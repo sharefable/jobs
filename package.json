@@ -1,0 +1,30 @@
+{
+  "name": "sqs_jobs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:sharefable/sqs_jobs.git",
+  "author": "akash@sharefable.com",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "clean": "tsc -b --clean",
+    "build": "tsc -b --verbose",
+    "lint": "eslint \"src/**/*.ts\"",
+    "watch-ts": "tsc -b -w",
+    "start": "node dist/src/index.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.2",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.3.1",
+    "@typescript-eslint/eslint-plugin": "^5.59.11",
+    "@typescript-eslint/parser": "^5.59.11",
+    "eslint": "^8.43.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
+  }
+}
