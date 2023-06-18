@@ -45,7 +45,12 @@
         "@typescript-eslint"
       ],
       "rules": {
-        "@typescript-eslint/indent": 0,
+        "no-shadow": "off",
+        "@typescript-eslint/no-shadow": "error",
+        "@typescript-eslint/indent": [
+          "error",
+          2
+        ],
         "prefer-template": "error",
         "linebreak-style": [
           "error",

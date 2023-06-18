@@ -14,6 +14,8 @@
     "start": "node dist/src/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.354.0",
+    "@aws-sdk/client-sqs": "^3.354.0",
     "body-parser": "^1.20.2",
     "express": "^4.18.2"
   },
