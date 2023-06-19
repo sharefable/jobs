@@ -61,7 +61,7 @@
           "single"
         ],
         "max-len": [
-          "error",
+          "warn",
           {
             "code": 120
           }
@@ -74,6 +74,7 @@
         "@typescript-eslint/no-var-requires": 0,
         "@typescript-eslint/no-namespace": 0,
         "@typescript-eslint/no-unused-vars": 1,
+        "@typescript-eslint/no-non-null-assertion": "off",
         "semi": "error",
         "no-constant-condition": 0,
         "no-fallthrough": 0,
