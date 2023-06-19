@@ -38,7 +38,7 @@ export default function mainMsgLoop() {
       WaitTimeSeconds: 20,
       MessageAttributeNames: ['*'],
     });
-    log.info('polling');
+    log.info('Checking for new messages');
 
     if (msgs.Messages && msgs.Messages.length) {
       const msg = msgs.Messages[0];
@@ -55,6 +55,6 @@ export default function mainMsgLoop() {
 
     clearTimeout(timer);
     timer = mainMsgLoop();
-  }, /* 40 */ 5 * 1000);
+  }, 40 /* 5 */ * 1000);
   return timer;
 }
