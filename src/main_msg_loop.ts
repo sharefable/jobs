@@ -32,13 +32,13 @@ export default function mainMsgLoop() {
       url = (await qUrlResp).QueueUrl;
       if (!url) throw new Error('Queue url could not be retrieved');
     }
+    log.info('Checking for new messages');
     const msgs = await sqsClient.receiveMessage({
       QueueUrl: url,
       MaxNumberOfMessages: 1,
       WaitTimeSeconds: 20,
       MessageAttributeNames: ['*'],
     });
-    log.info('Checking for new messages');
 
     if (msgs.Messages && msgs.Messages.length) {
       const msg = msgs.Messages[0];

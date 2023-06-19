@@ -15,6 +15,7 @@ export interface IProps extends TMsgAttrs {
   key: string;
   addExtensionInNewFile: 'mp4';
   action: 'CONVERT_TO_MP4';
+  fullPath: string;
 }
 
 const s3 = new S3Client({ region: process.env.S3_REGION });
@@ -30,15 +31,16 @@ export default async function (utProps: TMsgAttrs, deleteMsgOnFinish: () => Prom
   try {
     const props = utProps as IProps;
     qualifiedKey = props.key;
+    const sourcePath = props.fullPath.replace(/https?:\/\//, '');
 
     if (!qualifiedKey) throw new IrrecoverableErr('key not found');
     log.info('Received message to transcode video', qualifiedKey);
 
     conn = await getConnection();
 
-    // value of key = fable-tour-app-gamma.s3.ap-south-1.amazonaws.com/akashgoswami/usr/org/2/85c663479c9b42a89f26f96dd31529a6
-    const qualifiedKeyArr = qualifiedKey.split('/');
-    const domain = qualifiedKeyArr[0];
+    // value of sourcePath = fable-tour-app-gamma.s3.ap-south-1.amazonaws.com/akashgoswami/usr/org/2/85c663479c9b42a89f26f96dd31529a6
+    const sourcePathArr = sourcePath.split('/');
+    const domain = sourcePathArr[0];
     const domainArr = domain.split('.'); // fable-tour-app-gamma.s3.ap-south-1.amazonaws.com
     const bucketName = domainArr.slice(0, domainArr.length - 4).join('.');
     if (!bucketName) throw new IrrecoverableErr('bucketName can\'t be retrieved');
@@ -54,9 +56,9 @@ export default async function (utProps: TMsgAttrs, deleteMsgOnFinish: () => Prom
         });
     });
 
-    const key = qualifiedKeyArr.slice(1, qualifiedKeyArr.length).join('/');
-    const filepath = qualifiedKeyArr.slice(1, qualifiedKeyArr.length - 1).join('/');
-    const filename = qualifiedKeyArr.at(-1);
+    const key = sourcePathArr.slice(1, sourcePathArr.length).join('/');
+    const filepath = sourcePathArr.slice(1, sourcePathArr.length - 1).join('/');
+    const filename = sourcePathArr.at(-1);
 
     // Get file from s3 -> save it in local file system
     const { Body: body } = await s3.send(new GetObjectCommand({
