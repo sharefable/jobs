@@ -7,6 +7,7 @@ import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
 import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
+import {CONCURRENCY} from './consts';
 
 const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -48,7 +49,7 @@ export default function mainMsgLoop() {
     log.info('Checking for new messages');
     const msgs = await sqsClient.receiveMessage({
       QueueUrl: url,
-      MaxNumberOfMessages: 5,
+      MaxNumberOfMessages: CONCURRENCY,
       WaitTimeSeconds: 20,
       MessageAttributeNames: ['*'],
     });
@@ -121,6 +122,6 @@ export default function mainMsgLoop() {
 
     clearTimeout(timer);
     timer = mainMsgLoop();
-  }, /* 40 */ 5 * 1000);
+  }, 15 * 1000 /* TODO implement something like exponential backoff to reduce msg polling to save cost */);
   return timer;
 }
