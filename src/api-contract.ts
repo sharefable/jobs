@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-25 17:53:05.
+// Generated using typescript-generator version 2.35.1025 on 2023-06-25 18:50:02.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -9,12 +9,14 @@ export interface ApiResp<T> {
     errCode: ErrorCode;
 }
 
-export interface EntityAssetInfo extends Serializable {
+export interface EntityHoldingInfoBase extends Serializable {
     __id: number;
     type: string;
 }
 
 export interface ImgResizingJobInfo extends JobProcessingInfo {
+    sourceFilePath: string;
+    processedFilePath: string;
     resolution: string;
 }
 
@@ -25,7 +27,7 @@ export interface JobProcessingInfo extends MapSerializable {
     type: string;
 }
 
-export interface MediaEntityAssetInfo extends EntityAssetInfo {
+export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
 }
@@ -46,8 +48,7 @@ export interface ReqEntityAssetAssn {
     entityType: EntityType;
 }
 
-export interface ReqMediaProcess {
-    qualifiedPath?: string;
+export interface ReqMediaProcessing {
     path: string;
     assn: ReqEntityAssetAssn;
 }
@@ -121,9 +122,9 @@ export interface RespHealth extends ResponseBase {
 }
 
 export interface RespMediaProcessingInfo extends ResponseBase {
-    id: number;
-    fullFilePath: string;
-    transcodedFilePath: string;
+    jobId: number;
+    originalFilePath: string;
+    processedFilePath: string;
     processingState: JobProcessingStatus;
     failureReason: string;
 }
@@ -207,8 +208,8 @@ export const enum JobProcessingStatus {
 }
 
 export const enum JobType {
-    VIDEO_TRANSCODING = 0,
-    IMG_RESIZING = 1,
+    TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
+    RESIZE_IMG = "RESIZE_IMG",
 }
 
 export const enum SchemaVersion {

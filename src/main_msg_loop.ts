@@ -1,6 +1,7 @@
 import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/client-sqs';
 import {TMsgAttrs} from './types';
 import transcodeVideo from './processors/video_transcoder';
+import resizeImg from './processors/image_resizer';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
@@ -78,6 +79,12 @@ export default function mainMsgLoop() {
             jobInfo = await transcodeVideo(msgAttrs);
             break;
           }
+
+          case 'RESIZE_IMG': {
+            jobInfo = await resizeImg(msgAttrs);
+            break;
+          }
+
           default: {
             const errMsg =`No handler found for msg ${msg.Body}`;
             log.err(errMsg);
