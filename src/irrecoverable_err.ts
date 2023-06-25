@@ -1,4 +1,4 @@
-export default class IrrecoverableErr extends Error {  
+export default class NonRunnableErr extends Error {
   constructor (msg: string) {
     super(msg);
   }

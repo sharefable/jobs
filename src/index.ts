@@ -13,8 +13,6 @@ const INFO = {
 
 if (!(process.env.SQS_Q_REGION
   && process.env.SQS_Q_NAME
-  && process.env.AWS_PROFILE
-  && process.env.AWS_DEFAULT_PROFILE
   && process.env.DB_HOST
   && process.env.DB_USER
   && process.env.DB_PWD

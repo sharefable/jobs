@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-19 16:56:48.
+// Generated using typescript-generator version 2.35.1025 on 2023-06-25 17:53:05.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -9,14 +9,47 @@ export interface ApiResp<T> {
     errCode: ErrorCode;
 }
 
+export interface EntityAssetInfo extends Serializable {
+    __id: number;
+    type: string;
+}
+
+export interface ImgResizingJobInfo extends JobProcessingInfo {
+    resolution: string;
+}
+
+export interface JobProcessingInfo extends MapSerializable {
+    __id: number;
+    duration: string;
+    key: string;
+    type: string;
+}
+
+export interface MediaEntityAssetInfo extends EntityAssetInfo {
+    fullFilePaths: string[];
+    deletable: boolean;
+}
+
+export interface VideoTranscodingJobInfo extends JobProcessingInfo {
+    sourceFilePath: string;
+    processedFilePath: string;
+    sub: string;
+}
+
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
 }
 
+export interface ReqEntityAssetAssn {
+    entityRid: string;
+    entityType: EntityType;
+}
+
 export interface ReqMediaProcess {
     qualifiedPath?: string;
     path: string;
+    assn: ReqEntityAssetAssn;
 }
 
 export interface ReqNewOrg {
@@ -90,7 +123,8 @@ export interface RespHealth extends ResponseBase {
 export interface RespMediaProcessingInfo extends ResponseBase {
     id: number;
     fullFilePath: string;
-    processingState: MediaProcessingState;
+    transcodedFilePath: string;
+    processingState: JobProcessingStatus;
     failureReason: string;
 }
 
@@ -149,16 +183,32 @@ export interface RespUser extends ResponseBase {
     orgAssociation: UserOrgAssociation;
 }
 
+export interface Serializable {
+}
+
+export interface MapSerializable extends Serializable {
+}
+
 export interface ResponseBase {
     createdAt: Date;
     updatedAt: Date;
 }
 
-export const enum MediaProcessingState {
+export const enum EntityType {
+    Screen = 0,
+    Tour = 1,
+}
+
+export const enum JobProcessingStatus {
     Failed = 0,
     Touched = 1,
     InProcess = 2,
     Processed = 3,
+}
+
+export const enum JobType {
+    VIDEO_TRANSCODING = 0,
+    IMG_RESIZING = 1,
 }
 
 export const enum SchemaVersion {
