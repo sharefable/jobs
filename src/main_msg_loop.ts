@@ -48,76 +48,76 @@ export default function mainMsgLoop() {
     log.info('Checking for new messages');
     const msgs = await sqsClient.receiveMessage({
       QueueUrl: url,
-      MaxNumberOfMessages: 1,
+      MaxNumberOfMessages: 5,
       WaitTimeSeconds: 20,
       MessageAttributeNames: ['*'],
     });
 
     if (msgs.Messages && msgs.Messages.length) {
-      const msg = msgs.Messages[0];
-      const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
-      const deleteMsg = deleteMsgPrep(url, msg.ReceiptHandle);
-      if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
+      await Promise.all(msgs.Messages.map(async (msg) => {
+        const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
+        const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
+        if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
 
-      const conn = await getConnection();
-      let jobInfo: object = {};
+        const conn = await getConnection();
+        let jobInfo: object = {};
 
-      // Marking in db that the process is starting
-      await new Promise((res, rej) => {
-        conn!.query(
-          'UPDATE jobs SET processing_status = ? WHERE job_key = ?',
-          [JobProcessingStatus.InProcess, msgAttrs.key],
-          (err: MysqlError | null) => {
-            if (err) rej(err);
-            else res(1);
+        // Marking in db that the process is starting
+        await new Promise((res, rej) => {
+          conn!.query(
+            'UPDATE jobs SET processing_status = ? WHERE job_key = ?',
+            [JobProcessingStatus.InProcess, msgAttrs.key],
+            (err: MysqlError | null) => {
+              if (err) rej(err);
+              else res(1);
+            });
+        });
+
+        try {
+          switch (msg.Body) {
+            case  'TRANSCODE_VIDEO': {
+              jobInfo = await transcodeVideo(msgAttrs);
+              break;
+            }
+
+            case 'RESIZE_IMG': {
+              jobInfo = await resizeImg(msgAttrs);
+              break;
+            }
+
+            default: {
+              const errMsg =`No handler found for msg ${msg.Body}`;
+              log.err(errMsg);
+              throw new NonRunnableErr(errMsg);
+            }
+          }
+          await new Promise((res, rej) => {
+            conn!.query(
+              'UPDATE jobs SET processing_status = ?, info = ? WHERE job_key = ?',
+              [JobProcessingStatus.Processed, JSON.stringify(jobInfo), msgAttrs.key],
+              (err: MysqlError | null) => {
+                if (err) rej(err);
+                else res(1);
+              });
           });
-      });
-
-      try {
-        switch (msg.Body) {
-          case  'TRANSCODE_VIDEO': {
-            jobInfo = await transcodeVideo(msgAttrs);
-            break;
-          }
-
-          case 'RESIZE_IMG': {
-            jobInfo = await resizeImg(msgAttrs);
-            break;
-          }
-
-          default: {
-            const errMsg =`No handler found for msg ${msg.Body}`;
-            log.err(errMsg);
-            throw new NonRunnableErr(errMsg);
-          }
+          await deleteMsg();
+        } catch (e) {
+          await new Promise((res, rej) => {
+            conn!.query(
+              'UPDATE jobs SET processing_status = ?, failure_reason = ? WHERE job_key = ?',
+              [JobProcessingStatus.Failed, (e as Error).message, msgAttrs.key],
+              (err: MysqlError | null) => {
+                if (err) rej(err);
+                else res(1);
+              });
+          });
+          log.err((e as Error).message);
+          if (e instanceof NonRunnableErr) await deleteMsg();
+        } finally {
+          conn.release();
         }
-        await new Promise((res, rej) => {
-          conn!.query(
-            'UPDATE jobs SET processing_status = ?, info = ? WHERE job_key = ?',
-            [JobProcessingStatus.Processed, JSON.stringify(jobInfo), msgAttrs.key],
-            (err: MysqlError | null) => {
-              if (err) rej(err);
-              else res(1);
-            });
-        });
-        await deleteMsg();
-      } catch (e) {
-        await new Promise((res, rej) => {
-          conn!.query(
-            'UPDATE jobs SET processing_status = ?, failure_reason = ? WHERE job_key = ?',
-            [JobProcessingStatus.Failed, (e as Error).message, msgAttrs.key],
-            (err: MysqlError | null) => {
-              if (err) rej(err);
-              else res(1);
-            });
-        });
-        log.err((e as Error).message);
-        if (e instanceof NonRunnableErr) await deleteMsg();
-      } finally {
-        conn.release();
-      }
+      }));
     }
-
 
     clearTimeout(timer);
     timer = mainMsgLoop();
