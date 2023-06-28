@@ -27,6 +27,10 @@ export interface JobProcessingInfo extends MapSerializable {
     type: string;
 }
 
+export interface DeleteJobInfo extends JobProcessingInfo {
+    filePath: string;
+}
+
 export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
