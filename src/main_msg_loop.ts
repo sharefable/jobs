@@ -2,6 +2,7 @@ import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/c
 import {TMsgAttrs} from './types';
 import transcodeVideo from './processors/video_transcoder';
 import resizeImg from './processors/image_resizer';
+import deleteAsset from './processors/delete_asset';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
@@ -83,6 +84,11 @@ export default function mainMsgLoop() {
 
             case 'RESIZE_IMG': {
               jobInfo = await resizeImg(msgAttrs);
+              break;
+            }
+            
+            case 'DELETE_ASSET': {
+              jobInfo = await deleteAsset(msgAttrs);
               break;
             }
 
