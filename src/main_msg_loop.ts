@@ -2,7 +2,7 @@ import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/c
 import {TMsgAttrs} from './types';
 import transcodeVideo from './processors/video_transcoder';
 import resizeImg from './processors/image_resizer';
-import deleteAsset from './processors/delete_asset';
+// import deleteAsset from './processors/delete_asset';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
@@ -56,7 +56,9 @@ export default function mainMsgLoop() {
     });
 
     if (msgs.Messages && msgs.Messages.length) {
+      log.info(`Got ${msgs.Messages.length} msgs`);
       await Promise.all(msgs.Messages.map(async (msg) => {
+        log.info(`Processing message ${msg.Body}`);
         const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
         if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
@@ -87,10 +89,10 @@ export default function mainMsgLoop() {
               break;
             }
             
-            case 'DELETE_ASSET': {
-              jobInfo = await deleteAsset(msgAttrs);
-              break;
-            }
+            // case 'DELETE_ASSET': {
+            //   jobInfo = await deleteAsset(msgAttrs);
+            //   break;
+            // }
 
             default: {
               const errMsg =`No handler found for msg ${msg.Body}`;

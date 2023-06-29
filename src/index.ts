@@ -17,6 +17,7 @@ if (!(process.env.SQS_Q_REGION
   && process.env.DB_USER
   && process.env.DB_PWD
   && process.env.DB_DB
+  && process.env.TRANSCODER_PIPELINE_ID
   && process.env.S3_REGION)) {
   throw new Error('Environment vars are not loaded properly');
 }

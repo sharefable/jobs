@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-25 18:50:02.
+// Generated using typescript-generator version 2.35.1025 on 2023-06-29 17:45:29.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -27,10 +27,6 @@ export interface JobProcessingInfo extends MapSerializable {
     type: string;
 }
 
-export interface DeleteJobInfo extends JobProcessingInfo {
-    filePath: string;
-}
-
 export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
@@ -39,7 +35,8 @@ export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
     sourceFilePath: string;
     processedFilePath: string;
-    sub: string;
+    sub: VideoProcessingSub;
+    meta: string;
 }
 
 export interface ReqCopyScreen {
@@ -223,6 +220,11 @@ export const enum SchemaVersion {
 export const enum ScreenType {
     Img = 0,
     SerDom = 1,
+}
+
+export const enum VideoProcessingSub {
+    CONVERT_TO_MP4 = "CONVERT_TO_MP4",
+    CONVERT_TO_HLS = "CONVERT_TO_HLS",
 }
 
 export const enum ResponseStatus {

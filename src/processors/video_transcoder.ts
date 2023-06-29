@@ -1,65 +1,99 @@
 import {TMsgAttrs} from '../types';
-import {fetchFile} from '@ffmpeg/ffmpeg';
-import {VideoTranscodingJobInfo} from '../api-contract';
-import {deepcopy} from '../utils';
-import ffmpegTransform from './file_based_ffmpeg_transformer';
-import { CreateJobCommand, ElasticTranscoderClient, ReadJobCommand } from '@aws-sdk/client-elastic-transcoder';
+import {VideoProcessingSub, VideoTranscodingJobInfo} from '../api-contract';
+import {deepcopy, getS3FileLocationFromURI} from '../utils';
+import IrrecoverableErr from '../irrecoverable_err';
+import { CreateJobCommand, CreateJobCommandInput, ElasticTranscoderClient, ReadJobCommand } from '@aws-sdk/client-elastic-transcoder';
 import * as log from '../log';
 
 
 type IProps = VideoTranscodingJobInfo & TMsgAttrs;
-
 export default async function (utProps: TMsgAttrs): Promise<object> {
   const props = utProps as IProps;
-  const processingInfo = await ffmpegTransform(
-    props,
-    'video/mp4',   // only supported CONVERT_TO_MP4 for now
-    // Transcode the file to mp4 container. The vodeo file needs to be encoded with mimeType: 'video/webm;codecs=h264'
-    // so that ffmpeg could change the container easily and save it back to disk with extension
-    async (ffmpeg, inFile) => {
-      const virtualOutFile = 'transcoded.mp4';
-      ffmpeg.FS('writeFile', 'source.webm', await fetchFile(inFile));
-      await ffmpeg.run('-i', 'source.webm', '-movflags', '+faststart' , virtualOutFile);
-      return virtualOutFile;
-    },
-  );
-  //const awsElasticTranscoder = new ElasticTranscoderClient({region: process.env.s3_REGION});
-  // const params = {
-  //   PipelineId: '1687807152584-1v28mw', // PIPELINE_ID
-  //   OutputKeyPrefix: 'test_demo/', 
-  //   Input: {
-  //     Key: 'f98c03d5c9b246f2b8c4461bf0747c30',
-  //   },
-  //   Outputs: [{
-  //     Key: 'demo_2',
-  //     PresetId: '1351620000001-200010', // PRESET_ID
-  //     ThumbnailPattern: 'poster-{count}',
-  //   }],
-  // };
-  // const createJobCommand = new CreateJobCommand(params);
-  // let createdJobResponse;
-  // try {
-  //   createdJobResponse = await awsElasticTranscoder.send(createJobCommand);
-  // } catch (err) {
-  //   log.err('Error when sending create job command', err);
-  // }
-  // let jobStatus = createdJobResponse?.Job?.Status; // after job create status will be submitted
-  // const readJobCommand = new ReadJobCommand({ Id: createdJobResponse?.Job?.Id});
-  
-  // const intervalId = setInterval( async() => {
-  //   try {
-  //     const readJobResponse = await awsElasticTranscoder.send(readJobCommand);
-  //     jobStatus = readJobResponse.Job?.Status;
-  //     if (jobStatus == 'Completed') {
-  //       clearInterval(intervalId); 
-  //     }
-  //   } catch (err) {
-  //     log.err('Error when sending read job command', err);
-  //   }
-  // }, 5000);
+  log.info(`Starting ${props.sub} processing for ${props.key}`);
+  const source = getS3FileLocationFromURI(props.sourceFilePath);
+  const dest = getS3FileLocationFromURI(props.processedFilePath);
+  let jobParams: CreateJobCommandInput;
+  const awsElasticTranscoder = new ElasticTranscoderClient({region: process.env.S3_REGION});
+  if (props.sub === VideoProcessingSub.CONVERT_TO_HLS) {
+    jobParams = {
+      PipelineId: process.env.TRANSCODER_PIPELINE_ID,
+      OutputKeyPrefix: `${dest.dir}/`, // the output would be produced inside this folder
+      Input: {
+        Key: source.fullFilePath,
+      },
+      Outputs: [{
+        SegmentDuration: '4.0',
+        Key: dest.fileName,
+        PresetId: '1351620000001-200010', // PRESET_ID for hls
+        ThumbnailPattern: 'poster-{count}',
+      }],
+    };
+  } else if (props.sub === VideoProcessingSub.CONVERT_TO_MP4) {
+    jobParams = {
+      PipelineId: process.env.TRANSCODER_PIPELINE_ID,
+      OutputKeyPrefix: `${dest.dir}/`, // the output would be produced inside this folder
+      Input: {
+        Key: source.fullFilePath,
+      },
+      Outputs: [{
+        Key: dest.fileName,
+        PresetId: '1351620000001-100070', // PRESET_ID for mp4 web
+      }],
+    };
+  } else {
+    throw new IrrecoverableErr(`Videotranscoding handler for sub=${props.sub} not found`);
+  }
 
+  const startTime = +new Date();
+  let jobDuration = -1;
+  let transcoderJobId = '';
+  try {
+    const createJobCommand = new CreateJobCommand(jobParams);
+    const createdJobResponse = await awsElasticTranscoder.send(createJobCommand);
+    if (!createdJobResponse?.Job) {
+      throw new Error('Job object is undefined after job submission');
+    }
+    transcoderJobId = createdJobResponse.Job.Id!;
+
+    jobDuration = await new Promise((resolve, reject) => {
+      const timer = setInterval( async() => {
+        try {
+          const duration = ((+new Date() - startTime) / 1000) | 0;
+          if (duration > 12 * 60) {
+          // If the job does not finish in 12mins, get outta
+            clearInterval(timer);
+            reject(new Error(`Job ${transcoderJobId} timed out`));
+            return;
+          }
+          const readJobCommand = new ReadJobCommand({ Id: transcoderJobId});
+          const readJobResponse = await awsElasticTranscoder.send(readJobCommand);
+          if (!readJobResponse?.Job) {
+            reject(new Error('Job object is undefined while fetching for status'));
+            return;
+          }
+          const jobStatus = readJobResponse.Job.Status;
+          log.info(`Job ${transcoderJobId} status ${jobStatus}`);
+          if (jobStatus == 'Complete') {
+            clearInterval(timer); 
+            resolve(duration);
+          } else if (jobStatus === 'Error') {
+            clearInterval(timer);
+            reject(new Error(`Job ${transcoderJobId} failed`));
+          }
+        } catch (err) {
+          reject(err);
+        }
+      }, 2000);
+    });
+  } catch (err) {
+    const errMsg = (err as Error).message;
+    log.err('[Error from transcoder service] ', errMsg);
+    throw new IrrecoverableErr(errMsg);
+  }
+  
   const updatedInfo: VideoTranscodingJobInfo = deepcopy<VideoTranscodingJobInfo>(props);
-  updatedInfo.duration = `${processingInfo.duration}s`;
+  updatedInfo.meta = `etsId=${transcoderJobId}`;
+  updatedInfo.duration = `${jobDuration}s`;
   return updatedInfo;
 }
 

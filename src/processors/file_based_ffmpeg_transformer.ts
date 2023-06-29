@@ -25,14 +25,14 @@ export default async function (
   if (!source.bucketName) throw new NonRunnableErr('source bucketName can\'t be retrieved');
   if (!dest.bucketName) throw new NonRunnableErr('dest bucketName can\'t be retrieved');
 
-  const nFilename = source.key.replace(/\//g, '_');
+  const nFilename = source.fullFilePath.replace(/\//g, '_');
   let ffmpeg;
   try {
     [, ffmpeg] = await Promise.all([
       (async () => {
         const {Body: body} = await s3.send(new GetObjectCommand({
           Bucket: source.bucketName,
-          Key: source.key,
+          Key: source.fullFilePath,
         }));
 
         if (body instanceof Readable) {
@@ -65,14 +65,14 @@ export default async function (
 
     await s3.send(new PutObjectCommand({
       Bucket: dest.bucketName,
-      Key: dest.key,
+      Key: dest.fullFilePath,
       Body: createReadStream(outputMediaFile),
       ContentType: contentType,
       Metadata: {
         source: sourcePath,
       },
     }));
-    log.info('file uploaded to s3', dest.key);
+    log.info('file uploaded to s3', dest.fullFilePath);
 
     await Promise.all([inputMediaFile, outputMediaFile].map(f => fs.promises.unlink(f)));
 

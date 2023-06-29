@@ -9,11 +9,14 @@ export function getS3FileLocationFromURI(path: string) {
   // fable-tour-app-gamma.s3.ap-south-1.amazonaws.com
   const bucketName = hostArr.slice(0, hostArr.length - 4).join('.');
   const pathname = url.pathname.substring(1); // remove leading / as the path name /home.acme.com
-  const fileName = pathname.split('/').at(-1);
+  const pathArr = pathname.split('/');
+  const dir = pathArr.slice(0, pathArr.length - 1).join('/');
+  const fileName = pathArr.at(-1);
 
   return {
     bucketName: bucketName,
-    key: pathname,
+    dir,
+    fullFilePath: pathname,
     fileName,
   };
 }
