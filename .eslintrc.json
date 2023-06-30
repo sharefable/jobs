@@ -1,0 +1,97 @@
+{
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended"
+  ],
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly",
+    "jest": "readonly"
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "overrides": [
+    {
+      "files": [
+        "*.ts"
+      ],
+      "env": {
+        "es6": true,
+        "node": true
+      },
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module",
+        "extends": "./tsconfig.json",
+        "include": [
+          "src/**/*.ts",
+          "tests/**/*.ts"
+        ]
+      },
+      "plugins": [
+        "@typescript-eslint"
+      ],
+      "rules": {
+        "no-shadow": "off",
+        "@typescript-eslint/no-shadow": "error",
+        "@typescript-eslint/indent": [
+          "error",
+          2
+        ],
+        "prefer-template": "error",
+        "linebreak-style": [
+          "error",
+          "unix"
+        ],
+        "quotes": [
+          "error",
+          "single"
+        ],
+        "max-len": [
+          "warn",
+          {
+            "code": 120
+          }
+        ],
+        "comma-dangle": [
+          "error",
+          "always-multiline"
+        ],
+        "@typescript-eslint/no-explicit-any": 0,
+        "@typescript-eslint/no-var-requires": 0,
+        "@typescript-eslint/no-namespace": 0,
+        "@typescript-eslint/no-unused-vars": 1,
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "semi": "error",
+        "no-constant-condition": 0,
+        "no-fallthrough": 0,
+        "no-cond-assign": 0,
+        "no-bitwise": 0,
+        "no-inner-declarations": 0
+      },
+      "settings": {
+        "import/resolver": {
+          "node": {
+            "extensions": [
+              ".ts",
+              ".js"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
