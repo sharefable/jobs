@@ -1,13 +1,15 @@
 import {createPool} from 'mysql';
 import {promisify} from 'util';
 import {CONCURRENCY} from './consts';
+import {ConnectionString} from 'connection-string';
 
+const cs = new ConnectionString(process.env.DB_CONN_URL);
 export const pool  = createPool({
   connectionLimit : CONCURRENCY,
-  host : process.env.DB_HOST,
+  host : cs.hostname,
   user : process.env.DB_USER,
   password : process.env.DB_PWD,
-  database : process.env.DB_DB,
+  database : 'fable_tour_app',
 });
 
 export const getConnection = promisify(pool.getConnection).bind(pool);
