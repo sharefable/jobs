@@ -41,8 +41,8 @@ containerize:
 	fi
 	@echo "ECR tag: $(ECR_IMAGE_TAG)"
 	docker build -t $(SERVICE_NAME) -t $(ECR_IMAGE_TAG) .
-	# aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ORG).dkr.ecr.$(AWS_REGION).amazonaws.com
-	# docker push $(ECR_IMAGE_TAG)
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(AWS_ORG).dkr.ecr.$(AWS_REGION).amazonaws.com
+	docker push $(ECR_IMAGE_TAG)
 
 # README If you are running this in local make sure in env.dev file
 # DB_CONN_URL=host.docker.internal is set otherwise the db won't be reachable via the docker network
