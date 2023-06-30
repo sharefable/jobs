@@ -1,9 +1,9 @@
-import express, { Request, Response, Express } from 'express';
+import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
 import * as log from './log';
-import { promisify } from 'util';
-import { pool } from './db';
+import {promisify} from 'util';
+import {pool} from './db';
 
 const PORT = 8081;
 
@@ -13,10 +13,9 @@ const INFO = {
 
 if (!(process.env.SQS_Q_REGION
   && process.env.SQS_Q_NAME
-  && process.env.DB_HOST
+  && process.env.DB_CONN_URL
   && process.env.DB_USER
   && process.env.DB_PWD
-  && process.env.DB_DB
   && process.env.TRANSCODER_PIPELINE_ID
   && process.env.AWS_S3_REGION)) {
   throw new Error('Environment vars are not loaded properly');
