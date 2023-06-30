@@ -13,7 +13,7 @@ export default async function (utProps: TMsgAttrs): Promise<object> {
   const source = getS3FileLocationFromURI(props.sourceFilePath);
   const dest = getS3FileLocationFromURI(props.processedFilePath);
   let jobParams: CreateJobCommandInput;
-  const awsElasticTranscoder = new ElasticTranscoderClient({region: process.env.S3_REGION});
+  const awsElasticTranscoder = new ElasticTranscoderClient({region: process.env.AWS_S3_REGION});
   if (props.sub === VideoProcessingSub.CONVERT_TO_HLS) {
     jobParams = {
       PipelineId: process.env.TRANSCODER_PIPELINE_ID,
