@@ -1,6 +1,7 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
+import mainScheduleLoop from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
@@ -24,7 +25,8 @@ if (!(process.env.SQS_Q_REGION
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
-mainMsgLoop();
+// mainMsgLoop();
+mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));

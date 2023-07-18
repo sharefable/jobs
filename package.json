@@ -14,7 +14,9 @@
     "start": "node --experimental-wasm-threads dist/src/index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-athena": "^3.370.0",
     "@aws-sdk/client-elastic-transcoder": "^3.360.0",
+    "@aws-sdk/client-glue": "^3.371.0",
     "@aws-sdk/client-s3": "^3.354.0",
     "@aws-sdk/client-sqs": "^3.354.0",
     "@ffmpeg/core": "^0.11.0",
@@ -23,7 +25,8 @@
     "connection-string": "^4.3.6",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "node-cron": "^3.0.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.2",
@@ -31,6 +34,7 @@
     "@types/ffmpeg": "^1.0.4",
     "@types/mysql": "^2.15.21",
     "@types/node": "^20.3.1",
+    "@types/node-cron": "^3.0.8",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
     "eslint": "^8.43.0",
