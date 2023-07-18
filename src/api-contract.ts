@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-08-22 13:20:57.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-21 14:04:21.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -213,6 +213,11 @@ export const enum EntityType {
     Tour = 1,
 }
 
+export const enum EntryDurationType {
+    CURRENT = "CURRENT",
+    DAILY = "DAILY",
+}
+
 export const enum JobProcessingStatus {
     Failed = 0,
     Touched = 1,
@@ -223,6 +228,13 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
+    REFRESH_CRAWLER = "REFRESH_CRAWLER",
+    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
+    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
+    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
+    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
+    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
+    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
 }
 
 export const enum SchemaVersion {

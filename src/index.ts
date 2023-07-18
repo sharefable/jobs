@@ -1,9 +1,11 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
+import mainScheduleLoop from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
+import { sentryInitialize } from './sentry';
 
 const PORT = 8081;
 
@@ -19,14 +21,24 @@ if (!( process.env.APP_ENV
   && process.env.DB_PWD
   && process.env.ETS_REGION
   && process.env.TRANSCODER_PIPELINE_ID
-  && process.env.AWS_S3_REGION)) {
+  && process.env.AWS_S3_REGION
+  && process.env.AWS_GLUE_REGION
+  && process.env.AWS_GLUE_DB_NAME
+  && process.env.AWS_GLUE_CRAWLER_NAME
+  && process.env.AWS_GLUE_TABLE_NAME
+  && process.env.AWS_ATHENA_OUTPUT_LOCATION
+  && process.env.AWS_ATHENA_REGION
+  && process.env.JOB_ENV)) {
   throw new Error('Environment vars are not loaded properly');
 }
 
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
+sentryInitialize();
+
 mainMsgLoop();
+mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));
