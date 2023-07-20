@@ -57,3 +57,26 @@ export const getDateAndHour =  (time: number): DateAndHour => {
   const dateAndHour: DateAndHour = { date: formattedDate, hour: formattedHour };
   return dateAndHour;
 };
+
+const convertToDateFormat = (unformattedDate: string) => {
+  const year = unformattedDate.slice(0, 4);
+  const month = unformattedDate.slice(4, 6);
+  const day = unformattedDate.slice(6, 8);
+  const convertedDateStr = `${year}-${month}-${day}`;
+  return convertedDateStr;
+};
+
+export const calculateDateNintyDaysBefore = (date: string): number => {
+  const formattedDate = convertToDateFormat(date);
+  const givenDate = new Date(formattedDate);
+  const ninetyDaysBefore = new Date(givenDate);
+  ninetyDaysBefore.setDate(givenDate.getDate() - 90);
+  const ninetyDaysBeforeStr: number = oldDateFormat (ninetyDaysBefore.toISOString().slice(0, 10));
+  return ninetyDaysBeforeStr;
+};
+
+const oldDateFormat = (newFormat: string): number => {
+  const oldFormat = newFormat.replace(/-/g, '');
+  return parseInt(oldFormat);
+};
+

@@ -18,11 +18,12 @@ import { athenaQueryIfSecondLastDataInTableIsSuccess,
   sqlQueryToInsertDataIfJobFailed,
   sqlQueryToUpdateData,
   sqlQueryToSelectSecondLastData,
-  athenaQueryIfDatesAreNotEqual} from './queries';
+  athenaQueryIfDatesAreNotEqual} from './job_queries';
 import { JobProcessingStatus, JobType } from 'api-contract';
 import { randomUUID } from 'crypto';
 import { getDateAndHour } from '../utils';
-import { DateAndHour, SqlQueryValues } from '../types';
+import { AthenaQueryEntity, DateAndHour, SqlQueryValues } from '../types';
+import { sendDataToDB } from './process_data_to_db';
 
 export default function refreshTourUsageData() {
   // 1. start a crawler
@@ -104,9 +105,9 @@ const getCrawlerStatus = async (client: GlueClient, jobKey: string, jobDateAndHo
       const getCommand = new GetCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
       const getResult: GetCrawlerCommandOutput = await client.send(getCommand);
       crawlerStatus = getResult.Crawler?.State;
-      console.log('Crawler status:', crawlerStatus);
+      // console.log('Crawler status:', crawlerStatus);
     }
-    await runAthenaQuery(jobKey);
+    await runAthenaQuery(jobKey, jobDateAndHour);
   } catch (error) {
     // const sqlValues: SqlQueryValues = {
     //   jobKey: jobKey, 
@@ -122,7 +123,7 @@ const getCrawlerStatus = async (client: GlueClient, jobKey: string, jobDateAndHo
   }
 };
 
-const runAthenaQuery = async (jobKey: string) => {
+const runAthenaQuery = async (jobKey: string, jobDateAndHour: DateAndHour) => {
   const client: AthenaClient = new AthenaClient({ region: process.env.AWS_S3_REGION });
   const startCommand = new StartQueryExecutionCommand({
     QueryString: await getAppropriateAthenaQuery(),
@@ -153,6 +154,13 @@ const runAthenaQuery = async (jobKey: string) => {
       }
       const getQueryResultsCommand = new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId });
       const getQueryResults: GetQueryResultsCommandOutput = await client.send(getQueryResultsCommand);
+      const queryResultArray: AthenaQueryEntity[] =  retriveExecutedQueryData(getQueryResults);
+      console.log('queryResultArray', queryResultArray);
+      if (queryResultArray.length > 0) {
+        await sendDataToDB(queryResultArray);
+      } else {
+        throw new Error(`No data found when queried for ymd=${jobDateAndHour.date} and hour=${jobDateAndHour.hour}`);
+      }
       const sqlValues: SqlQueryValues = {
         jobKey: jobKey,
         jobType: JobType.CRAWLER_ATHENA,
@@ -161,7 +169,6 @@ const runAthenaQuery = async (jobKey: string) => {
       };
       const query = sqlQueryToUpdateData(sqlValues);
       await executeAppropriateSqlQueryToInsertOrUpdateData(query);
-      retriveExecutedQueryData(getQueryResults);
     }
   } catch (error: any) {
     console.error('Error running Athena query:', error);
@@ -203,17 +210,15 @@ const getAppropriateAthenaQuery = async () => {
   return query;
 };
 
-const retriveExecutedQueryData = (queryExecutionResult: GetQueryResultsCommandOutput) => {
+const retriveExecutedQueryData = (queryExecutionResult: GetQueryResultsCommandOutput): AthenaQueryEntity[] => {
   try {
     const columnNames: any = queryExecutionResult.ResultSet?.ResultSetMetadata?.ColumnInfo?.map(column => column.Name);
     const rows: any = queryExecutionResult.ResultSet?.Rows;
-    console.log('columnNames', columnNames);
-    console.log('row', rows);
-    const results = [];
+    const results: AthenaQueryEntity[] = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const rowData = row.Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
-      const rowObject: any= {};
+      const rowObject: any = {};
       for (let j = 0; j < columnNames.length; j++) {
         const columnName:any = columnNames[j];
         const cellValue = rowData[j];
@@ -221,9 +226,9 @@ const retriveExecutedQueryData = (queryExecutionResult: GetQueryResultsCommandOu
       }
       results.push(rowObject);
     }
-    console.log('results', results);
-  } catch (error) {
-    console.error('Error running retriveExecutedQueryData', error);
+    return results;
+  } catch (error: any) {
+    throw new Error(error);
   }
 };
 

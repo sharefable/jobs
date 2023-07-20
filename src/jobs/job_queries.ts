@@ -42,29 +42,27 @@ export const sqlQueryToSelectLastSuccessData = () => {
 };
 
 export const athenaQueryIfSecondLastDataInTableIsSuccess = (currentHour: DateAndHour) => {
-  const date = 20230718;
-  const h =12;
-  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS view_unique FROM 
-                 (SELECT DISTINCT payload_tour_id, sid FROM "ann_btn_clicked" 
-                 where ymd=${date} and 
-                 h=${h}) subquery GROUP BY payload_tour_id`;
+  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
+                 (SELECT payload_tour_id, sid,  ymd FROM "ann_btn_clicked" 
+                 where ymd=${currentHour.date} and 
+                 h=${currentHour.hour}) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
 
 export const athenaQueryIfSecondLastDataInTableIsFailure = (lastSucessDataDateAndHour: DateAndHour, currentHour: string) => {
-  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS view_unique FROM 
-                 (SELECT DISTINCT payload_tour_id, sid FROM "ann_btn_clicked" 
+  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
+                 (SELECT payload_tour_id, sid, ymd FROM "ann_btn_clicked" 
                  where ymd=${lastSucessDataDateAndHour.date} and 
                  h BETWEEN ${lastSucessDataDateAndHour.hour} AND 
-                 ${currentHour}) subquery GROUP BY payload_tour_id`;
+                 ${currentHour}) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
 
 export const athenaQueryIfDatesAreNotEqual = (lastSucessDataDateAndHour: DateAndHour) => {
-  const query = `SELECT payload_tour_id, COUNT(sid) AS view_unique FROM 
-                   (SELECT DISTINCT payload_tour_id, sid FROM "ann_btn_clicked" 
+  const query = `SELECT payload_tour_id,ymd, COUNT(sid) AS views_all FROM 
+                   (SELECT payload_tour_id, sid, ymd FROM "ann_btn_clicked" 
                    where ymd=${lastSucessDataDateAndHour.date} and 
-                   h=${lastSucessDataDateAndHour.hour}) subquery GROUP BY payload_tour_id`;
+                   h=${lastSucessDataDateAndHour.hour}) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
 
