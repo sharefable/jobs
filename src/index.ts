@@ -25,7 +25,7 @@ if (!(process.env.SQS_Q_REGION
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
-// mainMsgLoop();
+//mainMsgLoop();
 mainScheduleLoop();
 
 const app: Express = express();

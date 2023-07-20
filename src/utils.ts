@@ -1,3 +1,6 @@
+import { Connection, MysqlError } from 'mysql';
+import { DateAndHour } from 'types';
+
 export function deepcopy<T>(obj:T): T {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -20,3 +23,37 @@ export function getS3FileLocationFromURI(path: string) {
     fileName,
   };
 }
+
+export function executeQuery(conn: Connection, query: string) {
+  return new Promise((resolve, reject) => {
+    !conn.query(query, (err: MysqlError | null, rows: []) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+}
+
+export const getDateAndHour =  (time: number): DateAndHour => {
+  const date = new Date(time);
+  date.setHours(date.getHours() - 1);
+  const utcTime = new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+    date.getUTCMilliseconds(),
+  );
+  const year = utcTime.getFullYear();
+  const month = utcTime.getMonth() + 1;
+  const day = utcTime.getDate();
+  const hour = utcTime.getHours();
+  const formattedDate = `${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+  const formattedHour = `${hour}`;
+  const dateAndHour: DateAndHour = { date: formattedDate, hour: formattedHour };
+  return dateAndHour;
+};

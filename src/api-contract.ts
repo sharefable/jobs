@@ -211,6 +211,7 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
+    CRAWLER_ATHENA ="CRAWLER_ATHENA",
 }
 
 export const enum SchemaVersion {
