@@ -1,4 +1,4 @@
-import { JobProcessingInfo, JobProcessingStatus, JobType } from 'api-contract';
+import { JobProcessingStatus, JobType } from 'api-contract';
 import { Connection, MysqlError } from 'mysql';
 import { JobTimestampInfo, SqlQueryValues } from 'types';
 

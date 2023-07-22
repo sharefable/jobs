@@ -18,10 +18,10 @@ import { athenaQueryToFetchEventsForCurrentTimestamp,
   sqlQueryToInsertDataIfJobFailed,
   sqlQueryToUpdateData,
   sqlQueryToSelectSecondLastData } from './job_queries';
-import { JobProcessingStatus, JobType } from 'api-contract';
+import { JobProcessingStatus } from 'api-contract';
 import { randomUUID } from 'crypto';
 import { generateSqlValues, getDateAndHour } from '../utils';
-import { AthenaQueryEntity, JobTimestampInfo, SqlQueryValues } from '../types';
+import { AthenaQueryEntity, JobTimestampInfo } from '../types';
 import { processAthenaQueryResultToDb } from './process_data_to_db';
 
 export default function refreshTourUsageData() {
