@@ -1,5 +1,6 @@
+import { JobProcessingInfo, JobProcessingStatus, JobType } from 'api-contract';
 import { Connection, MysqlError } from 'mysql';
-import { DateAndHour } from 'types';
+import { JobTimestampInfo, SqlQueryValues } from 'types';
 
 export function deepcopy<T>(obj:T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -36,10 +37,9 @@ export function executeQuery(conn: Connection, query: string) {
   });
 }
 
-export const getDateAndHour =  (time: number): DateAndHour => {
+export const getDateAndHour =  (time: number): JobTimestampInfo => {
   const date = new Date(time);
-  date.setHours(date.getHours() - 1);
-  const utcTime = new Date(
+  const utcTimeOfCrawler = new Date(
     date.getUTCFullYear(),
     date.getUTCMonth(),
     date.getUTCDate(),
@@ -48,13 +48,15 @@ export const getDateAndHour =  (time: number): DateAndHour => {
     date.getUTCSeconds(),
     date.getUTCMilliseconds(),
   );
-  const year = utcTime.getFullYear();
-  const month = utcTime.getMonth() + 1;
-  const day = utcTime.getDate();
-  const hour = utcTime.getHours();
-  const formattedDate = `${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
-  const formattedHour = `${hour}`;
-  const dateAndHour: DateAndHour = { date: formattedDate, hour: formattedHour };
+  const jobRanHour = utcTimeOfCrawler.getHours();
+  date.setHours(date.getHours() - 1);
+  const utcYear = utcTimeOfCrawler.getFullYear();
+  const utcMonth = utcTimeOfCrawler.getMonth() + 1;
+  const utcDay = utcTimeOfCrawler.getDate();
+  const utcHour = utcTimeOfCrawler.getHours();
+  const jobDate = parseInt(`${utcYear}${utcMonth.toString().padStart(2, '0')}${utcDay.toString().padStart(2, '0')}`);
+  const jobRanForHour = parseInt(`${utcHour}`);
+  const dateAndHour: JobTimestampInfo = { date: jobDate, jobRanForPrevHour: jobRanForHour, actualHour: jobRanHour };
   return dateAndHour;
 };
 
@@ -68,9 +70,9 @@ const convertToDateFormat = (unformattedDate: string) => {
 
 export const calculateDateNintyDaysBefore = (date: string): number => {
   const formattedDate = convertToDateFormat(date);
-  const givenDate = new Date(formattedDate);
-  const ninetyDaysBefore = new Date(givenDate);
-  ninetyDaysBefore.setDate(givenDate.getDate() - 90);
+  const newDate = new Date(formattedDate);
+  const ninetyDaysBefore = new Date(newDate);
+  ninetyDaysBefore.setDate(newDate.getDate() - 90);
   const ninetyDaysBeforeStr: number = oldDateFormat (ninetyDaysBefore.toISOString().slice(0, 10));
   return ninetyDaysBeforeStr;
 };
@@ -78,5 +80,16 @@ export const calculateDateNintyDaysBefore = (date: string): number => {
 const oldDateFormat = (newFormat: string): number => {
   const oldFormat = newFormat.replace(/-/g, '');
   return parseInt(oldFormat);
+};
+
+export const generateSqlValues = (jobKey: string, jobTimestampInfo: JobTimestampInfo, processingStatus: JobProcessingStatus, reason: string | null ): SqlQueryValues => {
+  const sqlValues: SqlQueryValues = {
+    jobKey: jobKey, 
+    jobInfo: jobTimestampInfo, 
+    jobType: JobType.ATHENA_QUERY,
+    processing_status: processingStatus,
+    failureReason: null,
+  };
+  return sqlValues;
 };
 

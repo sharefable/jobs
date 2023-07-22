@@ -1,4 +1,4 @@
-import { DateAndHour, SqlQueryValues } from 'types';
+import { JobTimestampInfo, SqlQueryValues } from 'types';
 import { getConnection } from '../db';
 import { executeQuery } from '../utils';
 import { MysqlError } from 'mysql';
@@ -26,43 +26,37 @@ export const executeAppropriateSqlQueryToInsertOrUpdateData = async (query: stri
       });
   });
 };
+
 export const sqlQueryToSelectSecondLastData = () => {
-  const sqlQuery = 'SELECT * FROM jobs ORDER BY id DESC LIMIT 1 OFFSET 1';
+  const sqlQuery = 'SELECT * FROM jobs WHERE job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1 OFFSET 1';
   return sqlQuery;
 };
 
-export const sqlQueryToSelectLastData = () => {
-  const sqlQuery = 'SELECT * FROM jobs ORDER BY id DESC LIMIT 1';
+export const sqlQueryToFetchLastAthenaJob = () => {
+  const sqlQuery = 'SELECT * FROM jobs WHERE job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1';
   return sqlQuery;
 };
 
 export const sqlQueryToSelectLastSuccessData = () => {
-  const sqlQuery = 'SELECT * FROM jobs where processing_status = 3 ORDER BY id DESC LIMIT 1';
+  const sqlQuery = 'SELECT * FROM jobs where processing_status = 3 and job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1';
   return sqlQuery;
 };
 
-export const athenaQueryIfSecondLastDataInTableIsSuccess = (currentHour: DateAndHour) => {
+export const athenaQueryToFetchEventsForCurrentTimestamp = (dateAndHour: JobTimestampInfo) => {
   const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
                  (SELECT payload_tour_id, sid,  ymd FROM "ann_btn_clicked" 
-                 where ymd=${currentHour.date} and 
-                 h=${currentHour.hour}) subquery GROUP BY payload_tour_id, ymd`;
+                 where ymd=${dateAndHour.date} and 
+                 h=${dateAndHour.jobRanForPrevHour}) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
 
-export const athenaQueryIfSecondLastDataInTableIsFailure = (lastSucessDataDateAndHour: DateAndHour, currentHour: string) => {
+export const athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp = (lastSucessDataDateAndHour: JobTimestampInfo) =>{
   const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
-                 (SELECT payload_tour_id, sid, ymd FROM "ann_btn_clicked" 
-                 where ymd=${lastSucessDataDateAndHour.date} and 
-                 h BETWEEN ${lastSucessDataDateAndHour.hour} AND 
-                 ${currentHour}) subquery GROUP BY payload_tour_id, ymd`;
-  return query;
-};
-
-export const athenaQueryIfDatesAreNotEqual = (lastSucessDataDateAndHour: DateAndHour) => {
-  const query = `SELECT payload_tour_id,ymd, COUNT(sid) AS views_all FROM 
-                   (SELECT payload_tour_id, sid, ymd FROM "ann_btn_clicked" 
-                   where ymd=${lastSucessDataDateAndHour.date} and 
-                   h=${lastSucessDataDateAndHour.hour}) subquery GROUP BY payload_tour_id, ymd`;
+                 (SELECT payload_tour_id, sid, cast(concat(cast(ymd as varchar), 
+                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint) as test FROM 
+                 "ann_btn_clicked" where test>=${lastSucessDataDateAndHour.date + 
+                  lastSucessDataDateAndHour.jobRanForPrevHour.toString().padStart(2, '0')}
+                  ) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
 

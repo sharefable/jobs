@@ -1,25 +1,23 @@
 import { AthenaQueryEntity, TourCount, AnalyticTourMetrics, AnalyticTourMetricsViews } from '../types';
 import { calculateDateNintyDaysBefore } from '../utils';
 import { executeAppropriateSqlQueryFoFetchData, executeAppropriateSqlQueryToInsertOrUpdateData } from './job_queries';
-import { queryToCountAllRowsForTourId, 
+import { queryToCountDailyRowsForTourId, 
   queryToCheckIfTourIdHasLifeTimeValue, 
-  queryToFetchFromMetricsTable, 
+  queryToFetchDataFromMetricsTableForTourIdAndDate, 
   updateQuery, 
   updateQueryWithEntryType, 
-  insertQuery, 
+  insertQueryForNewRowWithTypeCurrent, 
   queryToGetLifeTimeValueOfTourId, 
   queryToUpdateLifeTimeValueOfTourId, 
   queryToInsertLifeTimeData, 
   queryToDeleteAllTheDailyEvents, 
   queryToFindSumofViewsForTourId } from './sql_queries';
 
-export const sendDataToDB = async (athenaResults: AthenaQueryEntity[]) => {
-  console.log('sendDataToDB I am here');
+export const processAthenaQueryResultToDb = async (athenaResults: AthenaQueryEntity[]) => {
   athenaResults.map(async (queryResult: AthenaQueryEntity) =>{
-    const queryToCountParticularTour = queryToCountAllRowsForTourId(queryResult.payload_tour_id);
-    const countOfParticularTour: TourCount = await executeAppropriateSqlQueryFoFetchData(queryToCountParticularTour);
-      
-    if (countOfParticularTour.tour_count !== undefined && countOfParticularTour.tour_count === 90) {
+    const queryToCountDailyTypeForParticularTour = queryToCountDailyRowsForTourId(queryResult.payload_tour_id);
+    const rowCountOfDailyForParticularTour: TourCount = await executeAppropriateSqlQueryFoFetchData(queryToCountDailyTypeForParticularTour);
+    if (rowCountOfDailyForParticularTour.tour_count !== undefined && rowCountOfDailyForParticularTour.tour_count === 90) {
       const isPresent = await queryToCheckIfTourIdHasLifeTimeValue(queryResult.payload_tour_id);
       if (isPresent.value === 1) {
         await performeQueryIfTourIdHasLifeTimeValue(queryResult);
@@ -27,20 +25,24 @@ export const sendDataToDB = async (athenaResults: AthenaQueryEntity[]) => {
         await performeQueryIfTourIdDoNotHaveLifeTimeValue(queryResult);
       }
     } else {
-      const query = queryToFetchFromMetricsTable(queryResult.payload_tour_id, queryResult.ymd);
+      const query = queryToFetchDataFromMetricsTableForTourIdAndDate(queryResult.payload_tour_id, queryResult.ymd);
       const tableDataForTourId: AnalyticTourMetrics = await executeAppropriateSqlQueryFoFetchData(query);
       if (tableDataForTourId !== undefined) {
         if (queryResult.h !== 23) {
-          const addedViewAll = parseInt(queryResult.views_all) + tableDataForTourId.views_all;
-          const querys = updateQuery(addedViewAll, queryResult.payload_tour_id, queryResult.ymd);
-          await executeAppropriateSqlQueryToInsertOrUpdateData(querys);
+          console.log('hour is lesser than 0');
+          const addedViewAll = queryResult.views_all + tableDataForTourId.views_all;
+          console.log('comined added value for current', queryResult.views_all, ' ',tableDataForTourId.views_all);
+          const queryToUpdateViews = updateQuery(addedViewAll, queryResult.payload_tour_id, queryResult.ymd);
+          await executeAppropriateSqlQueryToInsertOrUpdateData(queryToUpdateViews);
         } else {
-          const querys = updateQueryWithEntryType(queryResult.ymd,  queryResult.payload_tour_id);
-          await executeAppropriateSqlQueryToInsertOrUpdateData(querys);
+          console.log('hour is  equal TO 0 so CHANEGED TO DAILY');
+          const queryToUpdate = updateQueryWithEntryType(queryResult.ymd,  queryResult.payload_tour_id);
+          await executeAppropriateSqlQueryToInsertOrUpdateData(queryToUpdate);
         }
       } else {
-        const insert = insertQuery(queryResult);
-        await executeAppropriateSqlQueryToInsertOrUpdateData(insert);
+        console.log('normal insert');
+        const queryToInsertNewCurrentRow = insertQueryForNewRowWithTypeCurrent(queryResult);
+        await executeAppropriateSqlQueryToInsertOrUpdateData(queryToInsertNewCurrentRow);
       }
     }
   });
@@ -49,14 +51,17 @@ export const sendDataToDB = async (athenaResults: AthenaQueryEntity[]) => {
 const performeQueryIfTourIdHasLifeTimeValue = async (queryResult: AthenaQueryEntity) => {
   const queryLifetimeValue = queryToGetLifeTimeValueOfTourId(queryResult.payload_tour_id);
   const lifeTimeValue: AthenaQueryEntity = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue);
-  const dailyDataForNientyDays:AnalyticTourMetricsViews  = await performQueryEcexutionToFindSumOfViews(queryResult.payload_tour_id);
+  const aggregatedDailyDataForNientyDays:AnalyticTourMetricsViews  = await performQueryEcexutionToFindSumOfViews(queryResult.payload_tour_id);
     
-  const addedViewAll = lifeTimeValue.views_all + dailyDataForNientyDays.sum_views_all;
-  const addedViewUnique = lifeTimeValue.views_unique + dailyDataForNientyDays.sum_views_unique;
+  const addedViewAll = lifeTimeValue.views_all + aggregatedDailyDataForNientyDays.sum_views_all;
+  const addedViewUnique = lifeTimeValue.views_unique + aggregatedDailyDataForNientyDays.sum_views_unique;
+  
+  const deleteQuery = queryToDeleteAllTheDailyEvents(queryResult.payload_tour_id);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(deleteQuery);
   
   const date: number = calculateDateNintyDaysBefore(queryResult.ymd.toString());
-  const insertQueryForUpdatedLifeTime = queryToUpdateLifeTimeValueOfTourId(queryResult.payload_tour_id, addedViewAll, addedViewUnique, date);
-  await executeAppropriateSqlQueryToInsertOrUpdateData(insertQueryForUpdatedLifeTime);
+  const queryForUpdatedLifeTime = queryToUpdateLifeTimeValueOfTourId(queryResult.payload_tour_id, addedViewAll, addedViewUnique, date);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(queryForUpdatedLifeTime);
 };
   
 const performeQueryIfTourIdDoNotHaveLifeTimeValue = async (queryResult: AthenaQueryEntity) => {
@@ -69,7 +74,7 @@ const performeQueryIfTourIdDoNotHaveLifeTimeValue = async (queryResult: AthenaQu
   const deleteQuery = queryToDeleteAllTheDailyEvents(queryResult.payload_tour_id);
   await executeAppropriateSqlQueryToInsertOrUpdateData(deleteQuery);
     
-  const insertCurrentEventQuery = insertQuery(queryResult);
+  const insertCurrentEventQuery = insertQueryForNewRowWithTypeCurrent(queryResult);
   await executeAppropriateSqlQueryToInsertOrUpdateData(insertCurrentEventQuery);
 };
   

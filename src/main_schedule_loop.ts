@@ -6,5 +6,5 @@ export default function mainScheduleLoop() {
     console.log('running a task every second');
     refreshTourUsageData();
   });
-  //refreshTourUsageData();
+  // refreshTourUsageData();
 }

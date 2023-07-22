@@ -2,16 +2,17 @@ import { JobProcessingStatus, JobType } from 'api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
-export interface DateAndHour {
-  date: string;
-  hour: string;
+export interface JobTimestampInfo {
+  date: number;
+  jobRanForPrevHour: number;
+  actualHour: number;
 }
 
 export interface SqlQueryValues {
   jobType: JobType;
   jobKey: string;
   processing_status: JobProcessingStatus;
-  jobInfo?: DateAndHour;
+  jobInfo?: JobTimestampInfo;
   failureReason?: string | null;
 }
 
@@ -27,7 +28,7 @@ export interface AthenaQueryEntity{
   ymd: number;
   h: number;
   payload_tour_id: number;
-  views_all: any;
+  views_all: number;
   views_unique: number;
 }
 
@@ -38,10 +39,4 @@ export interface AnalyticTourMetricsViews{
 
 export interface TourCount{
   tour_count: number;
-}
-
-export const enum EntityDurationType{
-  DAILY = 'DAILY',
-  CURRENT = 'CURRENT',
-  LIFETIME ='LIFETIME',
 }

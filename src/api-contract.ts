@@ -211,7 +211,7 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
-    CRAWLER_ATHENA ="CRAWLER_ATHENA",
+    ATHENA_QUERY ="ATHENA_QUERY",
 }
 
 export const enum SchemaVersion {
@@ -243,3 +243,9 @@ export const enum UserOrgAssociation {
     Explicit = "Explicit",
     NA = "NA",
 }
+
+export const enum EntryDurationType{
+    DAILY = 'DAILY',
+    CURRENT = 'CURRENT',
+    LIFETIME ='LIFETIME',
+  }
