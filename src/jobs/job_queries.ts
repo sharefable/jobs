@@ -2,6 +2,7 @@ import { JobTimestampInfo, SqlQueryValues } from 'types';
 import { getConnection } from '../db';
 import { executeQuery } from '../utils';
 import { MysqlError } from 'mysql';
+import { JobType } from 'api-contract';
 
 export const executeAppropriateSqlQueryFoFetchData = async (query: string) => { 
   const conn = await getConnection();
@@ -28,34 +29,32 @@ export const executeAppropriateSqlQueryToInsertOrUpdateData = async (query: stri
 };
 
 export const sqlQueryToSelectSecondLastData = () => {
-  const sqlQuery = 'SELECT * FROM jobs WHERE job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1 OFFSET 1';
-  return sqlQuery;
-};
-
-export const sqlQueryToFetchLastAthenaJob = () => {
-  const sqlQuery = 'SELECT * FROM jobs WHERE job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1';
+  const sqlQuery = `SELECT * FROM jobs WHERE job_type='${JobType.REFRESH_TOUR_ANALYTICS}' 
+                    ORDER BY updated_at DESC LIMIT 1 OFFSET 1`;
   return sqlQuery;
 };
 
 export const sqlQueryToSelectLastSuccessData = () => {
-  const sqlQuery = 'SELECT * FROM jobs where processing_status = 3 and job_type = ATHENA_QUERY ORDER BY id DESC LIMIT 1';
+  const sqlQuery = `SELECT * FROM jobs WHERE processing_status=3 AND 
+                    job_type='${JobType.REFRESH_TOUR_ANALYTICS}' ORDER BY updated_at DESC LIMIT 1`;
   return sqlQuery;
 };
 
-export const athenaQueryToFetchEventsForCurrentTimestamp = (dateAndHour: JobTimestampInfo) => {
+export const athenaQueryToFetchEventsForLastSucessfulJobRun = (timestampInfo: JobTimestampInfo) => {
   const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
                  (SELECT payload_tour_id, sid,  ymd FROM "ann_btn_clicked" 
-                 where ymd=${dateAndHour.date} and 
-                 h=${dateAndHour.jobRanForPrevHour}) subquery GROUP BY payload_tour_id, ymd`;
+                  WHERE cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
+                  as bigint)=${parseInt(timestampInfo.lastSuccessfulRunAt)}) subquery 
+                  GROUP BY payload_tour_id, ymd`;
   return query;
 };
 
-export const athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp = (lastSucessDataDateAndHour: JobTimestampInfo) =>{
+export const athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp = (timestampInfo: JobTimestampInfo) =>{
   const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
-                 (SELECT payload_tour_id, sid, cast(concat(cast(ymd as varchar), 
-                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint) as test FROM 
-                 "ann_btn_clicked" where test>=${lastSucessDataDateAndHour.date + 
-                  lastSucessDataDateAndHour.jobRanForPrevHour.toString().padStart(2, '0')}
+                 (SELECT payload_tour_id, sid, ymd FROM 
+                 "ann_btn_clicked" WHERE cast(concat(cast(ymd as varchar), 
+                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
+                 >=${parseInt(timestampInfo.currentRunAt)}
                   ) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
@@ -79,7 +78,7 @@ export const sqlQueryToInsertDataIfJobFailed = (queryValues: SqlQueryValues) => 
 };
 
 export const sqlQueryToUpdateData = (queryValues: SqlQueryValues) => {
-  const query =  `UPDATE jobs SET processing_status = '${queryValues.processing_status}'
-                  WHERE job_key = '${queryValues.jobKey}'`;
+  const query =  `UPDATE jobs SET processing_status='${queryValues.processing_status}'
+                  WHERE job_key='${queryValues.jobKey}'`;
   return query;
 };

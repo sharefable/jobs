@@ -37,27 +37,13 @@ export function executeQuery(conn: Connection, query: string) {
   });
 }
 
-export const getDateAndHour =  (time: number): JobTimestampInfo => {
+export const getJobTimestampInfo =  (time: number): JobTimestampInfo => {
   const date = new Date(time);
-  const utcTimeOfCrawler = new Date(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    date.getUTCHours(),
-    date.getUTCMinutes(),
-    date.getUTCSeconds(),
-    date.getUTCMilliseconds(),
-  );
-  const jobRanHour = utcTimeOfCrawler.getHours();
+  const currentRunAt: string = getUtcTimestamp(date);
   date.setHours(date.getHours() - 1);
-  const utcYear = utcTimeOfCrawler.getFullYear();
-  const utcMonth = utcTimeOfCrawler.getMonth() + 1;
-  const utcDay = utcTimeOfCrawler.getDate();
-  const utcHour = utcTimeOfCrawler.getHours();
-  const jobDate = parseInt(`${utcYear}${utcMonth.toString().padStart(2, '0')}${utcDay.toString().padStart(2, '0')}`);
-  const jobRanForHour = parseInt(`${utcHour}`);
-  const dateAndHour: JobTimestampInfo = { date: jobDate, jobRanForPrevHour: jobRanForHour, actualHour: jobRanHour };
-  return dateAndHour;
+  const lastSuccessfulRunAt: string = getUtcTimestamp(date);
+  const jobTimestampInfo: JobTimestampInfo = { currentRunAt: currentRunAt, lastSuccessfulRunAt: lastSuccessfulRunAt};
+  return jobTimestampInfo;
 };
 
 const convertToDateFormat = (unformattedDate: string) => {
@@ -68,28 +54,49 @@ const convertToDateFormat = (unformattedDate: string) => {
   return convertedDateStr;
 };
 
-export const calculateDateNintyDaysBefore = (date: string): number => {
-  const formattedDate = convertToDateFormat(date);
-  const newDate = new Date(formattedDate);
-  const ninetyDaysBefore = new Date(newDate);
-  ninetyDaysBefore.setDate(newDate.getDate() - 90);
-  const ninetyDaysBeforeStr: number = oldDateFormat (ninetyDaysBefore.toISOString().slice(0, 10));
-  return ninetyDaysBeforeStr;
-};
-
 const oldDateFormat = (newFormat: string): number => {
   const oldFormat = newFormat.replace(/-/g, '');
   return parseInt(oldFormat);
+};
+
+export const calculateDateNintyDaysBefore = (date: string): number => {
+  const hyphenedDate = convertToDateFormat(date);
+  const originalDate = new Date(hyphenedDate);
+  const ninetyDaysBefore = new Date(originalDate);
+  ninetyDaysBefore.setDate(originalDate.getDate() - 90);
+  const ninetyDaysBeforeDate: number = oldDateFormat(ninetyDaysBefore.toISOString().slice(0, 10));
+  return ninetyDaysBeforeDate;
 };
 
 export const generateSqlValues = (jobKey: string, jobTimestampInfo: JobTimestampInfo, processingStatus: JobProcessingStatus, reason: string | null ): SqlQueryValues => {
   const sqlValues: SqlQueryValues = {
     jobKey: jobKey, 
     jobInfo: jobTimestampInfo, 
-    jobType: JobType.ATHENA_QUERY,
+    jobType: JobType.REFRESH_TOUR_ANALYTICS,
     processing_status: processingStatus,
     failureReason: null,
   };
   return sqlValues;
 };
 
+const getUtcTimestamp = (timestamp: Date): string => {
+  const currentRunAtUtc = new Date(
+    timestamp.getUTCFullYear(),
+    timestamp.getUTCMonth(),
+    timestamp.getUTCDate(),
+    timestamp.getUTCHours(),
+    timestamp.getUTCMinutes(),
+    timestamp.getUTCSeconds(),
+    timestamp.getUTCMilliseconds(),
+  );
+  const currentRunAtUtcYear = currentRunAtUtc.getFullYear();
+  const currentRunAtUtcMonth = currentRunAtUtc.getMonth() + 1;
+  const currentRunAtUtcDate = currentRunAtUtc.getDate();
+  const currentRunAtUtcHour = currentRunAtUtc.getHours();
+  const jobTimeInfo = `${currentRunAtUtcYear}${currentRunAtUtcMonth.toString().padStart(2, '0')}${currentRunAtUtcDate.toString().padStart(2, '0')}${currentRunAtUtcHour.toString().padStart(2, '0')}`;
+  return jobTimeInfo;
+};
+
+export const getYmdFromJobTimestampInfo = (timestamp: string): number => {
+  return parseInt(timestamp.substring(0,8));
+};

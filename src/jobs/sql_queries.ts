@@ -2,12 +2,12 @@ import { EntryDurationType } from 'api-contract';
 import { AnalyticTourMetricsViews, AthenaQueryEntity } from '../types';
 import { executeAppropriateSqlQueryFoFetchData } from './job_queries';
 
-export const queryToFetchDataFromMetricsTableForTourIdAndDate = (tour_id: number, ymd: number) => {
+export const queryToFetchDataForTourIdAndDate = (tour_id: number, ymd: number) => {
   const query = `SELECT * From analytics_tour_metrics where tour_id = ${tour_id} and date_ymd = ${ymd}`;
   return query;
 };
   
-export const queryToCountDailyRowsForTourId = (tour_id: number) => {
+export const queryForTotalDailyRowsForTourId = (tour_id: number) => {
   const query = `SELECT COUNT(*) AS tour_count FROM analytics_tour_metrics 
                  WHERE tour_id = ${tour_id} and entry_duration_type='${EntryDurationType.DAILY}'`;
   return query;
@@ -34,20 +34,20 @@ export const insertQueryForNewRowWithTypeCurrent = (entityData: AthenaQueryEntit
                  entry_duration_type, tour_id, views_unique, views_all) 
                  VALUES (CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 
                  ${entityData.ymd}, '${EntryDurationType.CURRENT}',
-                 ${entityData.payload_tour_id},null,
+                 ${entityData.payload_tour_id},0,
                  ${entityData.views_all} )`;
   return query;
 };
   
-export const updateQuery = (views_all: number, tour_id: number, ymd: number) => {
+export const updateViews = (views_all: number, tour_id: number, ymd: number) => {
   const query = `UPDATE analytics_tour_metrics SET views_all = ${views_all} 
                  WHERE date_ymd =${ymd} AND tour_id =${tour_id}`;
   return query;
 };
   
-export const updateQueryWithEntryType = (ymd: number, tour_id: number) => {
+export const updateEntryType = (ymd: number, tour_id: number, views_all: number) => {
   const query = `UPDATE analytics_tour_metrics SET 
-                 entry_duration_type = '${EntryDurationType.DAILY}' 
+                 entry_duration_type = '${EntryDurationType.DAILY}', views_all = ${views_all}  
                  WHERE date_ymd=${ymd} AND tour_id=${tour_id}`;
   return query;
 };
@@ -68,13 +68,14 @@ export const queryToCheckIfTourIdHasLifeTimeValue = async (tour_id: number) => {
 
 export const queryToGetLifeTimeValueOfTourId = (tour_id: number) => {
   const query = `SELECT *  FROM analytics_tour_metrics WHERE tour_id = ${tour_id} AND 
-  entry_duration_type = '${EntryDurationType.LIFETIME}'`;
+                 entry_duration_type = '${EntryDurationType.LIFETIME}'`;
   return query;
 };
 
 export const queryToUpdateLifeTimeValueOfTourId = (tour_id: number, view_unique: number, views_all: number, date: number) => {
   const query = `UPDATE analytics_tour_metrics SET views_unique=${view_unique}, 
-                 views_all=${views_all}, ymd=${date} WHERE tour_id = ${tour_id}`;
+                 views_all=${views_all}, date_ymd=${date} WHERE tour_id = ${tour_id}
+                 AND entry_duration_type='${EntryDurationType.LIFETIME}'`;
   return query;
 };
   

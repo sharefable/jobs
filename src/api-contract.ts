@@ -211,7 +211,7 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
-    ATHENA_QUERY ="ATHENA_QUERY",
+    REFRESH_TOUR_ANALYTICS = "REFRESH_TOUR_ANALYTICS",
 }
 
 export const enum SchemaVersion {

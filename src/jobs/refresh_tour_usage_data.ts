@@ -8,10 +8,9 @@ import { GetCrawlerCommand,
   GlueClient, 
   StartCrawlerCommand, 
   StartCrawlerCommandOutput } from '@aws-sdk/client-glue';
-import { athenaQueryToFetchEventsForCurrentTimestamp, 
+import { athenaQueryToFetchEventsForLastSucessfulJobRun, 
   athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp, 
-  executeAppropriateSqlQueryFoFetchData, 
-  sqlQueryToFetchLastAthenaJob, 
+  executeAppropriateSqlQueryFoFetchData,  
   sqlQueryToSelectLastSuccessData,
   executeAppropriateSqlQueryToInsertOrUpdateData, 
   sqlQueryToInsertDataIfJobInProcess,
@@ -20,40 +19,35 @@ import { athenaQueryToFetchEventsForCurrentTimestamp,
   sqlQueryToSelectSecondLastData } from './job_queries';
 import { JobProcessingStatus } from 'api-contract';
 import { randomUUID } from 'crypto';
-import { generateSqlValues, getDateAndHour } from '../utils';
+import { generateSqlValues, getJobTimestampInfo } from '../utils';
 import { AthenaQueryEntity, JobTimestampInfo } from '../types';
 import { processAthenaQueryResultToDb } from './process_data_to_db';
 
-export default function refreshTourUsageData() {
-  startCrawler();
+export default async function refreshTourUsageData() {
+  const jobKey: string = randomUUID();
+  const jobTimestampInfo: JobTimestampInfo =  await startJob(jobKey);
+  await runAthenaQuery(jobKey, jobTimestampInfo);
   console.log('refreshTourUsageData');
 }
 
-const startCrawler = async () => {
-  const jobKey: string = randomUUID();
+const startJob = async (jobKey: string) => {
   const jobStartedAt: number = Date.now(); 
-  const jobTimestampInfo: JobTimestampInfo = getDateAndHour(jobStartedAt);
-  
+  const jobTimestampInfo: JobTimestampInfo = getJobTimestampInfo(jobStartedAt);
   const glueClient: GlueClient = new GlueClient({ region: process.env.AWS_S3_REGION });
   const command: StartCrawlerCommand = new StartCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
   try {
     const glueResult: StartCrawlerCommandOutput = await glueClient.send(command);
     if(glueResult.$metadata.httpStatusCode === 200) {
-      const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.InProcess, null);
-      const query = sqlQueryToInsertDataIfJobInProcess(sqlQueryValues);
-      await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+      await markJobInProcess(jobKey, jobTimestampInfo);
       await getCrawlerStatus(glueClient, jobKey, jobTimestampInfo);
     } else {
-      const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.Failed, glueResult.$metadata.toString());
-      const query = sqlQueryToInsertDataIfJobFailed(sqlQueryValues);
-      await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+      await markJobFailed(jobKey, jobTimestampInfo, glueResult.$metadata.toString());
     }
   } catch (error) {
-    const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.Failed, 'Something went wrong');
-    const query = sqlQueryToInsertDataIfJobFailed(sqlQueryValues);
-    await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+    await markJobFailed(jobKey, jobTimestampInfo, 'something went wrong');
     // TODO: raise an error in sentry 
   }
+  return jobTimestampInfo;
 };
 
 const getCrawlerStatus = async (glueClient: GlueClient, jobKey: string, timestampInfo: JobTimestampInfo) => {
@@ -61,22 +55,16 @@ const getCrawlerStatus = async (glueClient: GlueClient, jobKey: string, timestam
   try {
     while (crawlerStatus !== 'READY') {
       if (crawlerStatus === 'FAILED' || crawlerStatus === 'ERROR' || crawlerStatus === 'TIMEOUT') {
-        const sqlQueryValues = generateSqlValues(jobKey, timestampInfo, JobProcessingStatus.Failed, null);
-        const query = sqlQueryToUpdateData(sqlQueryValues);
-        await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+        await markJobFailed(jobKey, timestampInfo, null);
         // TODO: raise an error in sentry
       } 
       await new Promise(resolve => setTimeout(resolve, 5000));
-        
       const getCommand = new GetCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
       const getResult: GetCrawlerCommandOutput = await glueClient.send(getCommand);
       crawlerStatus = getResult.Crawler?.State;
     }
-    await runAthenaQuery(jobKey, timestampInfo);
   } catch (error) {
-    const sqlQueryValues = generateSqlValues(jobKey, timestampInfo, JobProcessingStatus.Failed, null);
-    const query = sqlQueryToUpdateData(sqlQueryValues);
-    await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+    await markJobFailed(jobKey, timestampInfo, null);
     // TODO: raise an error in sentry
   }
 };
@@ -84,7 +72,7 @@ const getCrawlerStatus = async (glueClient: GlueClient, jobKey: string, timestam
 const runAthenaQuery = async (jobKey: string, timestampInfo: JobTimestampInfo) => {
   const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_S3_REGION });
   const startCommand = new StartQueryExecutionCommand({
-    QueryString: await getAppropriateAthenaQuery(),
+    QueryString: await getAppropriateAthenaQuery(timestampInfo),
     QueryExecutionContext: { Database: process.env.AWS_GLUE_DB_NAME },
     ResultConfiguration: { OutputLocation: process.env.AWS_ATHENA_OUTPUT_LOCATION },
   });
@@ -97,11 +85,8 @@ const runAthenaQuery = async (jobKey: string, timestampInfo: JobTimestampInfo) =
       while (queryStatus !== 'SUCCEEDED') {
         const getResponse = await athenaClient.send(getCommand);
         queryStatus = getResponse.QueryExecution?.Status?.State;
-        console.log('queryStatus', queryStatus);
         if (queryStatus === 'FAILED' || queryStatus === 'CANCELLED') {
-          const sqlQueryValues = generateSqlValues(jobKey, timestampInfo, JobProcessingStatus.Failed, `queryStatus: ${queryStatus}`);
-          const query = sqlQueryToUpdateData(sqlQueryValues);
-          await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+          await markJobFailed(jobKey, timestampInfo, null);
         }
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
@@ -109,27 +94,18 @@ const runAthenaQuery = async (jobKey: string, timestampInfo: JobTimestampInfo) =
       const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
       const queryResultArray: AthenaQueryEntity[] =  retriveExecutedQueryData(getQueryResults);
       if (queryResultArray.length > 0) {
-        await processAthenaQueryResultToDb(queryResultArray);
+        await processAthenaQueryResultToDb(queryResultArray, timestampInfo);
       }
-      const sqlQueryValues = generateSqlValues(jobKey, timestampInfo, JobProcessingStatus.Processed, null);
-      const query = sqlQueryToUpdateData(sqlQueryValues);
-      await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+      await markJobSuccess(jobKey, timestampInfo);
     }
   } catch (error: any) {
-    const sqlQueryValues = generateSqlValues(jobKey, timestampInfo, JobProcessingStatus.Failed, error.message);
-    const query = sqlQueryToUpdateData(sqlQueryValues);
-    await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+    await markJobFailed(jobKey, timestampInfo, null);
   }
 };
 
-const getAppropriateAthenaQuery = async () => {
-  const queryToGetCurrentAthenaJob = sqlQueryToFetchLastAthenaJob();
-  const currentAthenaJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetCurrentAthenaJob);
-  const currentAthenaJobTimestampInfo: JobTimestampInfo = JSON.parse(currentAthenaJobData.info);
-
+const getAppropriateAthenaQuery = async (currentJobTimestampInfo: JobTimestampInfo) => {
   const queryToGetSecondLastAthenaJob = sqlQueryToSelectSecondLastData();
   const secondLastAthenaJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetSecondLastAthenaJob);
- 
   if (secondLastAthenaJobData !== undefined && secondLastAthenaJobData.processing_status === 0) {
     const querytoFetchLastSuccessAthenaJob = sqlQueryToSelectLastSuccessData();
     const lastSucessAthenaJobData  = await executeAppropriateSqlQueryFoFetchData(querytoFetchLastSuccessAthenaJob);
@@ -138,7 +114,7 @@ const getAppropriateAthenaQuery = async () => {
       return athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp(lastSucessAthenaJobTimestamp);
     } 
   }
-  const query = athenaQueryToFetchEventsForCurrentTimestamp(currentAthenaJobTimestampInfo);
+  const query = athenaQueryToFetchEventsForLastSucessfulJobRun(currentJobTimestampInfo);
   return query;
 };
 
@@ -164,3 +140,20 @@ const retriveExecutedQueryData = (queryExecutionResult: GetQueryResultsCommandOu
   }
 };
 
+const markJobSuccess = async (jobKey: string, jobTimestampInfo: JobTimestampInfo) => {
+  const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.Processed, null);
+  const query = sqlQueryToUpdateData(sqlQueryValues);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+};
+
+const markJobFailed   = async (jobKey: string, jobTimestampInfo: JobTimestampInfo, failureReason: string | null) => {
+  const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.Failed, failureReason);
+  const query = sqlQueryToInsertDataIfJobFailed(sqlQueryValues);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+};
+
+const markJobInProcess  = async (jobKey: string, jobTimestampInfo: JobTimestampInfo) => {
+  const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.InProcess, null);
+  const query = sqlQueryToInsertDataIfJobInProcess(sqlQueryValues);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+};

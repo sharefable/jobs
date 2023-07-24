@@ -3,9 +3,12 @@ import { JobProcessingStatus, JobType } from 'api-contract';
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
 export interface JobTimestampInfo {
-  date: number;
-  jobRanForPrevHour: number;
-  actualHour: number;
+  currentRunAt: string;
+  lastSuccessfulRunAt: string;
+}
+
+export interface TourCount{
+  tour_count: number;
 }
 
 export interface SqlQueryValues {
@@ -20,7 +23,7 @@ export interface AnalyticTourMetrics{
   date_ymd: number;
   entry_duration_type: string;
   tour_id: number;
-  views_all: number;
+  views_all: any;
   views_unique?: number;
 }
 
@@ -28,7 +31,7 @@ export interface AthenaQueryEntity{
   ymd: number;
   h: number;
   payload_tour_id: number;
-  views_all: number;
+  views_all: any;
   views_unique: number;
 }
 
@@ -37,6 +40,7 @@ export interface AnalyticTourMetricsViews{
   sum_views_unique: number;
 }
 
-export interface TourCount{
-  tour_count: number;
+export interface AggregatedViewsAndDate{
+  aggregatedViews: AnalyticTourMetricsViews;
+  nientyDaysBeforeDate: number;
 }
