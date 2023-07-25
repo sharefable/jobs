@@ -29,8 +29,8 @@ export const processAthenaQueryResultToDb = async (athenaResults: AthenaQueryEnt
         const queryToUpdateViews = updateViews(addedViewsAll, queryResult.payload_tour_id, queryResult.ymd);
         await executeAppropriateSqlQueryToInsertOrUpdateData(queryToUpdateViews);
       } else {
-        const queryToUpdate = updateEntryType(queryResult.ymd,  queryResult.payload_tour_id, addedViewsAll);
-        await executeAppropriateSqlQueryToInsertOrUpdateData(queryToUpdate);
+        const queryToUpdateEntryType = updateEntryType(queryResult.ymd,  queryResult.payload_tour_id, addedViewsAll);
+        await executeAppropriateSqlQueryToInsertOrUpdateData(queryToUpdateEntryType);
       }
     } else {
       const queryToCountDailyTypeForParticularTour = queryForTotalDailyRowsForTourId(queryResult.payload_tour_id);
@@ -56,7 +56,7 @@ const performeQueriesIfTourIdHasLifeTimeValue = async (queryResult: AthenaQueryE
   const nientyDaysValues: AggregatedViewsAndDate = await aggregatedNientyDaysViewsAndDate(queryResult);
   const addedViewsAll = lifeTimeValue.views_all + nientyDaysValues.aggregatedViews.sum_views_all;
   const addedViewsUnique = lifeTimeValue.views_unique + nientyDaysValues.aggregatedViews.sum_views_unique;
-  performDeleteQueryOFDataWithTypeDailyForTourId(queryResult.payload_tour_id);
+  performDeleteQueryOfDataWithTypeDailyForTourId(queryResult.payload_tour_id);
   
   const queryForUpdatedLifeTime = queryToUpdateLifeTimeValueOfTourId(queryResult.payload_tour_id, addedViewsUnique, addedViewsAll, nientyDaysValues.nientyDaysBeforeDate);
   await executeAppropriateSqlQueryToInsertOrUpdateData(queryForUpdatedLifeTime);
@@ -65,24 +65,23 @@ const performeQueriesIfTourIdHasLifeTimeValue = async (queryResult: AthenaQueryE
 const performeQueriesIfTourIdDoNotHasLifeTimeValue = async (queryResult: AthenaQueryEntity) => {
   const nientyDaysValues: AggregatedViewsAndDate = await aggregatedNientyDaysViewsAndDate(queryResult);
   const insertQueryForLifeTime = queryToInsertLifeTimeData(nientyDaysValues.aggregatedViews, nientyDaysValues.nientyDaysBeforeDate, queryResult.payload_tour_id);
-  
   await executeAppropriateSqlQueryToInsertOrUpdateData(insertQueryForLifeTime);
-  performDeleteQueryOFDataWithTypeDailyForTourId(queryResult.payload_tour_id);
+  performDeleteQueryOfDataWithTypeDailyForTourId(queryResult.payload_tour_id);
 };
   
-const performDeleteQueryOFDataWithTypeDailyForTourId = async (tour_id: number) => {
+const performDeleteQueryOfDataWithTypeDailyForTourId = async (tour_id: number) => {
   const deleteQuery = queryToDeleteAllTheDailyEvents(tour_id);
   await executeAppropriateSqlQueryToInsertOrUpdateData(deleteQuery);
 };
 
-const performQueryEcexutionToFindSumOfViews = async (tour_id: number) => {
+const performQueryExecutionToFindSumOfViews = async (tour_id: number) => {
   const queryToFindSumOfViews = queryToFindSumofViewsForTourId(tour_id);
   const views: AnalyticTourMetricsViews  = await executeAppropriateSqlQueryFoFetchData(queryToFindSumOfViews);
   return views;
 };
 
 const aggregatedNientyDaysViewsAndDate = async (queryResult: AthenaQueryEntity) => {
-  const nientyDaysViewsForTourId: AnalyticTourMetricsViews = await performQueryEcexutionToFindSumOfViews(queryResult.payload_tour_id);
+  const nientyDaysViewsForTourId: AnalyticTourMetricsViews = await performQueryExecutionToFindSumOfViews(queryResult.payload_tour_id);
   const date: number = calculateDateNintyDaysBefore(queryResult.ymd.toString());
   const sumOfViewsAndDate: AggregatedViewsAndDate =  {nientyDaysBeforeDate: date, aggregatedViews: nientyDaysViewsForTourId};
   return sumOfViewsAndDate;

@@ -37,11 +37,11 @@ export function executeQuery(conn: Connection, query: string) {
   });
 }
 
-export const getJobTimestampInfo =  (time: number): JobTimestampInfo => {
-  const date = new Date(time);
-  const currentRunAt: string = getUtcTimestamp(date);
-  date.setHours(date.getHours() - 1);
-  const lastSuccessfulRunAt: string = getUtcTimestamp(date);
+export const getJobTimestampInfo =  (timestamp: number): JobTimestampInfo => {
+  const localDate = new Date(timestamp);
+  const currentRunAt: string = getUtcTimestamp(localDate);
+  localDate.setHours(localDate.getHours() - 1);
+  const lastSuccessfulRunAt: string = getUtcTimestamp(localDate);
   const jobTimestampInfo: JobTimestampInfo = { currentRunAt: currentRunAt, lastSuccessfulRunAt: lastSuccessfulRunAt};
   return jobTimestampInfo;
 };
@@ -80,7 +80,7 @@ export const generateSqlValues = (jobKey: string, jobTimestampInfo: JobTimestamp
 };
 
 const getUtcTimestamp = (timestamp: Date): string => {
-  const currentRunAtUtc = new Date(
+  const jobUtc = new Date(
     timestamp.getUTCFullYear(),
     timestamp.getUTCMonth(),
     timestamp.getUTCDate(),
@@ -89,11 +89,11 @@ const getUtcTimestamp = (timestamp: Date): string => {
     timestamp.getUTCSeconds(),
     timestamp.getUTCMilliseconds(),
   );
-  const currentRunAtUtcYear = currentRunAtUtc.getFullYear();
-  const currentRunAtUtcMonth = currentRunAtUtc.getMonth() + 1;
-  const currentRunAtUtcDate = currentRunAtUtc.getDate();
-  const currentRunAtUtcHour = currentRunAtUtc.getHours();
-  const jobTimeInfo = `${currentRunAtUtcYear}${currentRunAtUtcMonth.toString().padStart(2, '0')}${currentRunAtUtcDate.toString().padStart(2, '0')}${currentRunAtUtcHour.toString().padStart(2, '0')}`;
+  const jobUtcYear = jobUtc.getFullYear();
+  const jobUtcMonth = jobUtc.getMonth() + 1;
+  const jobUtcDate = jobUtc.getDate();
+  const jobUtcHour = jobUtc.getHours();
+  const jobTimeInfo = `${jobUtcYear}${jobUtcMonth.toString().padStart(2, '0')}${jobUtcDate.toString().padStart(2, '0')}${jobUtcHour.toString().padStart(2, '0')}`;
   return jobTimeInfo;
 };
 
