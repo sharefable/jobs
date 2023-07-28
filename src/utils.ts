@@ -1,6 +1,7 @@
-import { JobProcessingStatus, JobType } from 'api-contract';
+import { JobProcessingStatus, JobType } from './api-contract';
+import { getConnection } from './db';
 import { Connection, MysqlError } from 'mysql';
-import { JobTimestampInfo, SqlQueryValues } from 'types';
+import { JobTimestampInfo, SqlQueryValues } from './types';
 
 export function deepcopy<T>(obj:T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -24,6 +25,30 @@ export function getS3FileLocationFromURI(path: string) {
     fileName,
   };
 }
+
+export const executeAppropriateSqlQueryFoFetchData = async (query: string) => { 
+  const conn = await getConnection();
+  try {
+    const rows: any = await executeQuery(conn, query);
+    return rows;
+    
+  } catch (err: any) {
+    console.log(err.message);
+  } finally {
+    conn.release();
+  }
+};
+
+export const executeAppropriateSqlQueryToInsertOrUpdateData = async (query: string) => {
+  const conn = await getConnection();
+  try {
+    await executeQuery(conn, query);
+  } catch (err: any) {
+    console.log(err.message);
+  } finally {
+    conn.release();
+  }
+};
 
 export function executeQuery(conn: Connection, query: string) {
   return new Promise((resolve, reject) => {
@@ -68,13 +93,16 @@ export const calculateDateNintyDaysBefore = (date: string): number => {
   return ninetyDaysBeforeDate;
 };
 
-export const generateSqlValues = (jobKey: string, jobTimestampInfo: JobTimestampInfo, processingStatus: JobProcessingStatus, reason: string | null ): SqlQueryValues => {
+export const generateSqlValues = (jobKey: string, 
+  jobTimestampInfo: JobTimestampInfo, 
+  processingStatus: JobProcessingStatus,
+  reason: string | null ): SqlQueryValues => {
   const sqlValues: SqlQueryValues = {
     jobKey: jobKey, 
     jobInfo: jobTimestampInfo, 
     jobType: JobType.REFRESH_TOUR_ANALYTICS,
     processing_status: processingStatus,
-    failureReason: null,
+    failureReason: reason,
   };
   return sqlValues;
 };
@@ -99,4 +127,19 @@ const getUtcTimestamp = (timestamp: Date): string => {
 
 export const getYmdFromJobTimestampInfo = (timestamp: string): number => {
   return parseInt(timestamp.substring(0,8));
+};
+
+export const calculateAverage = (arr1: any[], arr2:any[]) => {
+  const maxLength = Math.max(arr1.length, arr2.length);
+  const sumArr: number[] = new Array(maxLength).fill(0);
+
+  arr1.forEach((value, index) => {
+    sumArr[index] += value;
+  });
+
+  arr2.forEach((value, index) => {
+    sumArr[index] += value;
+  });
+  const averages = sumArr.map((sum) => Math.round(sum / 2)); 
+  return averages;
 };

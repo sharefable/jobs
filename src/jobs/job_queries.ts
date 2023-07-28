@@ -1,32 +1,11 @@
-import { JobTimestampInfo, SqlQueryValues } from 'types';
-import { getConnection } from '../db';
-import { executeQuery } from '../utils';
-import { MysqlError } from 'mysql';
-import { JobType } from 'api-contract';
-
-export const executeAppropriateSqlQueryFoFetchData = async (query: string) => { 
-  const conn = await getConnection();
-  try {
-    const rows: any = await executeQuery(conn, query);
-    return rows[0];
-  } catch (err: any) {
-    console.log(err.message);
-  } finally {
-    conn.release();
-  }
-};
-
-export const executeAppropriateSqlQueryToInsertOrUpdateData = async (query: string) => {
-  const conn = await getConnection();
-  await new Promise((res, rej) => {
-    conn!.query(
-      query,
-      (err: MysqlError | null) => {
-        if (err) rej(err);
-        else res(1);
-      });
-  });
-};
+import { JobTimestampInfo, RespectiveQuery, SqlQueryValues, TableName } from '../types';
+import { JobType } from '../api-contract';
+import { athenaQueryToGetAnnClicksFromLastSuccessToCurrentTimestamp, 
+  athenaQueryToGetAnnTourClicksForLastSucessfulJobRun, 
+  athenaQueryToGetConversionForLastSucessfulJobRun, 
+  athenaQueryToGetConversionFromLastSuccessToCurrentTimestamp, 
+  athenaQueryToGetMetricsForLastSucessfulJobRun, 
+  athenaQueryToGetMetricsFromLastSuccessToCurrentTimestamp} from './athena_queries';
 
 export const sqlQueryToSelectSecondLastData = () => {
   const sqlQuery = `SELECT * FROM jobs WHERE job_type='${JobType.REFRESH_TOUR_ANALYTICS}' 
@@ -38,25 +17,6 @@ export const sqlQueryToSelectLastSuccessData = () => {
   const sqlQuery = `SELECT * FROM jobs WHERE processing_status=3 AND 
                     job_type='${JobType.REFRESH_TOUR_ANALYTICS}' ORDER BY updated_at DESC LIMIT 1`;
   return sqlQuery;
-};
-
-export const athenaQueryToFetchEventsForLastSucessfulJobRun = (timestampInfo: JobTimestampInfo) => {
-  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
-                 (SELECT payload_tour_id, sid,  ymd FROM "ann_btn_clicked" 
-                  WHERE cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
-                  as bigint)=${parseInt(timestampInfo.lastSuccessfulRunAt)}) subquery 
-                  GROUP BY payload_tour_id, ymd`;
-  return query;
-};
-
-export const athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp = (timestampInfo: JobTimestampInfo) =>{
-  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all FROM 
-                 (SELECT payload_tour_id, sid, ymd FROM 
-                 "ann_btn_clicked" WHERE cast(concat(cast(ymd as varchar), 
-                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                 >=${parseInt(timestampInfo.currentRunAt)}
-                  ) subquery GROUP BY payload_tour_id, ymd`;
-  return query;
 };
 
 export const sqlQueryToInsertDataIfJobInProcess = (queryValues: SqlQueryValues) => {
@@ -81,4 +41,40 @@ export const sqlQueryToUpdateData = (queryValues: SqlQueryValues) => {
   const query =  `UPDATE jobs SET processing_status='${queryValues.processing_status}'
                   WHERE job_key='${queryValues.jobKey}'`;
   return query;
+};
+
+export const queriesForEachTableIfSuccess= (jobTimestampInfo: JobTimestampInfo) => {
+  const queryArray: RespectiveQuery[] = [];
+  
+  const getSuccessQueryForMetricsTable =  athenaQueryToGetMetricsForLastSucessfulJobRun(jobTimestampInfo);
+  const metricsQuery: RespectiveQuery = {query: getSuccessQueryForMetricsTable, tableName: TableName.AnalyticsTourMetrics};
+  
+  const getSuccessQueryForCoversionTable = athenaQueryToGetConversionForLastSucessfulJobRun(jobTimestampInfo);
+  const conversionQuery: RespectiveQuery = {query: getSuccessQueryForCoversionTable, tableName: TableName.AnalyticsConversion};
+  
+  const getSuccessQueryForAnnClickTable = athenaQueryToGetAnnTourClicksForLastSucessfulJobRun(jobTimestampInfo);
+  const annClickQuery: RespectiveQuery = {query: getSuccessQueryForAnnClickTable, tableName: TableName.AnalyticTourAnnClicks};
+  
+  queryArray.push(metricsQuery);
+  queryArray.push(conversionQuery);
+  queryArray.push(annClickQuery);
+  return queryArray;
+};
+
+export const queriesForEachTableIfFailed = (jobTimestampInfo: JobTimestampInfo) => {
+  const queryArray: RespectiveQuery[] = [];
+  
+  const getSuccessQueryForMetricsTable = athenaQueryToGetMetricsFromLastSuccessToCurrentTimestamp(jobTimestampInfo);
+  const metricsQuery: RespectiveQuery = {query: getSuccessQueryForMetricsTable,  tableName: TableName.AnalyticsTourMetrics};
+  
+  const getSuccessQueryForCoversionTable = athenaQueryToGetConversionFromLastSuccessToCurrentTimestamp(jobTimestampInfo);
+  const conversionQuery: RespectiveQuery = {query: getSuccessQueryForCoversionTable, tableName: TableName.AnalyticsConversion};
+  
+  const getSuccessQueryForAnnClickTable = athenaQueryToGetAnnClicksFromLastSuccessToCurrentTimestamp(jobTimestampInfo);
+  const annClickQuery: RespectiveQuery = {query: getSuccessQueryForAnnClickTable, tableName: TableName.AnalyticTourAnnClicks};
+
+  queryArray.push(metricsQuery);
+  queryArray.push(conversionQuery);
+  queryArray.push(annClickQuery);
+  return queryArray;
 };

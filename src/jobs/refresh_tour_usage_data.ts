@@ -8,26 +8,30 @@ import { GetCrawlerCommand,
   GlueClient, 
   StartCrawlerCommand, 
   StartCrawlerCommandOutput } from '@aws-sdk/client-glue';
-import { athenaQueryToFetchEventsForLastSucessfulJobRun, 
-  athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp, 
-  executeAppropriateSqlQueryFoFetchData,  
-  sqlQueryToSelectLastSuccessData,
-  executeAppropriateSqlQueryToInsertOrUpdateData, 
+import { sqlQueryToSelectLastSuccessData, 
   sqlQueryToInsertDataIfJobInProcess,
   sqlQueryToInsertDataIfJobFailed,
   sqlQueryToUpdateData,
-  sqlQueryToSelectSecondLastData } from './job_queries';
+  sqlQueryToSelectSecondLastData, 
+  queriesForEachTableIfFailed,
+  queriesForEachTableIfSuccess} from './job_queries';
 import { JobProcessingStatus } from 'api-contract';
 import { randomUUID } from 'crypto';
-import { generateSqlValues, getJobTimestampInfo } from '../utils';
-import { AthenaQueryEntity, JobTimestampInfo } from '../types';
-import { processAthenaQueryResultToDb } from './process_data_to_db';
+import { executeAppropriateSqlQueryFoFetchData, 
+  executeAppropriateSqlQueryToInsertOrUpdateData,
+  generateSqlValues, 
+  getJobTimestampInfo } from '../utils';
+import { AthenaEntityForAnnTourClick, AthenaQueryEntityForConversion, 
+  AthenaQueryEntityForMetrics, 
+  GenericAthenaResultType, 
+  JobTimestampInfo, 
+  RespectiveQuery } from '../types';
+import { processAthenaQueryResultToDb } from './process_metrics';
 
 export default async function refreshTourUsageData() {
   const jobKey: string = randomUUID();
   const jobTimestampInfo: JobTimestampInfo =  await startJob(jobKey);
   await runAthenaQuery(jobKey, jobTimestampInfo);
-  console.log('refreshTourUsageData');
 }
 
 const startJob = async (jobKey: string) => {
@@ -55,7 +59,7 @@ const getCrawlerStatus = async (glueClient: GlueClient, jobKey: string, timestam
   try {
     while (crawlerStatus !== 'READY') {
       if (crawlerStatus === 'FAILED' || crawlerStatus === 'ERROR' || crawlerStatus === 'TIMEOUT') {
-        await markJobFailed(jobKey, timestampInfo, null);
+        await markJobFailedUpdate(jobKey, timestampInfo, null);
         // TODO: raise an error in sentry
       } 
       await new Promise(resolve => setTimeout(resolve, 5000));
@@ -64,65 +68,68 @@ const getCrawlerStatus = async (glueClient: GlueClient, jobKey: string, timestam
       crawlerStatus = getResult.Crawler?.State;
     }
   } catch (error) {
-    await markJobFailed(jobKey, timestampInfo, null);
+    await markJobFailedUpdate(jobKey, timestampInfo, null);
     // TODO: raise an error in sentry
   }
 };
 
 const runAthenaQuery = async (jobKey: string, timestampInfo: JobTimestampInfo) => {
-  const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_S3_REGION });
-  const startCommand = new StartQueryExecutionCommand({
-    QueryString: await getAppropriateAthenaQuery(timestampInfo),
-    QueryExecutionContext: { Database: process.env.AWS_GLUE_DB_NAME },
-    ResultConfiguration: { OutputLocation: process.env.AWS_ATHENA_OUTPUT_LOCATION },
-  });
-  try {
-    const queryExecution = await athenaClient.send(startCommand);
-    if (queryExecution.$metadata.httpStatusCode === 200) {
-      const queryExecutionId = queryExecution.QueryExecutionId;
-      const getCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
-      let queryStatus;
-      while (queryStatus !== 'SUCCEEDED') {
-        const getResponse = await athenaClient.send(getCommand);
-        queryStatus = getResponse.QueryExecution?.Status?.State;
-        if (queryStatus === 'FAILED' || queryStatus === 'CANCELLED') {
-          await markJobFailed(jobKey, timestampInfo, null);
+  const queries: RespectiveQuery[] = await getAppropriateAthenaQuery(timestampInfo);
+  for (let i = 0; i < queries.length; i++) {
+    const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_S3_REGION });
+    const startCommand = new StartQueryExecutionCommand({
+      QueryString: queries.at(i)?.query,
+      QueryExecutionContext: { Database: process.env.AWS_GLUE_DB_NAME },
+      ResultConfiguration: { OutputLocation: process.env.AWS_ATHENA_OUTPUT_LOCATION },
+    });
+    try {
+      const queryExecution = await athenaClient.send(startCommand);
+      if (queryExecution.$metadata.httpStatusCode === 200) {
+        const queryExecutionId = queryExecution.QueryExecutionId;
+        const getCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
+        let queryStatus;
+        while (queryStatus !== 'SUCCEEDED') {
+          const getResponse = await athenaClient.send(getCommand);
+          queryStatus = getResponse.QueryExecution?.Status?.State;
+          if (queryStatus === 'FAILED' || queryStatus === 'CANCELLED') {
+            await markJobFailed(jobKey, timestampInfo, null);
+          }
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        const getQueryResultsCommand = new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId });
+        const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
+        const queryResultArray: GenericAthenaResultType[] =  retriveExecutedQueryData(getQueryResults);
+        await processAthenaQueryResultToDb(queryResultArray, timestampInfo, queries.at(i)?.tableName);
+        await markJobSuccess(jobKey, timestampInfo);
       }
-      const getQueryResultsCommand = new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId });
-      const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
-      const queryResultArray: AthenaQueryEntity[] =  retriveExecutedQueryData(getQueryResults);
-      if (queryResultArray.length > 0) {
-        await processAthenaQueryResultToDb(queryResultArray, timestampInfo);
-      }
-      await markJobSuccess(jobKey, timestampInfo);
+    } catch (error: any) {
+      await markJobFailedUpdate(jobKey, timestampInfo, error);
     }
-  } catch (error: any) {
-    await markJobFailed(jobKey, timestampInfo, null);
   }
 };
 
 const getAppropriateAthenaQuery = async (currentJobTimestampInfo: JobTimestampInfo) => {
-  const queryToGetSecondLastAthenaJob = sqlQueryToSelectSecondLastData();
-  const secondLastAthenaJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetSecondLastAthenaJob);
-  if (secondLastAthenaJobData !== undefined && secondLastAthenaJobData.processing_status === 0) {
-    const querytoFetchLastSuccessAthenaJob = sqlQueryToSelectLastSuccessData();
-    const lastSucessAthenaJobData  = await executeAppropriateSqlQueryFoFetchData(querytoFetchLastSuccessAthenaJob);
-    if (lastSucessAthenaJobData !== undefined) {
-      const lastSucessAthenaJobTimestamp: JobTimestampInfo = JSON.parse(lastSucessAthenaJobData.info);
-      return athenaQueryToFetchAllEventsFromLastSuccessToCurrentTimestamp(lastSucessAthenaJobTimestamp);
+  const queryToGetSecondLastJob = sqlQueryToSelectSecondLastData();
+  const secondLastJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetSecondLastJob);
+  if (secondLastJobData !== undefined && secondLastJobData.processing_status === 0) {
+    const querytoFetchLastSuccessJob = sqlQueryToSelectLastSuccessData();
+    const lastSuccessJobData  = await executeAppropriateSqlQueryFoFetchData(querytoFetchLastSuccessJob);
+    if (lastSuccessJobData !== undefined) {
+      const lastSuccessJobTimestamp: JobTimestampInfo = JSON.parse(lastSuccessJobData.info);
+      return queriesForEachTableIfFailed(lastSuccessJobTimestamp);
     } 
   }
-  const query = athenaQueryToFetchEventsForLastSucessfulJobRun(currentJobTimestampInfo);
-  return query;
+  return queriesForEachTableIfSuccess(currentJobTimestampInfo);
 };
 
-const retriveExecutedQueryData = (queryExecutionResult: GetQueryResultsCommandOutput): AthenaQueryEntity[] => {
+const retriveExecutedQueryData = (
+  queryExecutionResult: GetQueryResultsCommandOutput): 
+AthenaQueryEntityForMetrics[] | AthenaQueryEntityForConversion[] | AthenaEntityForAnnTourClick[] => {
   try {
     const columnNames: any = queryExecutionResult.ResultSet?.ResultSetMetadata?.ColumnInfo?.map(column => column.Name);
     const rows: any = queryExecutionResult.ResultSet?.Rows;
-    const results: AthenaQueryEntity[] = [];
+    const results: AthenaQueryEntityForMetrics[] | 
+    AthenaQueryEntityForConversion[] | AthenaEntityForAnnTourClick[] = [];
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const rowData = row.Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
@@ -155,5 +162,14 @@ const markJobFailed   = async (jobKey: string, jobTimestampInfo: JobTimestampInf
 const markJobInProcess  = async (jobKey: string, jobTimestampInfo: JobTimestampInfo) => {
   const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.InProcess, null);
   const query = sqlQueryToInsertDataIfJobInProcess(sqlQueryValues);
+  await executeAppropriateSqlQueryToInsertOrUpdateData(query);
+};
+
+const markJobFailedUpdate  = async (
+  jobKey: string, jobTimestampInfo: 
+  JobTimestampInfo, 
+  failureReason: string | null) => {
+  const sqlQueryValues = generateSqlValues(jobKey, jobTimestampInfo, JobProcessingStatus.Failed, failureReason);
+  const query = sqlQueryToUpdateData(sqlQueryValues);
   await executeAppropriateSqlQueryToInsertOrUpdateData(query);
 };
