@@ -9,7 +9,8 @@ import { AthenaQueryEntityForConversion,
 import { getYmdFromJobTimestampInfo, 
   calculateDateNintyDaysBefore, 
   executeAppropriateSqlQueryFoFetchData, 
-  executeAppropriateSqlQueryToInsertOrUpdateData } from '../utils';
+  executeAppropriateSqlQueryToInsertOrUpdateData, 
+  executeSqlQueryToOnlyReturnArrays} from '../utils';
 import { queryToCheckIfTourIdHasLifeTimeValueInConversion, 
   queryToCountDailyTypeForTourIdAndBtnId, 
   queryToDeleteAllTheDailyEventsConversion, 
@@ -34,7 +35,7 @@ export const processAthenaQueryResultToConversion = async (
     for(const queryResult of queryResults) {
       const conversionData: AnalyticTourConversion = await getConversionDataForIdAndYmd(queryResult);
       if (conversionData !== undefined) {
-        const addedClicks = parseInt(queryResult.clicks) + conversionData.clicks;
+        const addedClicks = parseInt(queryResult.clicks) + parseInt(conversionData.clicks);
         const queryYmd = parseInt(queryResult.ymd);
         if (queryYmd === currentYmdOfJob) {
           await updateClicksIfQueryResultExist(addedClicks, queryResult);
@@ -51,7 +52,7 @@ export const processAthenaQueryResultToConversion = async (
 const  updateEntryTypeInConversionWhenQueryResultIsEmpty = async (timestampInfo: JobTimestampInfo) => {
   const lastSuccessfulYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.lastSuccessfulRunAt);
   const query = queryToFetchCurrentTypeForYmd(lastSuccessfulYmdOfJob, TableName.AnalyticsConversion);
-  const currentTypeDataForYmd: AnalyticTourConversion[] = await executeAppropriateSqlQueryFoFetchData(query);
+  const currentTypeDataForYmd: AnalyticTourConversion[] = await executeSqlQueryToOnlyReturnArrays(query);
   if (currentTypeDataForYmd.length !== 0 && currentTypeDataForYmd !== undefined) {
     for(const currentTypeData of currentTypeDataForYmd) {
       await updateTypeForEachEntryWhenQueryIsEmpty(currentTypeData, timestampInfo);
@@ -110,7 +111,7 @@ const performQueriesIfTourIdHasLifeTimeValueInConversion = async (queryResult: A
   const lifeTimeValue: AnalyticTourConversion = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue);
    
   const nientyDaysValues: AggregatedClicksAndDate = await aggregatedNientyDaysClicksAndDate(queryResult);
-  const addedClicks = lifeTimeValue.clicks + nientyDaysValues.aggregatedClicks.total_clicks;
+  const addedClicks = parseInt(lifeTimeValue.clicks) + nientyDaysValues.aggregatedClicks.total_clicks;
   await queryToDeleteAllTheDailyEventsConversion(queryResult.payload_tour_id, queryResult.payload_btn_id);
     
   const queryForUpdatedLifeTime = queryToUpdateLifeTimeValueOfTourIdConversion(

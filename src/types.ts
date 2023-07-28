@@ -32,7 +32,7 @@ export interface AnalyticTourConversion{
   entry_duration_type: string;
   tour_id: number;
   btn_id: string;
-  clicks: any;
+  clicks: string;
 }
 
 export type GenericAthenaResultType = AthenaQueryEntityForConversion | AthenaQueryEntityForMetrics | AthenaEntityForAnnTourClick;

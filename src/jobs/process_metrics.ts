@@ -10,7 +10,8 @@ import { AthenaQueryEntityForMetrics,
   AthenaEntityForAnnTourClick} from '../types';
 import { calculateDateNintyDaysBefore, 
   executeAppropriateSqlQueryFoFetchData, 
-  executeAppropriateSqlQueryToInsertOrUpdateData, 
+  executeAppropriateSqlQueryToInsertOrUpdateData,  
+  executeSqlQueryToOnlyReturnArrays,  
   getYmdFromJobTimestampInfo } from '../utils';
 import { processAthenaQueryResultToConversion } from './process_conversion';
 import { processAthenaQueryResultToAnnClicks } from './process_ann_click';
@@ -66,7 +67,7 @@ const processAthenaQueryResultToMetrics = async (queryResults: AthenaQueryEntity
 const  updateEntryTypeWhenQueryResultIsEmpty = async (timestampInfo: JobTimestampInfo) => {
   const lastSuccessfulYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.lastSuccessfulRunAt);
   const query = queryToFetchCurrentTypeForYmd(lastSuccessfulYmdOfJob, TableName.AnalyticsTourMetrics);
-  const currentTypeDataForYmd: AnalyticTourMetrics[] = await executeAppropriateSqlQueryFoFetchData(query);
+  const currentTypeDataForYmd: AnalyticTourMetrics[] = await executeSqlQueryToOnlyReturnArrays(query);
   if (currentTypeDataForYmd.length !== 0 && currentTypeDataForYmd !== undefined) {
     for(const currentTypeData of currentTypeDataForYmd) {
       await updateTypeIfQueryIsEmpty(currentTypeData, timestampInfo);  

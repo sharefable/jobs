@@ -23,7 +23,8 @@ import { getCurrentTypeForTourIdAnnIdAndYmd,
 import { calculateAverage, 
   calculateDateNintyDaysBefore, 
   executeAppropriateSqlQueryFoFetchData, 
-  executeAppropriateSqlQueryToInsertOrUpdateData, 
+  executeAppropriateSqlQueryToInsertOrUpdateData,  
+  executeSqlQueryToOnlyReturnArrays,  
   getYmdFromJobTimestampInfo } from '../utils';
 import { queryToFetchCurrentTypeForYmd } from './conversion_queries';
 import { EntryDurationType } from 'api-contract';
@@ -31,7 +32,6 @@ import { EntryDurationType } from 'api-contract';
 export const processAthenaQueryResultToAnnClicks = async (
   queryResults: AthenaEntityForAnnTourClick[], timestampInfo: JobTimestampInfo) => {
   if (queryResults === undefined || queryResults.length === 0) {
-    console.log('here no query results');
     await updateEntryTypeInAnnTourClickWhenQueryResultsIsEmpty(timestampInfo);
   } else {
     const currentYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.currentRunAt);
@@ -49,7 +49,7 @@ export const processAthenaQueryResultToAnnClicks = async (
 const updateEntryTypeInAnnTourClickWhenQueryResultsIsEmpty = async (timestampInfo: JobTimestampInfo) => {
   const lastSuccessfulYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.lastSuccessfulRunAt);
   const query = queryToFetchCurrentTypeForYmd(lastSuccessfulYmdOfJob, TableName.AnalyticTourAnnClicks);
-  const currentTypeDataForYmd: AnalyticsEntityForAnnTourClick[] = await executeAppropriateSqlQueryFoFetchData(query);
+  const currentTypeDataForYmd: AnalyticsEntityForAnnTourClick[] = await executeSqlQueryToOnlyReturnArrays(query);
   if (currentTypeDataForYmd.length !== 0 && currentTypeDataForYmd !== undefined) {
     for (const currentTypeData of currentTypeDataForYmd) {
       const currentYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.currentRunAt);

@@ -3,7 +3,7 @@ import { TableName, AnalyticViews, AthenaQueryEntityForMetrics } from '../types'
 import { executeAppropriateSqlQueryFoFetchData, executeAppropriateSqlQueryToInsertOrUpdateData } from '../utils';
 
 export const queryToFetchDataForTourIdAndDate = (tour_id: number, ymd: number) => {
-  const query = `SELECT * From ${TableName.AnalyticsTourMetrics} where tour_id = ${tour_id} and date_ymd = ${ymd} and entry_duration_type = '${EntryDurationType.CURRENT}'`;
+  const query = `SELECT * From ${TableName.AnalyticsTourMetrics} where tour_id = ${tour_id} and date_ymd = ${ymd} and entry_duration_type='${EntryDurationType.CURRENT}'`;
   return query;
 };
   

@@ -30,8 +30,19 @@ export const executeAppropriateSqlQueryFoFetchData = async (query: string) => {
   const conn = await getConnection();
   try {
     const rows: any = await executeQuery(conn, query);
+    return rows[0];
+  } catch (err: any) {
+    console.log(err.message);
+  } finally {
+    conn.release();
+  }
+};
+
+export const executeSqlQueryToOnlyReturnArrays = async (query: string) => { 
+  const conn = await getConnection();
+  try {
+    const rows: any = await executeQuery(conn, query);
     return rows;
-    
   } catch (err: any) {
     console.log(err.message);
   } finally {
