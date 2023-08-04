@@ -4,9 +4,8 @@ import {AnalyticTourConversion,
   TableName } from '../types';
 import { executeAppropriateSqlQueryFoFetchData, executeAppropriateSqlQueryToInsertOrUpdateData } from '../utils';
 
-export const queryToFetchCurrentTypeForYmd= (ymd: number, tableName: string) => {
-  const query = `SELECT * From ${tableName} where date_ymd = ${ymd} 
-                 AND entry_duration_type='${EntryDurationType.CURRENT}'`;
+export const queryToFetchCurrentType = (tableName: string) => {
+  const query = `SELECT * From ${tableName} where entry_duration_type='${EntryDurationType.CURRENT}'`;
   return query;
 };
 
@@ -82,7 +81,7 @@ export const queryToCheckIfTourIdHasLifeTimeValueInConversion = async (tour_id: 
   const query = `SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END AS value
                FROM ${TableName.AnalyticsConversion} WHERE tour_id = ${tour_id} AND btn_id = '${btn_id}'
                AND entry_duration_type = '${EntryDurationType.LIFETIME}'`;
-  const check = await executeAppropriateSqlQueryFoFetchData(query);
+  const check = await executeAppropriateSqlQueryFoFetchData(query, 0);
   return check;
 };
 

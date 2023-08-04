@@ -110,10 +110,10 @@ const runAthenaQuery = async (jobKey: string, timestampInfo: JobTimestampInfo) =
 
 const getAppropriateAthenaQuery = async (currentJobTimestampInfo: JobTimestampInfo) => {
   const queryToGetSecondLastJob = sqlQueryToSelectSecondLastData();
-  const secondLastJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetSecondLastJob);
+  const secondLastJobData = await executeAppropriateSqlQueryFoFetchData(queryToGetSecondLastJob, 0);
   if (secondLastJobData !== undefined && secondLastJobData.processing_status === 0) {
     const querytoFetchLastSuccessJob = sqlQueryToSelectLastSuccessData();
-    const lastSuccessJobData  = await executeAppropriateSqlQueryFoFetchData(querytoFetchLastSuccessJob);
+    const lastSuccessJobData  = await executeAppropriateSqlQueryFoFetchData(querytoFetchLastSuccessJob, 0);
     if (lastSuccessJobData !== undefined) {
       const lastSuccessJobTimestamp: JobTimestampInfo = JSON.parse(lastSuccessJobData.info);
       return queriesForEachTableIfFailed(lastSuccessJobTimestamp);

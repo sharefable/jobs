@@ -9,12 +9,11 @@ import { AthenaQueryEntityForConversion,
 import { getYmdFromJobTimestampInfo, 
   calculateDateNintyDaysBefore, 
   executeAppropriateSqlQueryFoFetchData, 
-  executeAppropriateSqlQueryToInsertOrUpdateData, 
-  executeSqlQueryToOnlyReturnArrays} from '../utils';
+  executeAppropriateSqlQueryToInsertOrUpdateData } from '../utils';
 import { queryToCheckIfTourIdHasLifeTimeValueInConversion, 
   queryToCountDailyTypeForTourIdAndBtnId, 
   queryToDeleteAllTheDailyEventsConversion, 
-  queryToFetchCurrentTypeForYmd, 
+  queryToFetchCurrentType, 
   queryToFetchDataForTourIdDateAndBtnId, 
   queryToFindSumofClicksForTourIdConversion, 
   queryToGetLifeTimeValueOfTourIdConversion, 
@@ -31,17 +30,11 @@ export const processAthenaQueryResultToConversion = async (
   if (queryResults === undefined || queryResults.length === 0) {
     await updateEntryTypeInConversionWhenQueryResultIsEmpty(timestampInfo);
   } else {
-    const currentYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.currentRunAt);
+    const currentYmdOfJob: number = getYmdFromJobTimestampInfo(timestampInfo.currentRunAt);
     for(const queryResult of queryResults) {
       const conversionData: AnalyticTourConversion = await getConversionDataForIdAndYmd(queryResult);
       if (conversionData !== undefined) {
-        const addedClicks = parseInt(queryResult.clicks) + parseInt(conversionData.clicks);
-        const queryYmd = parseInt(queryResult.ymd);
-        if (queryYmd === currentYmdOfJob) {
-          await updateClicksIfQueryResultExist(addedClicks, queryResult);
-        } else {
-          await updateEntryTypeIfQueryResultExist(addedClicks, queryResult);
-        }
+        await updateViewsOrViewsAndTypeInMetricIfQueryResultNotEmpty(queryResult, conversionData, currentYmdOfJob);
       } else {
         await processForLifeTimeDataAndNewInsert(queryResult, currentYmdOfJob);
       }
@@ -50,13 +43,21 @@ export const processAthenaQueryResultToConversion = async (
 };
 
 const  updateEntryTypeInConversionWhenQueryResultIsEmpty = async (timestampInfo: JobTimestampInfo) => {
-  const lastSuccessfulYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.lastSuccessfulRunAt);
-  const query = queryToFetchCurrentTypeForYmd(lastSuccessfulYmdOfJob, TableName.AnalyticsConversion);
-  const currentTypeDataForYmd: AnalyticTourConversion[] = await executeSqlQueryToOnlyReturnArrays(query);
+  const query = queryToFetchCurrentType(TableName.AnalyticsConversion);
+  const currentTypeDataForYmd: AnalyticTourConversion[] = await executeAppropriateSqlQueryFoFetchData(query, 1);
   if (currentTypeDataForYmd.length !== 0 && currentTypeDataForYmd !== undefined) {
     for(const currentTypeData of currentTypeDataForYmd) {
       await updateTypeForEachEntryWhenQueryIsEmpty(currentTypeData, timestampInfo);
     }
+  }
+};
+
+const updateViewsOrViewsAndTypeInMetricIfQueryResultNotEmpty =  async (queryResult: AthenaQueryEntityForConversion, conversionData: AnalyticTourConversion, currentYmdOfJob: number ) => {
+  const addedClicks = parseInt(queryResult.clicks) + parseInt(conversionData.clicks);
+  if (conversionData.date_ymd === currentYmdOfJob) {
+    await updateClicksIfQueryResultExist(addedClicks, queryResult);
+  } else {
+    await updateEntryTypeIfQueryResultExist(addedClicks, queryResult);
   }
 };
 
@@ -74,13 +75,13 @@ const updateEntryTypeIfQueryResultNotExist = async (entityData: AnalyticTourConv
 
 const getConversionDataForIdAndYmd = async (queryResult: AthenaQueryEntityForConversion) => {
   const query = queryToFetchDataForTourIdDateAndBtnId(queryResult);
-  const conversionDataForIdandYmd: AnalyticTourConversion = await executeAppropriateSqlQueryFoFetchData(query);
+  const conversionDataForIdandYmd: AnalyticTourConversion = await executeAppropriateSqlQueryFoFetchData(query, 0);
   return conversionDataForIdandYmd;
 };
 
 const getDailyCountForTourIdAndBtnId = async (queryResult: AthenaQueryEntityForConversion) => {
   const queryToCountDailyTypeForTourId = queryToCountDailyTypeForTourIdAndBtnId(queryResult.payload_tour_id, queryResult.payload_btn_id);
-  const totalDailyTypeForTourId: Count = await executeAppropriateSqlQueryFoFetchData(queryToCountDailyTypeForTourId);
+  const totalDailyTypeForTourId: Count = await executeAppropriateSqlQueryFoFetchData(queryToCountDailyTypeForTourId, 0);
   return totalDailyTypeForTourId;
 };
 
@@ -108,7 +109,7 @@ const newConversionEntryWithAppropriateType = async ( queryResult: AthenaQueryEn
 
 const performQueriesIfTourIdHasLifeTimeValueInConversion = async (queryResult: AthenaQueryEntityForConversion) => {
   const queryLifetimeValue = queryToGetLifeTimeValueOfTourIdConversion(queryResult.payload_tour_id, queryResult.payload_btn_id);
-  const lifeTimeValue: AnalyticTourConversion = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue);
+  const lifeTimeValue: AnalyticTourConversion = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue, 0);
    
   const nientyDaysValues: AggregatedClicksAndDate = await aggregatedNientyDaysClicksAndDate(queryResult);
   const addedClicks = parseInt(lifeTimeValue.clicks) + nientyDaysValues.aggregatedClicks.total_clicks;
@@ -143,7 +144,7 @@ const aggregatedNientyDaysClicksAndDate = async (queryResult: AthenaQueryEntityF
   
 const performQueryToFindSumOfClicks = async (tour_id: number, btn_id: string) => {
   const queryToFindSumOfClicks = queryToFindSumofClicksForTourIdConversion(tour_id, btn_id);
-  const clicks: AnalyticTourConversionClicks  = await executeAppropriateSqlQueryFoFetchData(queryToFindSumOfClicks);
+  const clicks: AnalyticTourConversionClicks  = await executeAppropriateSqlQueryFoFetchData(queryToFindSumOfClicks, 0);
   return clicks;
 };
   

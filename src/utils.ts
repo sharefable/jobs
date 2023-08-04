@@ -26,23 +26,15 @@ export function getS3FileLocationFromURI(path: string) {
   };
 }
 
-export const executeAppropriateSqlQueryFoFetchData = async (query: string) => { 
+export const executeAppropriateSqlQueryFoFetchData = async (query: string, arrayOrElement: number) => { 
   const conn = await getConnection();
   try {
     const rows: any = await executeQuery(conn, query);
-    return rows[0];
-  } catch (err: any) {
-    console.log(err.message);
-  } finally {
-    conn.release();
-  }
-};
-
-export const executeSqlQueryToOnlyReturnArrays = async (query: string) => { 
-  const conn = await getConnection();
-  try {
-    const rows: any = await executeQuery(conn, query);
-    return rows;
+    if (arrayOrElement === 0) {
+      return rows[0];
+    } else {
+      return rows;
+    }
   } catch (err: any) {
     console.log(err.message);
   } finally {

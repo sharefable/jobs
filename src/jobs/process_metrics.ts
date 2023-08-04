@@ -11,7 +11,6 @@ import { AthenaQueryEntityForMetrics,
 import { calculateDateNintyDaysBefore, 
   executeAppropriateSqlQueryFoFetchData, 
   executeAppropriateSqlQueryToInsertOrUpdateData,  
-  executeSqlQueryToOnlyReturnArrays,  
   getYmdFromJobTimestampInfo } from '../utils';
 import { processAthenaQueryResultToConversion } from './process_conversion';
 import { processAthenaQueryResultToAnnClicks } from './process_ann_click';
@@ -27,7 +26,7 @@ import { updateViews,
   queryToFindSumofViewsForTourId,  
   queryToUpdateEntryTypeIfQueryResultIsNotPresent,
   insertQueryForNewRowWithType} from './metrics_queries';
-import { queryToFetchCurrentTypeForYmd } from './conversion_queries';
+import { queryToFetchCurrentType } from './conversion_queries';
 import { EntryDurationType } from 'api-contract';
 
 
@@ -36,7 +35,7 @@ export const processAthenaQueryResultToDb = async <T extends GenericAthenaResult
   switch (tableName) {
     case TableName.AnalyticsTourMetrics:
       await processAthenaQueryResultToMetrics(athenaResults as unknown as AthenaQueryEntityForMetrics[],timestampInfo);
-      break;
+      break;  
     case TableName.AnalyticsConversion:
       await processAthenaQueryResultToConversion( athenaResults as unknown as AthenaQueryEntityForConversion[], timestampInfo);
       break;
@@ -45,7 +44,6 @@ export const processAthenaQueryResultToDb = async <T extends GenericAthenaResult
     default:
       break;
   }
-  
 };
   
 const processAthenaQueryResultToMetrics = async (queryResults: AthenaQueryEntityForMetrics[], timestampInfo: JobTimestampInfo ) => {
@@ -65,9 +63,8 @@ const processAthenaQueryResultToMetrics = async (queryResults: AthenaQueryEntity
 };
 
 const  updateEntryTypeWhenQueryResultIsEmpty = async (timestampInfo: JobTimestampInfo) => {
-  const lastSuccessfulYmdOfJob = getYmdFromJobTimestampInfo(timestampInfo.lastSuccessfulRunAt);
-  const query = queryToFetchCurrentTypeForYmd(lastSuccessfulYmdOfJob, TableName.AnalyticsTourMetrics);
-  const currentTypeDataForYmd: AnalyticTourMetrics[] = await executeSqlQueryToOnlyReturnArrays(query);
+  const query = queryToFetchCurrentType(TableName.AnalyticsTourMetrics);
+  const currentTypeDataForYmd: AnalyticTourMetrics[] = await executeAppropriateSqlQueryFoFetchData(query, 1);
   if (currentTypeDataForYmd.length !== 0 && currentTypeDataForYmd !== undefined) {
     for(const currentTypeData of currentTypeDataForYmd) {
       await updateTypeIfQueryIsEmpty(currentTypeData, timestampInfo);  
@@ -78,13 +75,13 @@ const  updateEntryTypeWhenQueryResultIsEmpty = async (timestampInfo: JobTimestam
 const getTableDataForIdAndYmd = async (queryResult: AthenaQueryEntityForMetrics) => {
   const queryYmd = parseInt(queryResult.ymd);
   const query = queryToFetchDataForTourIdAndDate(queryResult.payload_tour_id, queryYmd);
-  const metricsTableDataForIdAndYmd: AnalyticTourMetrics = await executeAppropriateSqlQueryFoFetchData(query);
+  const metricsTableDataForIdAndYmd: AnalyticTourMetrics = await executeAppropriateSqlQueryFoFetchData(query, 0);
   return metricsTableDataForIdAndYmd;
 };
 
 const getDailyCountForTourId = async (tour_id: number) => {
   const queryToCountDailyTypeForTourId = queryForTotalDailyRowsForTourId(tour_id);
-  const totalDailyTypeTourId: Count = await executeAppropriateSqlQueryFoFetchData(queryToCountDailyTypeForTourId);
+  const totalDailyTypeTourId: Count = await executeAppropriateSqlQueryFoFetchData(queryToCountDailyTypeForTourId, 0);
   return totalDailyTypeTourId;
 };
 
@@ -112,7 +109,7 @@ const updateOrInsertLifeTimeDataOrNewEntry = async (queryResult: AthenaQueryEnti
 
 const performeQueriesIfTourIdHasLifeTimeValue = async (queryResult: AthenaQueryEntityForMetrics) => {
   const queryLifetimeValue = queryToGetLifeTimeValueOfTourId(queryResult.payload_tour_id);
-  const lifeTimeValue: AthenaQueryEntityForMetrics = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue);
+  const lifeTimeValue: AthenaQueryEntityForMetrics = await executeAppropriateSqlQueryFoFetchData(queryLifetimeValue, 0);
  
   const nientyDaysValues: AggregatedViewsAndDate = await aggregatedNientyDaysViewsAndDate(queryResult);
   const addedViewsAll = parseInt(lifeTimeValue.views_all) + nientyDaysValues.aggregatedViews.sum_views_all;
@@ -136,7 +133,7 @@ const performeQueriesIfTourIdDoNotHasLifeTimeValue = async (queryResult: AthenaQ
   
 const performQueryExecutionToFindSumOfViews = async (tour_id: number) => {
   const queryToFindSumOfViews = queryToFindSumofViewsForTourId(tour_id);
-  const views: AnalyticViews  = await executeAppropriateSqlQueryFoFetchData(queryToFindSumOfViews);
+  const views: AnalyticViews  = await executeAppropriateSqlQueryFoFetchData(queryToFindSumOfViews, 0);
   return views;
 };
 

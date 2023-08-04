@@ -43,7 +43,7 @@ export const queryToCheckIfLifeTimeExist = async (tour_id: number, ann_id: strin
   const query = `SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END AS value
                FROM ${TableName.AnalyticTourAnnClicks} WHERE tour_id = ${tour_id}
                AND ann_id = '${ann_id}' AND entry_duration_type = '${EntryDurationType.LIFETIME}'`;
-  const check = await executeAppropriateSqlQueryFoFetchData(query);
+  const check = await executeAppropriateSqlQueryFoFetchData(query, 0);
   return check;
 };
 
@@ -109,17 +109,15 @@ export const updateEntryTypeIfQueryResultNotExist = async (entityData: Analytics
 
 export const queryToFindAverageForAllDailyType =  (tour_id: number, ann_id: string) => {
   const query = `SELECT CONCAT('[', GROUP_CONCAT(average_value ORDER BY idx), ']') AS avg_time_spent
-                 FROM ( SELECT idx, AVG(value) AS average_value FROM
-                 (SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(time_spent_dist, ',', numbers.n), ',', -1) AS value,
-                 numbers.n AS idx FROM ${TableName.AnalyticTourAnnClicks} JOIN (SELECT 1 + units.i + tens.i * 10 AS n
-                 FROM (SELECT 0 i UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 
-                 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) units
-                 JOIN (SELECT 0 i UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
-                 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) tens ORDER BY n) AS numbers 
-                 ON numbers.n <= (LENGTH(time_spent_dist) - LENGTH(REPLACE(time_spent_dist, ',', '')) + 1)
-                 WHERE entry_duration_type='${EntryDurationType.DAILY}' AND ann_id='${ann_id}' 
-                 AND tour_id=${tour_id}) subquery GROUP BY idx ORDER BY idx
-                 ) average_subquery;`;
+                 FROM (SELECT idx, AVG(value) AS average_value FROM ( SELECT SUBSTRING_INDEX
+                (SUBSTRING_INDEX(time_spent_dist, ',', numbers.n), ',', -1) AS value,
+                numbers.n AS idx FROM fable_tour_app.analytics_tour_ann_clicks
+                JOIN ( SELECT n FROM ( SELECT 1 AS n UNION SELECT 2 AS n UNION SELECT 3 AS n 
+                UNION SELECT 4 AS n UNION SELECT 5 AS n UNION SELECT 6 AS n UNION SELECT 7 AS n 
+                UNION SELECT 8 AS n UNION SELECT 9 AS n) AS numbers) AS numbers ON 
+                numbers.n <= (LENGTH(time_spent_dist) - LENGTH(REPLACE(time_spent_dist, ',', '')) + 1)
+                WHERE entry_duration_type='${EntryDurationType.DAILY}' AND ann_id='${ann_id}' 
+                AND tour_id=${tour_id}) subquery GROUP BY idx ORDER BY idx) average_subquery;`;
   return query;
 };
   

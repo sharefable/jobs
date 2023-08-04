@@ -3,15 +3,11 @@ import { TableName, AnalyticViews, AthenaQueryEntityForMetrics } from '../types'
 import { executeAppropriateSqlQueryFoFetchData, executeAppropriateSqlQueryToInsertOrUpdateData } from '../utils';
 
 export const queryToFetchDataForTourIdAndDate = (tour_id: number, ymd: number) => {
-  const query = `SELECT * From ${TableName.AnalyticsTourMetrics} where tour_id = ${tour_id} and date_ymd = ${ymd} and entry_duration_type='${EntryDurationType.CURRENT}'`;
+  const query = `SELECT * From ${TableName.AnalyticsTourMetrics} where tour_id = ${tour_id} 
+                 and date_ymd = ${ymd} and entry_duration_type='${EntryDurationType.CURRENT}'`;
   return query;
 };
   
-export const queryToFetchCurrentTypeForYmd= (ymd: number) => {
-  const query = `SELECT * From ${TableName.AnalyticsTourMetrics} where date_ymd = ${ymd}`;
-  return query;
-};
-
 export const queryForTotalDailyRowsForTourId = (tour_id: number) => {
   const query = `SELECT COUNT(*) AS count FROM ${TableName.AnalyticsTourMetrics} 
                    WHERE tour_id = ${tour_id} and entry_duration_type='${EntryDurationType.DAILY}'`;
@@ -67,7 +63,7 @@ export const queryToCheckIfTourIdHasLifeTimeValue = async (tour_id: number) => {
   const query = `SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END AS value
                  FROM ${TableName.AnalyticsTourMetrics} WHERE tour_id = ${tour_id}
                  AND entry_duration_type = '${EntryDurationType.LIFETIME}'`;
-  const check = await executeAppropriateSqlQueryFoFetchData(query);
+  const check = await executeAppropriateSqlQueryFoFetchData(query, 0);
   return check;
 };
 
