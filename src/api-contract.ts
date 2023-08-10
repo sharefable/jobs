@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-29 17:45:29.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-10 20:08:07.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -42,6 +42,11 @@ export interface VideoTranscodingJobInfo extends JobProcessingInfo {
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
+}
+
+export interface ReqDuplicateTour {
+    duplicateTourName: string;
+    fromTourRid: string;
 }
 
 export interface ReqEntityAssetAssn {
@@ -125,6 +130,7 @@ export interface RespHealth extends ResponseBase {
 export interface RespMediaProcessingInfo extends ResponseBase {
     jobId: number;
     originalFilePath: string;
+    mediaType: MediaType;
     processedFilePath: string;
     processingState: JobProcessingStatus;
     failureReason: string;
@@ -157,6 +163,7 @@ export interface RespScreen extends ResponseBase {
 }
 
 export interface RespTour extends ResponseBase {
+    id: number;
     rid: string;
     assetPrefixHash: string;
     displayName: string;
@@ -166,6 +173,7 @@ export interface RespTour extends ResponseBase {
 
 export interface RespTourWithScreens extends RespTour {
     screens: RespScreen[];
+    idxm?: { [index: string]: string };
 }
 
 export interface RespUploadUrl {
@@ -201,6 +209,12 @@ export const enum EntityType {
     Tour = 1,
 }
 
+export const enum EntryDurationType {
+    CURRENT = "CURRENT",
+    DAILY = "DAILY",
+    LIFETIME = "LIFETIME",
+}
+
 export const enum JobProcessingStatus {
     Failed = 0,
     Touched = 1,
@@ -211,7 +225,16 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
-    REFRESH_TOUR_ANALYTICS = "REFRESH_TOUR_ANALYTICS",
+    REFRESH_CRAWLER = "REFRESH_CRAWLER",
+    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
+    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
+    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
+    ATHENA_QUERY_METRICS = "ATHENA_QUERY_METRICS",
+    ATHENA_QUERY_CONVERSION = "ATHENA_QUERY_CONVERSION",
+    ATHENA_QUERY_ANN_CLICK = "ATHENA_QUERY_ANN_CLICK",
+    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
+    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
+    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
 }
 
 export const enum SchemaVersion {
@@ -226,6 +249,12 @@ export const enum ScreenType {
 export const enum VideoProcessingSub {
     CONVERT_TO_MP4 = "CONVERT_TO_MP4",
     CONVERT_TO_HLS = "CONVERT_TO_HLS",
+}
+
+export const enum MediaType {
+    VIDEO_HLS = "VIDEO_HLS",
+    VIDEO_MP4 = "VIDEO_MP4",
+    IMG_MULTI = "IMG_MULTI",
 }
 
 export const enum ResponseStatus {
@@ -243,9 +272,3 @@ export const enum UserOrgAssociation {
     Explicit = "Explicit",
     NA = "NA",
 }
-
-export const enum EntryDurationType{
-    DAILY = 'DAILY',
-    CURRENT = 'CURRENT',
-    LIFETIME ='LIFETIME',
-  }
