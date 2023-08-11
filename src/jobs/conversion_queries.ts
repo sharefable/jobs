@@ -36,10 +36,10 @@ export const updateClicks = (addedClicks: number,
 export const newRowWithCurrentType = async (
   entityData: AthenaQueryEntityForConversion, 
   type: string, 
-  updatedAt: string ) => {
+  createdAndUpdatedAt: string ) => {
   const query = `INSERT INTO ${TableName.AnalyticsConversion} (created_at,updated_at, date_ymd, 
                  entry_duration_type, tour_id, btn_id, clicks) 
-                 VALUES ('${updatedAt}', '${updatedAt}', ${entityData.ymd}, '${type}',
+                 VALUES ('${createdAndUpdatedAt}', '${createdAndUpdatedAt}', ${entityData.ymd}, '${type}',
                  ${entityData.payload_tour_id}, '${entityData.payload_btn_id}',
                  ${entityData.clicks})`;
   await executeQueryToInsertOrUpdateData(query);

@@ -16,10 +16,10 @@ export const queryForTotalDailyRowsForTourId = (tour_id: number) => {
 
 export const insertQueryForNewRowWithType =  async (entityData: AthenaQueryEntityForMetrics,
   type: string, 
-  createdAt: string) => {
+  createdAndUpdatedAt: string) => {
   const query = `INSERT INTO ${TableName.AnalyticsTourMetrics} (created_at, updated_at, date_ymd, 
-                 entry_duration_type, tour_id, views_unique, views_all) VALUES (${createdAt}, 
-                 ${createdAt}, ${entityData.ymd}, '${type}', ${entityData.payload_tour_id}, 
+                 entry_duration_type, tour_id, views_unique, views_all) VALUES ('${createdAndUpdatedAt}', 
+                 '${createdAndUpdatedAt}', ${entityData.ymd}, '${type}', ${entityData.payload_tour_id}, 
                  ${entityData.views_unique}, ${entityData.views_all})`;
   await executeQueryToInsertOrUpdateData(query);
 };

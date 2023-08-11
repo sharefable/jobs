@@ -24,6 +24,7 @@ export const refreshDailyMetricsData = async () => {
     const athenaResultForMetrics: AthenaQueryEntityForMetrics[] = await getAthenaResponse(
       JobType.ATHENA_QUERY_METRICS, 
       JobType.REFRESH_TOUR_METRICS,
+      timestampInfo,
     ) as AthenaQueryEntityForMetrics[];
     for (const queryResult of athenaResultForMetrics) {
       const metricsData: AnalyticTourMetrics[] = await getTableDataForIdAndYmd(queryResult);

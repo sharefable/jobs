@@ -6,7 +6,6 @@ import { runCrawler } from './jobs/refresh_tour_usage_data';
 
 export default async function mainScheduleLoop() {
   cron.schedule('0 */1 * * *', async () => {
-    console.log('running a task every second');
     const isSuccess: boolean =  await runCrawler();
     if(isSuccess) {
       await Promise.all([

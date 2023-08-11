@@ -26,6 +26,7 @@ export const refreshDailyConversionData = async () => {
     const athenaResultForConversion: AthenaQueryEntityForConversion[] = await getAthenaResponse(
       JobType.ATHENA_QUERY_CONVERSION, 
       JobType.REFRESH_TOUR_CONVERSION,
+      timestampInfo,
     ) as AthenaQueryEntityForConversion[];
     const currentAndUpdatedAt: string = getCurrentAndUpdateAt(timestampInfo.currentRanFor);
     for(const queryResult of athenaResultForConversion) {

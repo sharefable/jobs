@@ -15,8 +15,8 @@ export const updateViewsForAnnClickTour = (tour_id: number,
   addedViewsUnique: number,
   timeSpentDist: string,
   ymd: number,
-  currentAndUpdatedAt: string ) => {
-  const query = `UPDATE ${TableName.AnalyticTourAnnClicks} SET updated_at = '${currentAndUpdatedAt}', 
+  updatedAt: string ) => {
+  const query = `UPDATE ${TableName.AnalyticTourAnnClicks} SET updated_at = '${updatedAt}', 
                  views_all = ${addedViewsAll}, views_unique = ${addedViewsUnique},time_spent_dist = '${timeSpentDist}'
                  WHERE date_ymd = ${ymd} AND tour_id =${tour_id} AND ann_id = '${ann_id}' 
                  AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
@@ -31,8 +31,7 @@ export const updateEntryTypeToDaily =  (entityData: AnalyticsEntityForAnnTourCli
 };
 
 export const newRowWithCurrentType =  async (entityData: AthenaEntityForAnnTourClick, 
-  type :string, currentAndUpdatedAt: 
-  string) => {
+  type :string, currentAndUpdatedAt: string) => {
   const query = `INSERT INTO ${TableName.AnalyticTourAnnClicks} (created_at, updated_at, date_ymd, 
                  entry_duration_type, tour_id, ann_id, views_all, views_unique, time_spent_dist) 
                  VALUES ('${currentAndUpdatedAt}', '${currentAndUpdatedAt}', ${entityData.ymd},

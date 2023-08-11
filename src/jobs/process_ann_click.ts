@@ -30,6 +30,7 @@ export const refreshDailyAnnClickData = async () => {
   const athenaResultForAnnClick: AthenaEntityForAnnTourClick[] = await getAthenaResponse(
     JobType.ATHENA_QUERY_ANN_CLICK, 
     JobType.REFRESH_TOUR_ANN_CLICK,
+    timestampInfo,
   ) as AthenaEntityForAnnTourClick[];
   try {
     for (const queryResult of athenaResultForAnnClick) {
