@@ -6,7 +6,6 @@ export const executeQueryToFetchData = async<T>(query: string):Promise<T[]> => {
     const rows: T[] = await executeQuery(query);
     return rows;
   } catch (err: any) {
-    console.log(err.message);
     throw new Error(err.message);
   } 
 };

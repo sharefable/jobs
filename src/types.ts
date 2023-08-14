@@ -2,9 +2,10 @@ import { JobProcessingStatus } from 'api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
-export interface JobTimestampInfo {
-  currentRunAt: string;
-  currentRanFor: string;
+export interface JobInfo {
+  jobRunTime: string;
+  jobDataScanningTime: string;
+  query?: string;
 }
 
 export interface Job {
@@ -15,16 +16,16 @@ export interface Job {
   failure_reason?: string | null;
 }
 
-export interface AnalyticTourMetrics{
+export interface AnalyticMetricsEntity{
   updated_at: string;
   date_ymd: number;
   entry_duration_type: string;
   tour_id: number;
   views_all: any;
-  views_unique: number;
+  views_unique: any;
 }
 
-export interface AnalyticTourConversion{
+export interface AnalyticConversionEntity{
   updated_at: string;
   date_ymd: number;
   entry_duration_type: string;
@@ -33,24 +34,22 @@ export interface AnalyticTourConversion{
   clicks: string;
 }
 
-export type GenericAthenaResultType = AthenaQueryEntityForConversion | AthenaQueryEntityForMetrics| AthenaEntityForAnnTourClick;
-
-export interface AthenaQueryCommon{
+export interface AthenaCommon{
   ymd: string;
   payload_tour_id: number;
 }
 
-export interface AthenaQueryEntityForMetrics extends AthenaQueryCommon{
+export interface AthenaMetricsEntity extends AthenaCommon{
   views_all: string;
   views_unique: string;
 }
 
-export interface AthenaQueryEntityForConversion extends AthenaQueryCommon{
+export interface AthenaConversionEntity extends AthenaCommon{
   payload_btn_id: string;
   clicks: string;
 }
 
-export interface AthenaEntityForAnnTourClick extends AthenaQueryCommon {
+export interface AthenaAnnClickEntity extends AthenaCommon {
   payload_ann_id: string;
   views_unique: string;
   views_all: string;
@@ -63,13 +62,13 @@ export enum TableName {
   AnalyticTourAnnClicks='analytics_tour_ann_clicks',
 }
 
-export interface AthenaEntityForViewAnnTourClick extends AthenaQueryCommon {
+export interface AthenaEntityForViewAnnTourClick extends AthenaCommon {
   payload_ann_id: number;
   views_unique: number;
   views_all: number;
 }
 
-export interface AnalyticsEntityForAnnTourClick {
+export interface AnalyticsAnnClickEntity {
   updated_at: string;
   date_ymd: number;
   ann_id: number;

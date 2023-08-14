@@ -1,4 +1,4 @@
-import { JobTimestampInfo } from './types';
+import { JobInfo } from './types';
 
 export function deepcopy<T>(obj:T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -23,16 +23,16 @@ export function getS3FileLocationFromURI(path: string) {
   };
 }
 
-export const getJobTimestampInfo =  (timestamp: number): JobTimestampInfo => {
-  const currentDate = new Date(timestamp);
-  const currentRunAt: string = getUtcTimestamp(currentDate);
-  currentDate.setHours(currentDate.getHours() - 1);
-  const currentRanFor: string = getUtcTimestamp(currentDate);
-  const jobTimestampInfo: JobTimestampInfo = { currentRunAt: currentRunAt, currentRanFor: currentRanFor};
+export const getUTCTimesForJob =  (): JobInfo => {
+  const jobStartedAt  = new Date(); 
+  const jobRunTime: string = getUtcDateHour(jobStartedAt);
+  jobStartedAt.setHours(jobStartedAt.getHours() - 1);
+  const jobDataScanningTime: string = getUtcDateHour(jobStartedAt);
+  const jobTimestampInfo: JobInfo = { jobRunTime: jobRunTime, jobDataScanningTime: jobDataScanningTime};
   return jobTimestampInfo;
 };
 
-export const getUtcTimestamp = (timestamp: Date): string => {
+export const getUtcDateHour= (timestamp: Date): string => {
   const jobUtc = new Date(
     timestamp.getUTCFullYear(),
     timestamp.getUTCMonth(),
@@ -46,8 +46,8 @@ export const getUtcTimestamp = (timestamp: Date): string => {
   const jobUtcMonth = jobUtc.getMonth() + 1;
   const jobUtcDate = jobUtc.getDate();
   const jobUtcHour = jobUtc.getHours();
-  const jobTimeInfo = `${jobUtcYear}${jobUtcMonth.toString().padStart(2, '0')}${jobUtcDate.toString().padStart(2, '0')}${jobUtcHour.toString().padStart(2, '0')}`;
-  return jobTimeInfo;
+  const jobDateHourInfo = `${jobUtcYear}${jobUtcMonth.toString().padStart(2, '0')}${jobUtcDate.toString().padStart(2, '0')}${jobUtcHour.toString().padStart(2, '0')}`;
+  return jobDateHourInfo;
 };
 
 export const getCurrentAndUpdateAt = (timestamp: string): string => {
@@ -69,13 +69,14 @@ export const getTimeFromUpdatedAt = (updatedAt: string) => {
   return `${hours}:${minutes}:${sec}`;
 };
 
-export function getPreviousDate(dateTime: number): string {
-  const currentDate = new Date(dateTime);
+export function getPreviousDate(timestamp: string): string {
+  const year = parseInt(timestamp.substring(0, 4));
+  const month = parseInt(timestamp.substring(4, 6)) - 1; 
+  const day = parseInt(timestamp.substring(6, 8));
+  const hour = parseInt(timestamp.substring(8, 10));
+  const currentDate = new Date(year, month, day, hour);
   currentDate.setDate(currentDate.getDate() - 1);
-  const year = currentDate.getFullYear();
-  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-  const day = currentDate.getDate().toString().padStart(2, '0');
-  return `${year}${month}${day}`;
+  return getUtcDateHour(currentDate).substring(0,8);
 }
 
 export const calculateAverage = (arr1: any[], arr2:any[]) => {

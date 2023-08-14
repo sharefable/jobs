@@ -3,20 +3,10 @@ import { AthenaClient,
   GetQueryResultsCommand, 
   GetQueryResultsCommandOutput,
   StartQueryExecutionCommand } from '@aws-sdk/client-athena';
-import { GenericAthenaResultType, JobTimestampInfo, Job } from '../types';
-import { retriveExecutedQueryData } from './refresh_tour_usage_data';
-import { getJobTimestampInfo } from '../utils';
-import { createJob, sqlQueryToSelectLastSuccessData } from './jobs';
-import { JobType } from '../api-contract';
-import { randomUUID } from 'crypto';
-import { athenaQueryToGetAnnTourClicksData, 
-  athenaQueryToGetConversionData, 
-  athenaQueryToGetMetricsData } from './athena_queries';
-import { executeQueryToFetchData } from './mysql';
 
 const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_ATHENA_REGION });
 
-export const runAthenaQuery = async(query: string): Promise<string> => {
+export const runAthenaQuery = async (query: string): Promise<string> => {
   try {
     const startCommand = new StartQueryExecutionCommand({
       QueryString: query,
@@ -45,59 +35,47 @@ export const runAthenaQuery = async(query: string): Promise<string> => {
   }
 };
 
-export const getAthenaResponse = async (jobTypeForAthena: string, 
-  jobTypeForSuccesData: string, 
-  currentRefreshMetricTimeInfo: JobTimestampInfo): Promise<GenericAthenaResultType[]> => {
-  const athenaJobkey = randomUUID();
-  const athenaJobStartedAt: number = Date.now(); 
-  const timestampInfo: JobTimestampInfo = getJobTimestampInfo(athenaJobStartedAt);
-  const markAsInProgress = await createJob(jobTypeForAthena, athenaJobkey, timestampInfo);
-  const [success, failure] = await markAsInProgress();
+export const processDataFromRaw = async<T> (query: string):Promise<T[]>  => {
   try {
-    const query: string = await getAppropriateAthenaQuery(currentRefreshMetricTimeInfo, jobTypeForSuccesData);
     const queryExecutionId: string = await runAthenaQuery(query);
-    const getQueryResultsCommand = new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId });
-    const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
-    const queryResultArray: GenericAthenaResultType[] = retriveExecutedQueryData(getQueryResults);
-    await success(`Athena query for ${jobTypeForSuccesData} table processed`);
-    return queryResultArray;
-  } catch (err: any) {
-    await failure(err.message);
-    throw new Error(err.message);
-  }
-};
+    const result: T[] = [];
+    let nextToken: string | undefined = undefined;
+    do {
+      const getQueryResultsCommand = new GetQueryResultsCommand({
+        QueryExecutionId: queryExecutionId,
+        NextToken: nextToken,
+      });
+      const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
+      nextToken = getQueryResults.NextToken;
 
-const getAppropriateAthenaQuery = async (currentJobTimestampInfo: JobTimestampInfo, 
-  jobType: string) : Promise<string> => {
-  const querytoFetchLastSuccessJob = sqlQueryToSelectLastSuccessData(jobType);
-  const lastSuccessJobData: Job[]= await executeQueryToFetchData(querytoFetchLastSuccessJob);
-  try {
-    let query;
-    if(lastSuccessJobData.length !== 0) {
-      const timeStampInfo: string = lastSuccessJobData.at(0)?.info as string;
-      const lastSuccessJobTimestamp: JobTimestampInfo = JSON.parse(timeStampInfo);
-      query = selectTimespanForAthenaQuery(jobType, 
-        lastSuccessJobTimestamp.currentRunAt, 
-        currentJobTimestampInfo.currentRanFor);
-    } else {
-      query = selectTimespanForAthenaQuery(jobType, 
-        '2023010100', 
-        currentJobTimestampInfo.currentRanFor);
-    }
-    return query as string;
+      const queryResultChunk: T[] = retriveExecutedQueryData(getQueryResults);
+      result.push(...queryResultChunk);
+    } while (nextToken);
+    return result;
   } catch (error: any) {
     throw new Error(error.message);
   }
 };
 
-const selectTimespanForAthenaQuery = (jobType: string, from: string, to: string): string => {
-  let query;
-  if (jobType === JobType.REFRESH_TOUR_METRICS) {
-    query = athenaQueryToGetMetricsData(from, to);
-  } else if (jobType === JobType.REFRESH_TOUR_ANN_CLICK) {
-    query = athenaQueryToGetAnnTourClicksData(from, to);     
-  } else {
-    query = athenaQueryToGetConversionData(from, to);
+export const retriveExecutedQueryData = <T>(
+  queryExecutionResult: GetQueryResultsCommandOutput): T[] => {
+  try {
+    const columnNames: any = queryExecutionResult.ResultSet?.ResultSetMetadata?.ColumnInfo?.map(column => column.Name);
+    const rows: any = queryExecutionResult.ResultSet?.Rows;
+    const results: T[]= [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const rowData = row.Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
+      const rowObject: any = {};
+      for (let j = 0; j < columnNames.length; j++) {
+        const columnName:any = columnNames[j];
+        const cellValue = rowData[j];
+        rowObject[columnName] = cellValue;
+      }
+      results.push(rowObject);
+    }
+    return results;
+  } catch (error: any) {
+    throw new Error(error.message);
   }
-  return query;
 };

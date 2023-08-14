@@ -1,41 +1,14 @@
-import { EntryDurationType, JobProcessingStatus } from '../api-contract';
-import { JobTimestampInfo } from '../types';
-import { executeQueryToInsertOrUpdateData } from './mysql';
+import { EntryDurationType, JobProcessingStatus, JobType } from '../api-contract';
+import { executeQueryToFetchData } from './mysql';
 
-export const createJob = async (jobName: string, jobKey: string, jobInfo: JobTimestampInfo) => {
-  await executeQueryToInsertOrUpdateData(
-    `INSERT INTO jobs (created_at, updated_at, job_type, job_key, 
-            processing_status, failure_reason, info) VALUES 
-           (CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), '${jobName}', 
-          '${jobKey}', ${JobProcessingStatus.Touched}, null, '${JSON.stringify(jobInfo)}');`);
-
-  return async function() {
-    await executeQueryToInsertOrUpdateData(
-      `UPDATE jobs SET processing_status = ${JobProcessingStatus.InProcess} WHERE job_key = '${jobKey}';`);
-
-    return [
-      async function (data: string) {
-        await executeQueryToInsertOrUpdateData(
-          `UPDATE jobs SET processing_status = ${JobProcessingStatus.Processed}, 
-           failure_reason = '${data}' WHERE job_key = '${jobKey}';`);
-      },
-      async function (data: string) {
-        await executeQueryToInsertOrUpdateData(
-          `UPDATE jobs SET processing_status = ${JobProcessingStatus.Failed}, 
-          failure_reason = '${data}' WHERE job_key = '${jobKey}';`);
-      },
-    ];
-  };
-};
-
-export const sqlQueryToSelectLastSuccessData = (jobType: string) => {
-  const sqlQuery = `SELECT * FROM jobs WHERE processing_status=3 AND 
+export const sqlQueryToSelectLastSuccessData = async<Job> (jobType: JobType): Promise<Job[]> => {
+  const sqlQuery = `SELECT * FROM jobs WHERE processing_status=${JobProcessingStatus.Processed} AND 
                     job_type ='${jobType}' ORDER BY updated_at DESC LIMIT 1;`;
-  return sqlQuery;
+  return await executeQueryToFetchData(sqlQuery);
 };
 
-export const queryToGetPrevDateData = (ymd: string, tableName: string) => {
+export const queryToGetPrevDateData = async<T> (ymd: string, tableName: string): Promise<T[]>=> {
   const query = `SELECT * FROM ${tableName} WHERE date_ymd = ${ymd}
-                  AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
-  return query;
+                 AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
+  return await executeQueryToFetchData(query);
 };
