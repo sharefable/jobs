@@ -10,7 +10,7 @@ export abstract class JobBase {
   protected abstract getJobType(): JobType 
     
   public async createJob(jobType: JobType) {
-    await executeQueryToFetchData(
+    await executeQueryToInsertOrUpdateData(
       `INSERT INTO jobs (created_at, updated_at, job_type, job_key, 
         processing_status, failure_reason, info) VALUES (CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), '${jobType}', 
         '${this.baseValues.jobKey}', ${JobProcessingStatus.Touched}, null, 

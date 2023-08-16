@@ -31,7 +31,7 @@ export const updateViewsForMetrics = async (
   const query = `UPDATE ${TableName.AnalyticsTourMetrics} SET updated_at = '${updatedAt}', 
                   views_all = ${views_all}, views_unique = ${views_unique}
                   WHERE date_ymd = ${ymd} AND tour_id = ${tour_id}`;
-  await executeQueryToFetchData(query);
+  await executeQueryToInsertOrUpdateData(query);
   
 };
         

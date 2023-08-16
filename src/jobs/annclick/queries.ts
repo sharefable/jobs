@@ -8,9 +8,7 @@ export const getCurrentTypeForTourIdAnnIdAndYmd = async (
   const query = `SELECT * FROM ${TableName.AnalyticTourAnnClicks} WHERE tour_id = 
                   ${queryEntity.payload_tour_id} AND ann_id = '${queryEntity.payload_ann_id}'
                   AND entry_duration_type= '${EntryDurationType.CURRENT}' AND date_ymd = ${queryEntity.ymd};`;
-  const result: AnalyticsAnnClickEntity[] = await executeQueryToFetchData(query);
-  return result;
-
+  return await executeQueryToFetchData(query); 
 };
   
 export const updateViewsForAnnClickTour = async (tour_id: number, 

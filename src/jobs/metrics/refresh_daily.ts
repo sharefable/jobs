@@ -25,9 +25,7 @@ export class MetricsJob extends RefreshDailyBase<Metrics> {
 
   protected async getDataFromAnalyticsDb (queryResult: AthenaMetricsEntity): Promise<AnalyticMetricsEntity[]> {
     const queryYmd = parseInt(queryResult.ymd);
-    const metricsData: AnalyticMetricsEntity[] = await queryToFetchDataForTourIdAndDate(queryResult.payload_tour_id, queryYmd);
-    return metricsData;
-  
+    return  await queryToFetchDataForTourIdAndDate(queryResult.payload_tour_id, queryYmd);
   }
 
   protected async updateExistingData (
@@ -38,7 +36,7 @@ export class MetricsJob extends RefreshDailyBase<Metrics> {
     const addedViewsAll = parseInt(queryResult.views_all) + parseInt(metricsEntity.views_all);
     const addedViewsUnique = parseInt(queryResult.views_unique) + parseInt(metricsEntity.views_unique);
     const queryYmd = parseInt(queryResult.ymd);
-    updateViewsForMetrics(
+    await updateViewsForMetrics(
       queryResult.payload_tour_id, 
       addedViewsAll, 
       addedViewsUnique, 

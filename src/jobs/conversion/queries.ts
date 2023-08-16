@@ -8,8 +8,7 @@ export const queryToFetchDataForTourIdDateAndBtnId = async (
   const query = `SELECT * From ${TableName.AnalyticsConversion} where tour_id = ${entityData.payload_tour_id} and 
                    date_ymd = ${entityData.ymd} and btn_id = '${entityData.payload_btn_id}' 
                    and entry_duration_type='${EntryDurationType.CURRENT}'`;
-  const conversionDataForIdandYmd: AnalyticConversionEntity[] = await executeQueryToFetchData(query);
-  return conversionDataForIdandYmd;
+  return await executeQueryToFetchData(query);
 };
     
 export const updateConversionTypeToDaily = async (entityData: AnalyticConversionEntity, updatedAt: string) => {

@@ -31,8 +31,7 @@ export class AnnClickJob extends RefreshDailyBase<AnnTourClick> {
   protected async getDataFromAnalyticsDb (
     queryResult: AthenaAnnClickEntity,
   ): Promise<AnalyticsAnnClickEntity[]> {
-    const annTourClickData: AnalyticsAnnClickEntity[] = await getCurrentTypeForTourIdAnnIdAndYmd(queryResult);
-    return annTourClickData;
+    return await getCurrentTypeForTourIdAnnIdAndYmd(queryResult);
   }
 
   protected async updateExistingData (

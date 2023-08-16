@@ -21,7 +21,6 @@ export class RollupMetricsJob extends RollUpBase<AnalyticMetricsEntity> {
   }
   
   protected async getPrevDateData (prevYmd: string): Promise<AnalyticMetricsEntity[]> {
-    const annTourClickData: AnalyticMetricsEntity[] = await queryToGetPrevDateData(prevYmd, TableName.AnalyticsTourMetrics);
-    return annTourClickData;
+    return await queryToGetPrevDateData(prevYmd, TableName.AnalyticsTourMetrics);
   }
 }

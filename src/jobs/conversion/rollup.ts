@@ -20,7 +20,6 @@ export class RollupConversionJob extends RollUpBase<AnalyticConversionEntity> {
   }
 
   protected async getPrevDateData (prevYmd: string): Promise<AnalyticConversionEntity[]> {
-    const annTourClickData: AnalyticConversionEntity[] = await queryToGetPrevDateData(prevYmd, TableName.AnalyticsConversion);
-    return annTourClickData;
+    return await queryToGetPrevDateData(prevYmd, TableName.AnalyticsConversion);
   }
 }

@@ -27,8 +27,7 @@ export class ConversionJob extends RefreshDailyBase<Conversion> {
   protected async getDataFromAnalyticsDb (
     queryResult: AthenaConversionEntity,
   ): Promise<AnalyticConversionEntity[]> {
-    const conversionData: AnalyticConversionEntity[] = await queryToFetchDataForTourIdDateAndBtnId(queryResult);
-    return conversionData;
+    return await queryToFetchDataForTourIdDateAndBtnId(queryResult);
   }
 
   protected async updateExistingData (
@@ -37,7 +36,7 @@ export class ConversionJob extends RefreshDailyBase<Conversion> {
     createdAtAndUpdatedAt: string,
   ): Promise<void> {
     const addedClicks = parseInt(queryResult.clicks) + parseInt(conversionData.clicks);
-    updateClicks(addedClicks, queryResult, createdAtAndUpdatedAt);
+    await updateClicks(addedClicks, queryResult, createdAtAndUpdatedAt);
   }
 
   protected async insertNewRow (

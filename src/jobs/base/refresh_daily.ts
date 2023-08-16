@@ -11,9 +11,8 @@ export abstract class RefreshDailyBase<T> extends JobBase {
     const [success, failure] = await markAsInProgress();
     try {
       const query = await this.getAthenaQuery();
-      const queryExecutionId: string = await runAthenaQuery(query);
-      this.baseValues.jobInfo.queryExecutionId = queryExecutionId;
-      const athenaResult: T[] = await processDataFromRaw(queryExecutionId);
+      this.baseValues.jobInfo.queryExecutionId = await runAthenaQuery(query);
+      const athenaResult: T[] = await processDataFromRaw(this.baseValues.jobInfo.queryExecutionId);
       const createdAtAndUpdatedAt: string = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
       for (const queryResult of athenaResult) {
         const data: T[] = await this.getDataFromAnalyticsDb(queryResult);
