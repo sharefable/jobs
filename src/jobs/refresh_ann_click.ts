@@ -32,7 +32,7 @@ export class AnnClickJob extends RefreshDailyBase<AnnTourClick> {
   protected async getAthenaQuery (): Promise<string> {
     let query;
     const successData: any = await this.getJobSuccessData();
-    if (successData.isPresent) {
+    if (successData) {
       query = getAnnTourClicksData(successData.timestamp.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime);
     } else {
       query = getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);

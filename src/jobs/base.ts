@@ -76,10 +76,10 @@ export abstract class RefreshDailyBase<T> extends JobBase {
   protected async getJobSuccessData (): Promise<any> {
     try {
       const jobData: Job[] = await sqlQueryToSelectLastSuccessData(JobType.REFRESH_TOUR_METRICS);
-      if (jobData.length === 0) {
-        return {isPresent: true, timestamp: JSON.parse(jobData.at(0)!.info)};
+      if (jobData.length !== 0) {
+        return JSON.parse(jobData.at(0)!.info);
       } else {
-        return false;
+        return null;
       }
     } catch (error: any) {
       throw new Error(error.message);

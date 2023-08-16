@@ -27,7 +27,7 @@ export class MetricsJob extends RefreshDailyBase<Metrics> {
   protected async getAthenaQuery (): Promise<string> {
     let query;
     const successData: any = await this.getJobSuccessData();
-    if (successData.isPresent) {
+    if (successData) {
       query = getMetricsData(successData.timestamp.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime);
     } else {
       query = getMetricsData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);

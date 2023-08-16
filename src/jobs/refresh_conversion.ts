@@ -27,7 +27,7 @@ export class ConversionJob extends RefreshDailyBase<Conversion> {
   protected async getAthenaQuery (): Promise<string> {
     let query;
     const successData: any = await this.getJobSuccessData();
-    if (successData.isPresent) {
+    if (successData) {
       query = getConversionData(successData.timestamp.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime);
     } else {
       query = getConversionData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);
