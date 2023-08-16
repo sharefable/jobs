@@ -5,7 +5,7 @@ export type TMsgAttrs = Record<string, string | null | undefined>;
 export interface JobInfo {
   jobRunTime: string;
   jobDataScanningTime: string;
-  query?: string;
+  queryExecutionId?: string;
 }
 
 export interface Job {

@@ -50,7 +50,7 @@ export const getUtcDateHour= (timestamp: Date): string => {
   return jobDateHourInfo;
 };
 
-export const getCurrentAndUpdateAt = (timestamp: string): string => {
+export const getCreatedAtAndUpdateAt = (timestamp: string): string => {
   const year = timestamp.slice(0, 4);
   const month = timestamp.slice(4, 6);
   const day = timestamp.slice(6, 8);
