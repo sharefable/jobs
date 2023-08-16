@@ -29,9 +29,9 @@ export abstract class JobBase {
         },
         async (failureReason?: string) => {
           await executeQueryToInsertOrUpdateData(
-            `UPDATE jobs SET processing_status = ${JobProcessingStatus.Failed}, 
-              failure_reason = '${failureReason}', info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}'
-              WHERE id = ${rowId.id}`);
+            `UPDATE jobs SET processing_status = ${JobProcessingStatus.Failed},
+              failure_reason = '${JSON.stringify(failureReason).replace(/'/g, '\'\'')}', 
+              info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}' WHERE id = ${rowId.id}`);
         },
       ];
     };
