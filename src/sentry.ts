@@ -10,25 +10,25 @@ export const sentryInitialize = () => {
   });
 };
 
-export const sentryFailure = (checkInId: string) => {
+export const sentryFailure = (checkInId: string, jobName: string) => {
   captureCheckIn({
     checkInId,
-    monitorSlug: 'daily-job',
+    monitorSlug: jobName,
     status: 'error',
   });
 };
 
-export const sentrySuccess = (checkInId: string) => {
+export const sentrySuccess = (checkInId: string, jobName: string) => {
   captureCheckIn({
     checkInId,
-    monitorSlug: 'daily-job',
+    monitorSlug: jobName,
     status: 'ok',
   });
 };
 
-export const sentryProgress = () => {
+export const sentryProgress = (jobName: string) => {
   const checkInId = captureCheckIn({
-    monitorSlug: 'daily-job',
+    monitorSlug: jobName,
     status: 'in_progress',
   });
   return checkInId;

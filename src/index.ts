@@ -5,12 +5,15 @@ import mainScheduleLoop from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
+import { sentryInitialize } from './sentry';
 
 const PORT = 8081;
 
 const INFO = {
   timeInSecSinceLastPoll: 0,
 };
+
+sentryInitialize();
 
 if (!(process.env.SQS_Q_REGION
   && process.env.SQS_Q_NAME
@@ -25,7 +28,7 @@ if (!(process.env.SQS_Q_REGION
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
-mainMsgLoop();
+// mainMsgLoop();
 mainScheduleLoop();
 
 const app: Express = express();

@@ -15,15 +15,12 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
         const timePortion = getTimeFromUpdatedAt(annClick.updated_at);
         if (timePortion === '23:59:59') {
           await this.updateToDaily(annClick, updatedAt);
-          await success();
-        } else {
-          await failure('Rollup for Ann Click Failed, Time did not match with 23:59:59');
-        }
+        } 
+        await success();
       }
-      await success();
     } catch (err: any) {
       await failure(err.message);
-      captureException(err.message);
+      captureException(err);
       // TODO: raise an error in sentry 
     }
   }
