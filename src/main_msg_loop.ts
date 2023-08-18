@@ -93,7 +93,7 @@ export default function mainMsgLoop() {
             //   jobInfo = await deleteAsset(msgAttrs);
             //   break;
             // }
-
+            
             default: {
               const errMsg =`No handler found for msg ${msg.Body}`;
               log.err(errMsg);

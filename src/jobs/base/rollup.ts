@@ -1,5 +1,6 @@
 import { getCreatedAtAndUpdateAt, getPreviousDate, getTimeFromUpdatedAt } from '../../utils';
 import { JobBase } from './job';
+import { captureException } from '@sentry/node';
 
 export abstract class RollUpBase<T extends { updated_at: string }> extends JobBase {
     
@@ -22,6 +23,7 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
       await success();
     } catch (err: any) {
       await failure(err.message);
+      captureException(err.message);
       // TODO: raise an error in sentry 
     }
   }

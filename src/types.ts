@@ -1,4 +1,4 @@
-import { JobProcessingStatus } from 'api-contract';
+import { JobProcessingStatus } from './api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 

@@ -6,7 +6,8 @@ import {
   StartCrawlerCommandOutput,
 } from '@aws-sdk/client-glue';
 import { JobBase } from './base/job';
-import { JobType } from 'api-contract';
+import { JobType } from '../api-contract';
+import * as Sentry from '@sentry/node';
 
 export const refreshPartition = async (): Promise<boolean> => {
   const crawlerJob = new RefreshPartition();
@@ -33,10 +34,12 @@ class RefreshPartition extends JobBase {
       } else {
         await failure('Something wrong happend when running the crawler');
         // TODO: raise an error in sentry 
+        Sentry.captureException('Something wrong happend when running the crawler');
         return false;
       }
     } catch (error: any) {
       await failure(error.message);
+      Sentry.captureException(error.message);
       return false;
       // TODO: raise an error in sentry 
     }

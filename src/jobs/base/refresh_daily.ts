@@ -3,6 +3,7 @@ import { JobBase } from './job';
 import { getCreatedAtAndUpdateAt } from '../../utils';
 import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries';
 import { Job } from '../../types';
+import { captureException } from '@sentry/node';
 
 export abstract class RefreshDailyBase<T> extends JobBase {
 
@@ -25,6 +26,7 @@ export abstract class RefreshDailyBase<T> extends JobBase {
       await success();
     } catch (err: any) {
       await failure(err.message);
+      captureException(err.message);
       // TODO: raise an error in sentry 
     }
   }

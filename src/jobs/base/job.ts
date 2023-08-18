@@ -2,6 +2,7 @@ import { getUTCTimesForJob } from '../../utils';
 import { JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQueryToFetchData, executeQueryToInsertOrUpdateData } from '../mysql';
 import { randomUUID } from 'crypto';
+import { captureException } from '@sentry/node';
 
 export abstract class JobBase {
 
