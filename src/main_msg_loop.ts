@@ -9,7 +9,7 @@ import {JobProcessingStatus} from './api-contract';
 import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
-import { newUserNotify } from './processors/notify_slack';
+import { processEventsToNotify } from './processors/notify_slack';
 
 const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -62,74 +62,74 @@ export default function mainMsgLoop() {
         log.info(`Processing message ${msg.Body}`);
         const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
-        if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
-
-        const conn = await getConnection();
-        let jobInfo: object = {};
-
-        // Marking in db that the process is starting
-        await new Promise((res, rej) => {
-          conn!.query(
-            'UPDATE jobs SET processing_status = ? WHERE job_key = ?',
-            [JobProcessingStatus.InProcess, msgAttrs.key],
-            (err: MysqlError | null) => {
-              if (err) rej(err);
-              else res(1);
-            });
-        });
-
-        try {
-          switch (msg.Body) {
-            case  'TRANSCODE_VIDEO': {
-              jobInfo = await transcodeVideo(msgAttrs);
-              break;
-            }
-
-            case 'RESIZE_IMG': {
-              jobInfo = await resizeImg(msgAttrs);
-              break;
-            }
-            
-            // case 'DELETE_ASSET': {
-            //   jobInfo = await deleteAsset(msgAttrs);
-            //   break;
-            // }
-
-            case 'NF': {
-              jobInfo = await newUserNotify(msgAttrs);
-              break;
-            }
-
-            default: {
-              const errMsg =`No handler found for msg ${msg.Body}`;
-              log.err(errMsg);
-              throw new NonRunnableErr(errMsg);
-            }
-          }
-          await new Promise((res, rej) => {
-            conn!.query(
-              'UPDATE jobs SET processing_status = ?, info = ? WHERE job_key = ?',
-              [JobProcessingStatus.Processed, JSON.stringify(jobInfo), msgAttrs.key],
-              (err: MysqlError | null) => {
-                if (err) rej(err);
-                else res(1);
-              });
-          });
+        if (msg.Body === 'NF') {
+          await processEventsToNotify(msgAttrs);
           await deleteMsg();
-        } catch (e) {
+        } else {
+          if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
+
+          const conn = await getConnection();
+          let jobInfo: object = {};
+
+          // Marking in db that the process is starting
           await new Promise((res, rej) => {
             conn!.query(
-              'UPDATE jobs SET processing_status = ?, failure_reason = ? WHERE job_key = ?',
-              [JobProcessingStatus.Failed, (e as Error).message, msgAttrs.key],
+              'UPDATE jobs SET processing_status = ? WHERE job_key = ?',
+              [JobProcessingStatus.InProcess, msgAttrs.key],
               (err: MysqlError | null) => {
                 if (err) rej(err);
                 else res(1);
               });
           });
-          log.err((e as Error).message);
-          if (e instanceof NonRunnableErr) await deleteMsg();
-        } finally {
-          conn.release();
+
+          try {
+            switch (msg.Body) {
+              case  'TRANSCODE_VIDEO': {
+                jobInfo = await transcodeVideo(msgAttrs);
+                break;
+              }
+
+              case 'RESIZE_IMG': {
+                jobInfo = await resizeImg(msgAttrs);
+                break;
+              }
+            
+              // case 'DELETE_ASSET': {
+              //   jobInfo = await deleteAsset(msgAttrs);
+              //   break;
+              // }
+
+              default: {
+                const errMsg =`No handler found for msg ${msg.Body}`;
+                log.err(errMsg);
+                throw new NonRunnableErr(errMsg);
+              }
+            }
+            await new Promise((res, rej) => {
+              conn!.query(
+                'UPDATE jobs SET processing_status = ?, info = ? WHERE job_key = ?',
+                [JobProcessingStatus.Processed, JSON.stringify(jobInfo), msgAttrs.key],
+                (err: MysqlError | null) => {
+                  if (err) rej(err);
+                  else res(1);
+                });
+            });
+            await deleteMsg();
+          } catch (e) {
+            await new Promise((res, rej) => {
+              conn!.query(
+                'UPDATE jobs SET processing_status = ?, failure_reason = ? WHERE job_key = ?',
+                [JobProcessingStatus.Failed, (e as Error).message, msgAttrs.key],
+                (err: MysqlError | null) => {
+                  if (err) rej(err);
+                  else res(1);
+                });
+            });
+            log.err((e as Error).message);
+            if (e instanceof NonRunnableErr) await deleteMsg();
+          } finally {
+            conn.release();
+          }
         }
       }));
     }
