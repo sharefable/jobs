@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-08-18 10:07:47.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-18 23:41:29.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -32,10 +32,9 @@ export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     deletable: boolean;
 }
 
-export interface NotifySlackJobInfo extends JobProcessingInfo {
-    eventName: string;
-    emailId: string;
-    orgStatus: string;
+export interface NfHookUserInfo {
+    firstName: string;
+    email: string;
 }
 
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
@@ -83,6 +82,11 @@ export interface ReqNewScreen {
 export interface ReqNewTour {
     name: string;
     description?: string;
+}
+
+export interface ReqNfHook {
+    eventName: SlackEvents;
+    payload: NfHookUserInfo;
 }
 
 export interface ReqProxyAsset {
@@ -214,12 +218,6 @@ export const enum EntityType {
     Tour = 1,
 }
 
-export const enum EntryDurationType {
-    CURRENT = "CURRENT",
-    DAILY = "DAILY",
-    LIFETIME = "LIFETIME",
-}
-
 export const enum JobProcessingStatus {
     Failed = 0,
     Touched = 1,
@@ -230,14 +228,6 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
-    NF = "NF",
-    REFRESH_CRAWLER = "REFRESH_CRAWLER",
-    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
-    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
-    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
-    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
-    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
-    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
 }
 
 export const enum SchemaVersion {
@@ -268,6 +258,11 @@ export const enum ResponseStatus {
 export const enum ErrorCode {
     IllegalArgs = 100,
     NotFound = 101,
+}
+
+export const enum SlackEvents {
+    NEW_USER_SIGNUP = "NEW_USER_SIGNUP",
+    EBOOK_DOWNLOAD = "EBOOK_DOWNLOAD",
 }
 
 export const enum UserOrgAssociation {
