@@ -18,7 +18,13 @@ if (!(process.env.SQS_Q_REGION
   && process.env.DB_PWD
   && process.env.ETS_REGION
   && process.env.TRANSCODER_PIPELINE_ID
-  && process.env.AWS_S3_REGION)) {
+  && process.env.AWS_S3_REGION
+  && process.env.AWS_GLUE_REGION
+  && process.env.AWS_GLUE_DB_NAME
+  && process.env.AWS_GLUE_CRAWLER_NAME
+  && process.env.AWS_GLUE_TABLE_NAME
+  && process.env.AWS_ATHENA_OUTPUT_LOCATION
+  && process.env.AWS_ATHENA_REGION)) {
   throw new Error('Environment vars are not loaded properly');
 }
 

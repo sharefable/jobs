@@ -9,6 +9,7 @@ import {JobProcessingStatus} from './api-contract';
 import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
+import { newUserNotify } from './processors/notify_slack';
 
 const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -93,6 +94,11 @@ export default function mainMsgLoop() {
             //   jobInfo = await deleteAsset(msgAttrs);
             //   break;
             // }
+
+            case 'NF': {
+              jobInfo = await newUserNotify(msgAttrs);
+              break;
+            }
 
             default: {
               const errMsg =`No handler found for msg ${msg.Body}`;

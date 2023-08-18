@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-29 17:45:29.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-18 10:07:47.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -32,6 +32,12 @@ export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     deletable: boolean;
 }
 
+export interface NotifySlackJobInfo extends JobProcessingInfo {
+    eventName: string;
+    emailId: string;
+    orgStatus: string;
+}
+
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
     sourceFilePath: string;
     processedFilePath: string;
@@ -42,6 +48,11 @@ export interface VideoTranscodingJobInfo extends JobProcessingInfo {
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
+}
+
+export interface ReqDuplicateTour {
+    duplicateTourName: string;
+    fromTourRid: string;
 }
 
 export interface ReqEntityAssetAssn {
@@ -125,6 +136,7 @@ export interface RespHealth extends ResponseBase {
 export interface RespMediaProcessingInfo extends ResponseBase {
     jobId: number;
     originalFilePath: string;
+    mediaType: MediaType;
     processedFilePath: string;
     processingState: JobProcessingStatus;
     failureReason: string;
@@ -151,12 +163,12 @@ export interface RespScreen extends ResponseBase {
     url: string;
     icon: string;
     responsive: boolean;
-    tour?: RespTour;
     type: ScreenType;
     uploadUrl?: string;
 }
 
 export interface RespTour extends ResponseBase {
+    id: number;
     rid: string;
     assetPrefixHash: string;
     displayName: string;
@@ -166,6 +178,7 @@ export interface RespTour extends ResponseBase {
 
 export interface RespTourWithScreens extends RespTour {
     screens: RespScreen[];
+    idxm?: { [index: string]: string };
 }
 
 export interface RespUploadUrl {
@@ -201,6 +214,12 @@ export const enum EntityType {
     Tour = 1,
 }
 
+export const enum EntryDurationType {
+    CURRENT = "CURRENT",
+    DAILY = "DAILY",
+    LIFETIME = "LIFETIME",
+}
+
 export const enum JobProcessingStatus {
     Failed = 0,
     Touched = 1,
@@ -211,6 +230,14 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
+    NF = "NF",
+    REFRESH_CRAWLER = "REFRESH_CRAWLER",
+    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
+    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
+    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
+    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
+    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
+    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
 }
 
 export const enum SchemaVersion {
@@ -225,6 +252,12 @@ export const enum ScreenType {
 export const enum VideoProcessingSub {
     CONVERT_TO_MP4 = "CONVERT_TO_MP4",
     CONVERT_TO_HLS = "CONVERT_TO_HLS",
+}
+
+export const enum MediaType {
+    VIDEO_HLS = "VIDEO_HLS",
+    VIDEO_MP4 = "VIDEO_MP4",
+    IMG_MULTI = "IMG_MULTI",
 }
 
 export const enum ResponseStatus {
