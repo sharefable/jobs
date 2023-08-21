@@ -9,7 +9,7 @@ import cron from 'node-cron';
 import { sentryProgress, sentrySuccess } from './sentry';
 
 export default async function mainScheduleLoop() {
-  cron.schedule('*/5 * * * *', async () => {
+  cron.schedule('0 */1 * * * *', async () => {
     const jobName = 'daily-job';
     const checkInId = sentryProgress(jobName);
     const isSuccess: boolean = await refreshPartition(); 
@@ -25,7 +25,7 @@ export default async function mainScheduleLoop() {
 
   //what time in mid day the job should be scheduled
 
-  cron.schedule('*/5 * * * *', async () => {
+  cron.schedule('0 0 * * * *', async () => {
     const jobName = 'roll-up';
     const checkInId = sentryProgress(jobName);
     await Promise.all([
