@@ -21,7 +21,6 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
     } catch (err: any) {
       await failure(err.message);
       captureException(err);
-      // TODO: raise an error in sentry 
     }
   }
     

@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-08-18 10:07:47.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-21 14:04:21.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -30,12 +30,6 @@ export interface JobProcessingInfo extends MapSerializable {
 export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
-}
-
-export interface NotifySlackJobInfo extends JobProcessingInfo {
-    eventName: string;
-    emailId: string;
-    orgStatus: string;
 }
 
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
@@ -163,6 +157,7 @@ export interface RespScreen extends ResponseBase {
     url: string;
     icon: string;
     responsive: boolean;
+    tour?: RespTour;
     type: ScreenType;
     uploadUrl?: string;
 }
@@ -217,7 +212,6 @@ export const enum EntityType {
 export const enum EntryDurationType {
     CURRENT = "CURRENT",
     DAILY = "DAILY",
-    LIFETIME = "LIFETIME",
 }
 
 export const enum JobProcessingStatus {
@@ -230,7 +224,6 @@ export const enum JobProcessingStatus {
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
     RESIZE_IMG = "RESIZE_IMG",
-    NF = "NF",
     REFRESH_CRAWLER = "REFRESH_CRAWLER",
     REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
     REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",

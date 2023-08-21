@@ -27,7 +27,6 @@ export abstract class RefreshDailyBase<T> extends JobBase {
     } catch (err: any) {
       await failure(err.message);
       captureException(err);
-      // TODO: raise an error in sentry 
     }
   }
     

@@ -10,7 +10,7 @@ export abstract class JobBase {
   
   protected abstract getJobType(): JobType 
     
-  public async createJob(jobType: JobType): Promise<any>{
+  public async createJob(jobType: JobType): Promise<any> {
     try {
       await executeQueryToInsertOrUpdateData(
         `INSERT INTO jobs (created_at, updated_at, job_type, job_key, 

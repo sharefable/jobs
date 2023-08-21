@@ -10,14 +10,6 @@ export const sentryInitialize = () => {
   });
 };
 
-export const sentryFailure = (checkInId: string, jobName: string) => {
-  captureCheckIn({
-    checkInId,
-    monitorSlug: jobName,
-    status: 'error',
-  });
-};
-
 export const sentrySuccess = (checkInId: string, jobName: string) => {
   captureCheckIn({
     checkInId,
