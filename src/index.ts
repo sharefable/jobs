@@ -11,7 +11,8 @@ const INFO = {
   timeInSecSinceLastPoll: 0,
 };
 
-if (!(process.env.SQS_Q_REGION
+if (!( process.env.APP_ENV
+  && process.env.SQS_Q_REGION
   && process.env.SQS_Q_NAME
   && process.env.DB_CONN_URL
   && process.env.DB_USER

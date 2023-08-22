@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-06-29 17:45:29.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-22 13:20:57.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -44,6 +44,11 @@ export interface ReqCopyScreen {
     tourRid: string;
 }
 
+export interface ReqDuplicateTour {
+    duplicateTourName: string;
+    fromTourRid: string;
+}
+
 export interface ReqEntityAssetAssn {
     entityRid: string;
     entityType: EntityType;
@@ -72,6 +77,11 @@ export interface ReqNewScreen {
 export interface ReqNewTour {
     name: string;
     description?: string;
+}
+
+export interface ReqNfHook {
+    eventName: NfEvents;
+    payload: { [index: string]: string };
 }
 
 export interface ReqProxyAsset {
@@ -125,6 +135,7 @@ export interface RespHealth extends ResponseBase {
 export interface RespMediaProcessingInfo extends ResponseBase {
     jobId: number;
     originalFilePath: string;
+    mediaType: MediaType;
     processedFilePath: string;
     processingState: JobProcessingStatus;
     failureReason: string;
@@ -151,12 +162,12 @@ export interface RespScreen extends ResponseBase {
     url: string;
     icon: string;
     responsive: boolean;
-    tour?: RespTour;
     type: ScreenType;
     uploadUrl?: string;
 }
 
 export interface RespTour extends ResponseBase {
+    id: number;
     rid: string;
     assetPrefixHash: string;
     displayName: string;
@@ -166,6 +177,7 @@ export interface RespTour extends ResponseBase {
 
 export interface RespTourWithScreens extends RespTour {
     screens: RespScreen[];
+    idxm?: { [index: string]: string };
 }
 
 export interface RespUploadUrl {
@@ -227,6 +239,12 @@ export const enum VideoProcessingSub {
     CONVERT_TO_HLS = "CONVERT_TO_HLS",
 }
 
+export const enum MediaType {
+    VIDEO_HLS = "VIDEO_HLS",
+    VIDEO_MP4 = "VIDEO_MP4",
+    IMG_MULTI = "IMG_MULTI",
+}
+
 export const enum ResponseStatus {
     Success = "Success",
     Failure = "Failure",
@@ -235,6 +253,11 @@ export const enum ResponseStatus {
 export const enum ErrorCode {
     IllegalArgs = 100,
     NotFound = 101,
+}
+
+export const enum NfEvents {
+    NEW_USER_SIGNUP = "NEW_USER_SIGNUP",
+    EBOOK_DOWNLOAD = "EBOOK_DOWNLOAD",
 }
 
 export const enum UserOrgAssociation {
