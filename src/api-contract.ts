@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2023-08-18 23:41:29.
+// Generated using typescript-generator version 2.35.1025 on 2023-08-22 13:20:57.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -30,11 +30,6 @@ export interface JobProcessingInfo extends MapSerializable {
 export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
-}
-
-export interface NfHookUserInfo {
-    firstName: string;
-    email: string;
 }
 
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
@@ -85,8 +80,8 @@ export interface ReqNewTour {
 }
 
 export interface ReqNfHook {
-    eventName: SlackEvents;
-    payload: NfHookUserInfo;
+    eventName: NfEvents;
+    payload: { [index: string]: string };
 }
 
 export interface ReqProxyAsset {
@@ -260,7 +255,7 @@ export const enum ErrorCode {
     NotFound = 101,
 }
 
-export const enum SlackEvents {
+export const enum NfEvents {
     NEW_USER_SIGNUP = "NEW_USER_SIGNUP",
     EBOOK_DOWNLOAD = "EBOOK_DOWNLOAD",
 }

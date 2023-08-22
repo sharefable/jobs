@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { TMsgAttrs } from '../types';
+import * as log from '../log';
 
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
 
@@ -14,7 +15,7 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
       } 
 
       case 'EBOOK_DOWNLOAD': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nfirst_name: ${utProps.firstName}\nemail_id: ${utProps.emailId}\n\`\`\``;
+        text = `\`\`\`\nevent_name: ${utProps.eventName}\nfirst_name: ${utProps.payload_firstName}\nemail_id: ${utProps.payload_email}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       }
@@ -24,7 +25,7 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
     } 
   } catch (error) {
     console.log(error);
-    // sentry error
+    // TODO: Raise sentry error
   }
 };
 
@@ -51,9 +52,9 @@ const notifySlack = async (url: string, text: string) => {
     body: JSON.stringify(formatProps(text)),
   });
   if (resp.ok) {
+    log.info('Notification sent');
     return;
-  } else {
-    // raise a sentry error
-  }
+  } 
+  log.info('Notification failed');
 };
   
