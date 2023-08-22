@@ -1,0 +1,74 @@
+name: Build and install code in ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        type: environment
+        description: Deployment environment?
+        required: true
+
+jobs:
+  build-and-install:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.deploy_env }}
+    permissions:
+      id-token: write
+      contents: read
+      issues: write
+
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Get Version Number
+        id: version
+        run: echo "V=$(node -p -e "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Printing version
+        run: |
+          echo "Builing for v=${{ steps.version.outputs.V }} env=${{ github.event.inputs.deploy_env }} branch=${{github.ref}}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          role-session-name: app-deployment
+
+      - name: Manual approval
+        uses: trstringer/manual-approval@v1
+        timeout-minutes: 3
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{vars.APPROVERS}}
+          minimum-approvals: 1
+          issue-title: |
+            Build and install v=${{ steps.version.outputs.V }} env=${{ github.event.inputs.deploy_env }} in ECR
+          issue-body: |
+            Make sure the server version in pom.xml is updated
+            **Please approve or deny within 3 min.**
+
+
+      - name: Checking if tag is present in ecr
+        run: >
+          if aws ecr describe-images --repository-name sqs-jobs --region ap-southeast-1 --query 'sort_by(imageDetails,& imagePushedAt)[*].imageTags[]' | grep -q ${{ steps.version.outputs.V }}; then
+            echo "::error::Image ${{ steps.version.outputs.V }} already present in registry. Update version in package.json"; exit 1
+          else
+            echo "Image not found in registry. Will create a new tag with ${{ steps.version.outputs.V }}"
+          fi
+
+      - name: Creating empty env file
+        run: touch env.now
+
+      - name: Containerize build & install
+        run: |
+          make containerize v=${{ steps.version.outputs.V }}
+
+      - run: |
+          echo "### :warning: container img uploaded to ECR with v=${{steps.version.outputs.V}}. Please perform manual deployment in ECS." >> $GITHUB_STEP_SUMMARY
