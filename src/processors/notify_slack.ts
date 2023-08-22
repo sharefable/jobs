@@ -1,21 +1,24 @@
 import fetch from 'node-fetch';
 import { TMsgAttrs } from '../types';
 import * as log from '../log';
+import { NfEvents, ReqNfHook } from 'api-contract';
 
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
 
+type IProps = ReqNfHook & TMsgAttrs;
 export const processEventsToNotify = async (utProps: TMsgAttrs) => {
+  const props = utProps as IProps;
   try {
     let text = '';
-    switch (utProps.eventName) {
-      case 'NEW_USER_SIGNUP': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nemail_id: ${utProps.payload_emailId}\norg_status: ${utProps.payload_orgStatus}\nenv: ${process.env.APP_ENV}\n\`\`\``;
+    switch (props.eventName) {
+      case NfEvents.NEW_USER_SIGNUP: {
+        text = `\`\`\`\nevent_name: ${props.eventName}\nemail_id: ${props.payload_emailId}\norg_status: ${props.payload_orgStatus}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       } 
 
-      case 'EBOOK_DOWNLOAD': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nfirst_name: ${utProps.payload_firstName}\nemail_id: ${utProps.payload_email}\nenv: ${process.env.APP_ENV}\n\`\`\``;
+      case NfEvents.EBOOK_DOWNLOAD: {
+        text = `\`\`\`\nevent_name: ${props.eventName}\nfirst_name: ${props.payload_firstName}\nemail_id: ${props.payload_email}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       }
