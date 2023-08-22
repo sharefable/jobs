@@ -9,7 +9,7 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
     let text = '';
     switch (utProps.eventName) {
       case 'NEW_USER_SIGNUP': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nemail_id: ${utProps.emailId}\norg_status: ${utProps.orgStatus}\n\`\`\``;
+        text = `\`\`\`\nevent_name: ${utProps.eventName}\nemail_id: ${utProps.payload_emailId}\norg_status: ${utProps.payload_orgStatus}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       } 
