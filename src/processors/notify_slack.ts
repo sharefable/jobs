@@ -9,13 +9,13 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
     let text = '';
     switch (utProps.eventName) {
       case 'NEW_USER_SIGNUP': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nemail_id: ${utProps.payload_emailId}\norg_status: ${utProps.payload_orgStatus}\n\`\`\``;
+        text = `\`\`\`\nevent_name: ${utProps.eventName}\nemail_id: ${utProps.payload_emailId}\norg_status: ${utProps.payload_orgStatus}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       } 
 
       case 'EBOOK_DOWNLOAD': {
-        text = `\`\`\`\nevent_name: ${utProps.eventName}\nfirst_name: ${utProps.payload_firstName}\nemail_id: ${utProps.payload_email}\n\`\`\``;
+        text = `\`\`\`\nevent_name: ${utProps.eventName}\nfirst_name: ${utProps.payload_firstName}\nemail_id: ${utProps.payload_email}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
         break;
       }
