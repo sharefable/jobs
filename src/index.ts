@@ -13,11 +13,13 @@ const INFO = {
   timeInSecSinceLastPoll: 0,
 };
 
-if (!(process.env.SQS_Q_REGION
+if (!( process.env.APP_ENV
+  && process.env.SQS_Q_REGION
   && process.env.SQS_Q_NAME
   && process.env.DB_CONN_URL
   && process.env.DB_USER
   && process.env.DB_PWD
+  && process.env.ETS_REGION
   && process.env.TRANSCODER_PIPELINE_ID
   && process.env.AWS_S3_REGION
   && process.env.AWS_GLUE_REGION
