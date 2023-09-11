@@ -23,9 +23,7 @@ export default async function mainScheduleLoop() {
     sentrySuccess(checkInId, jobName);
   });
 
-  //what time in mid day the job should be scheduled
-
-  cron.schedule('0 0 * * * ', async () => {
+  cron.schedule('0 15 * * * ', async () => {
     const jobName = 'roll-up';
     const checkInId = sentryProgress(jobName);
     await Promise.all([
