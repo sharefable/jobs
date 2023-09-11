@@ -1,17 +1,17 @@
 import { JobType } from '../../api-contract';
 import { getMetricsData } from '../common_queries/athena_queries';
-import { RefreshDailyBase } from '../base/refresh_daily';
+import { RefreshHourlyBase } from '../base/refresh_hourly';
 import { AthenaMetricsEntity, AnalyticMetricsEntity, JobInfo } from '../../types';
 import { insertMetrics, queryToFetchDataForTourIdAndDate, updateViewsForMetrics } from './queries';
 
-export const refreshDailyMetricsData = async () => {
+export const refreshHourlyMetricsData = async () => {
   const metricsJob = new MetricsJob();
   await metricsJob.executeJob();
 };
   
 type Metrics = AthenaMetricsEntity | AnalyticMetricsEntity
 
-export class MetricsJob extends RefreshDailyBase<Metrics> {
+export class MetricsJob extends RefreshHourlyBase<Metrics> {
  
   protected getJobType(): JobType {
     return JobType.REFRESH_TOUR_METRICS;

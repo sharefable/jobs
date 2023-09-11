@@ -1,21 +1,21 @@
 import { JobType } from '../../api-contract';
 import { getAnnTourClicksData } from '../common_queries/athena_queries';
-import { RefreshDailyBase } from '../base/refresh_daily';
 import { JobInfo, AnalyticsAnnClickEntity, AthenaAnnClickEntity } from '../../types';
 import { calculateAverage } from '../../utils';
 import { getCurrentTypeForTourIdAnnIdAndYmd, updateViewsForAnnClickTour, insertAnnClick } from './queries';
+import { RefreshHourlyBase } from '../base/refresh_hourly';
 
 /* TODO: we need to handle in case of hourly job gets failed at one point 
    and not able to change the entry type to CURRENT to DAILY */
 
-export const refreshDailyAnnClickData = async () => {
+export const refreshHourlyAnnClickData = async () => {
   const annClickJob = new AnnClickJob();
   await annClickJob.executeJob();
 };
 
 type AnnTourClick = AthenaAnnClickEntity | AnalyticsAnnClickEntity;
 
-export class AnnClickJob extends RefreshDailyBase<AnnTourClick> {
+export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
 
   protected getJobType(): JobType {
     return JobType.REFRESH_TOUR_ANN_CLICK;

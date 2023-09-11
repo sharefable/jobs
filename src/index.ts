@@ -35,7 +35,9 @@ if (!( process.env.APP_ENV
 process.on('SIGTERM', shutDown);
 process.on('SIGINT', shutDown);
 
-sentryInitialize();
+if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
+  sentryInitialize();
+} 
 
 mainMsgLoop();
 mainScheduleLoop();

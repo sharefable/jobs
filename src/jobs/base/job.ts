@@ -38,7 +38,7 @@ export abstract class JobBase {
         ];
       };
     } catch (error) {
-      captureException(error);
+      captureException(error as Error);
     }
   }
 }

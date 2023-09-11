@@ -28,7 +28,7 @@ export const updateViewsForAnnClickTour = async (tour_id: number,
 export const updateAnnTourTypeToDaily =  async (entityData: AnalyticsAnnClickEntity, updatedAt: string) => {
   const query = `UPDATE ${TableName.AnalyticTourAnnClicks} SET updated_at = '${updatedAt}', 
                   entry_duration_type = '${EntryDurationType.DAILY}' WHERE tour_id = ${entityData.tour_id} 
-                  AND ann_id = '${entityData.ann_id}';`;
+                  AND ann_id = '${entityData.ann_id}' AND entry_duration_type = '${EntryDurationType.CURRENT}';`;
   await executeQueryToInsertOrUpdateData(query);
 };
   

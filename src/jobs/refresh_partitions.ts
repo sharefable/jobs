@@ -32,16 +32,14 @@ class RefreshPartition extends JobBase {
         await success();
         return true;
       } else {
-        await failure('Something wrong happend when running the crawler');
-        // TODO: raise an error in sentry 
-        Sentry.captureException('Something wrong happend when running the crawler');
+        await failure('Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}');
+        Sentry.captureException(`Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}`);
         return false;
       }
-    } catch (error: any) {
-      await failure(error.message);
-      Sentry.captureException(error.message);
+    } catch (error) {
+      await failure((error as Error).message);
+      Sentry.captureException(error as Error);
       return false;
-      // TODO: raise an error in sentry 
     }
   }
 

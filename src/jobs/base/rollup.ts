@@ -18,9 +18,9 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
         } 
         await success();
       }
-    } catch (err: any) {
-      await failure(err.message);
-      captureException(err);
+    } catch (error) {
+      await failure((error as Error).message);
+      captureException(error as Error);
     }
   }
     

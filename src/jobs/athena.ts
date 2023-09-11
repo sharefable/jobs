@@ -27,6 +27,7 @@ export const runAthenaQuery = async (query: string): Promise<string> => {
       }
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
+
     return queryExecutionId;
   } else {
     throw new Error('No execution Id found, undefined');
@@ -43,7 +44,7 @@ export const processDataFromRaw = async<T> (queryExecutionId: string):Promise<T[
     });
     const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
     nextToken = getQueryResults.NextToken;
-
+   
     const queryResultChunk: T[] = retriveExecutedQueryData(getQueryResults);
     result.push(...queryResultChunk);
   } while (nextToken);
@@ -54,10 +55,11 @@ export const retriveExecutedQueryData = <T>(
   queryExecutionResult: GetQueryResultsCommandOutput): T[] => {
   const columnNames: any = queryExecutionResult.ResultSet?.ResultSetMetadata?.ColumnInfo?.map(column => column.Name);
   const rows: any = queryExecutionResult.ResultSet?.Rows;
+  const str = rows[0].Data[0].VarCharValue as string;
+  const correctRowIndex = str.startsWith('payload_') === true ? 1 : 0;
   const results: T[]= [];
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const rowData = row.Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
+  for (let i = correctRowIndex; i < rows.length; i++) {
+    const rowData = rows[i].Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
     const rowObject: any = {};
     for (let j = 0; j < columnNames.length; j++) {
       const columnName:any = columnNames[j];

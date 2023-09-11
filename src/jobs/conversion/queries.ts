@@ -15,7 +15,7 @@ export const updateConversionTypeToDaily = async (entityData: AnalyticConversion
   const query = `UPDATE ${TableName.AnalyticsConversion} SET updated_at = '${updatedAt}', 
                    entry_duration_type = '${EntryDurationType.DAILY}' 
                    WHERE date_ymd = ${entityData.date_ymd} AND tour_id = ${entityData.tour_id} 
-                   AND btn_id = '${entityData.btn_id}'`;
+                   AND btn_id = '${entityData.btn_id}' AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
   await executeQueryToInsertOrUpdateData(query);
 };
   

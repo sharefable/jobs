@@ -5,7 +5,7 @@ import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries'
 import { Job } from '../../types';
 import { captureException } from '@sentry/node';
 
-export abstract class RefreshDailyBase<T> extends JobBase {
+export abstract class RefreshHourlyBase<T> extends JobBase {
 
   public async executeJob() {
     const markAsInProgress = await this.createJob(this.getJobType());
@@ -24,9 +24,9 @@ export abstract class RefreshDailyBase<T> extends JobBase {
         }
       }
       await success();
-    } catch (err: any) {
-      await failure(err.message);
-      captureException(err);
+    } catch (error) {
+      await failure((error as Error).message);
+      captureException(error as Error);
     }
   }
     

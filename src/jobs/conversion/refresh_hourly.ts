@@ -1,17 +1,17 @@
 import { JobType } from '../../api-contract';
 import { getConversionData } from '../common_queries/athena_queries';
-import { RefreshDailyBase } from '../base/refresh_daily';
+import { RefreshHourlyBase } from '../base/refresh_hourly';
 import { JobInfo, AthenaConversionEntity, AnalyticConversionEntity } from '../../types';
 import { queryToFetchDataForTourIdDateAndBtnId, updateClicks, insertConversion } from './queries';
 
-export const refreshDailyConversionData = async () => {
+export const refreshHourlyConversionData = async () => {
   const conversionJob = new ConversionJob();
   await conversionJob.executeJob();
 };
 
 type Conversion = AthenaConversionEntity | AnalyticConversionEntity
 
-export class ConversionJob extends RefreshDailyBase<Conversion> {
+export class ConversionJob extends RefreshHourlyBase<Conversion> {
   
   protected getJobType(): JobType {
     return JobType.REFRESH_TOUR_CONVERSION;
