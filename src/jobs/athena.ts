@@ -37,6 +37,7 @@ export const runAthenaQuery = async (query: string): Promise<string> => {
 export const processDataFromRaw = async<T> (queryExecutionId: string):Promise<T[]>  => {
   const result: T[] = [];
   let nextToken: string | undefined = undefined;
+  let pageNo = 0;
   do {
     const getQueryResultsCommand = new GetQueryResultsCommand({
       QueryExecutionId: queryExecutionId,
@@ -45,20 +46,21 @@ export const processDataFromRaw = async<T> (queryExecutionId: string):Promise<T[
     const getQueryResults: GetQueryResultsCommandOutput = await athenaClient.send(getQueryResultsCommand);
     nextToken = getQueryResults.NextToken;
    
-    const queryResultChunk: T[] = retriveExecutedQueryData(getQueryResults);
+    const queryResultChunk: T[] = retriveExecutedQueryData(getQueryResults, pageNo);
     result.push(...queryResultChunk);
+    pageNo++;
   } while (nextToken);
   return result;
 };
 
 export const retriveExecutedQueryData = <T>(
-  queryExecutionResult: GetQueryResultsCommandOutput): T[] => {
+  queryExecutionResult: GetQueryResultsCommandOutput,
+  pageNo: number): T[] => {
   const columnNames: any = queryExecutionResult.ResultSet?.ResultSetMetadata?.ColumnInfo?.map(column => column.Name);
   const rows: any = queryExecutionResult.ResultSet?.Rows;
-  const str = rows[0].Data[0].VarCharValue as string;
-  const correctRowIndex = str.startsWith('payload_') === true ? 1 : 0;
+  const dataRowIndex = pageNo ? 0 : 1; // If it's the first page then only first row has header
   const results: T[]= [];
-  for (let i = correctRowIndex; i < rows.length; i++) {
+  for (let i = dataRowIndex; i < rows.length; i++) {
     const rowData = rows[i].Data.map((column: { VarCharValue: string; }) => column.VarCharValue);
     const rowObject: any = {};
     for (let j = 0; j < columnNames.length; j++) {
