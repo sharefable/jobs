@@ -26,8 +26,7 @@ if (!( process.env.APP_ENV
   && process.env.AWS_GLUE_DB_NAME
   && process.env.AWS_GLUE_CRAWLER_NAME
   && process.env.AWS_ATHENA_OUTPUT_LOCATION
-  && process.env.AWS_ATHENA_REGION
-  && process.env.JOB_ENV)) {
+  && process.env.AWS_ATHENA_REGION)) {
   throw new Error('Environment vars are not loaded properly');
 }
 
