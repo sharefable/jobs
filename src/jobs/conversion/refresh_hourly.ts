@@ -20,8 +20,8 @@ export class ConversionJob extends RefreshHourlyBase<Conversion> {
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
     return successData ? 
-      getConversionData(successData.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime):
-      getConversionData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);
+      getConversionData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
+      getConversionData('2023010100', this.baseValues.jobInfo.jobRunTime);
   }
   
   protected async getDataFromAnalyticsDb (

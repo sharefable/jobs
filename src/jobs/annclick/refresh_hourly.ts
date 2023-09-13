@@ -24,8 +24,8 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
     return successData ?
-      getAnnTourClicksData(successData.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime):
-      getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);
+      getAnnTourClicksData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
+      getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobRunTime);
   }
   
   protected async getDataFromAnalyticsDb (

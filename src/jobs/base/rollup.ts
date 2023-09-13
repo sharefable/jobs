@@ -16,8 +16,8 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
         if (timePortion === '23:59:59') {
           await this.updateToDaily(annClick, updatedAt);
         } 
-        await success();
       }
+      await success();
     } catch (error) {
       await failure((error as Error).message);
       captureException(error as Error);

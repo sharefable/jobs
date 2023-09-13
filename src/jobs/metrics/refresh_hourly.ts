@@ -19,8 +19,9 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
 
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
-    return successData ? getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobDataScanningTime):
-      getMetricsData('2023010100', this.baseValues.jobInfo.jobDataScanningTime);
+    return successData ? 
+      getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
+      getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
   }
 
   protected async getDataFromAnalyticsDb (queryResult: AthenaMetricsEntity): Promise<AnalyticMetricsEntity[]> {
