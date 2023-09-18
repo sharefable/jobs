@@ -19,8 +19,8 @@ export class RollupMetricsJob extends RollUpBase<AnalyticMetricsEntity> {
   protected async updateToDaily (annClickData: AnalyticMetricsEntity, updatedAt: string): Promise<void> {
     await updateMetricsTypeToDaily(annClickData, updatedAt);
   }
-  
-  protected async getPrevDateData (prevYmd: string): Promise<AnalyticMetricsEntity[]> {
-    return await queryToGetPrevDateData(prevYmd, TableName.AnalyticsTourMetrics);
+
+  protected async getPrevDataFromDbForAperiod(lastSuccessYmd: string, currentYmd: string): Promise<AnalyticMetricsEntity[]> {
+    return await queryToGetPrevDateData(lastSuccessYmd, currentYmd, TableName.AnalyticsTourMetrics);
   }
 }

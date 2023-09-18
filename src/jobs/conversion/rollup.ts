@@ -19,7 +19,7 @@ export class RollupConversionJob extends RollUpBase<AnalyticConversionEntity> {
     await updateConversionTypeToDaily(annClickData, updatedAt);
   }
 
-  protected async getPrevDateData (prevYmd: string): Promise<AnalyticConversionEntity[]> {
-    return await queryToGetPrevDateData(prevYmd, TableName.AnalyticsConversion);
+  protected async getPrevDataFromDbForAperiod(lastSuccessYmd: string, currentYmd: string): Promise<AnalyticConversionEntity[]> {
+    return await queryToGetPrevDateData(lastSuccessYmd, currentYmd, TableName.AnalyticsConversion);
   }
 }

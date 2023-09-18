@@ -8,8 +8,8 @@ export const sqlQueryToSelectLastSuccessData = async<Job> (jobType: JobType): Pr
   return await executeQuery(sqlQuery);
 };
 
-export const queryToGetPrevDateData = async<T> (ymd: string, tableName: TableName): Promise<T[]>=> {
-  const query = `SELECT * FROM ${tableName} WHERE date_ymd = ${ymd}
+export const queryToGetPrevDateData = async<T> (lastSuccessYmd: string, currentYmd: string, tableName: TableName): Promise<T[]>=> {
+  const query = `SELECT * FROM ${tableName} WHERE date_ymd >= ${lastSuccessYmd} AND date_ymd < ${currentYmd}
                  AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
   return await executeQuery(query);
 };

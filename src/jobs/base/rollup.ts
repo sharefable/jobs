@@ -1,6 +1,9 @@
-import { getCreatedAtAndUpdateAt, getPreviousDate, getTimeFromUpdatedAt } from '../../utils';
+import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries';
+import { getCreatedAtAndUpdateAt, getTimeFromUpdatedAt, getYmd } from '../../utils';
 import { JobBase } from './job';
 import { captureException } from '@sentry/node';
+import { Job, JobInfo } from '../../types';
+import { JobType } from 'api-contract';
 
 export abstract class RollUpBase<T extends { updated_at: string }> extends JobBase {
     
@@ -8,8 +11,7 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
     const markAsInProgress = await this.createJob(this.getJobType());
     const [success, failure] = await markAsInProgress();
     try {
-      const prevYmd: string = getPreviousDate(this.baseValues.jobInfo.jobRunTime);
-      const annClicks: T[] = await this.getPrevDateData(prevYmd);
+      const annClicks: T[] = await this.getDbDataToUpdate();
       for (const annClick of annClicks) {
         const updatedAt: string = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
         const timePortion = getTimeFromUpdatedAt(annClick.updated_at);
@@ -23,8 +25,28 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
       captureException(error as Error);
     }
   }
-    
-  protected abstract getPrevDateData(prevYmd: string): Promise<T[]>;
+
+  protected async getLastSuccessData (jobType: JobType): Promise<any> {
+    let lastSuccessYmd = '20230101';
+    const jobData: Job[] = await sqlQueryToSelectLastSuccessData(jobType);
+    if (jobData.length !== 0) {
+      const jobDataRunTime: JobInfo =  JSON.parse(jobData.at(0)!.info);
+      lastSuccessYmd = getYmd(jobDataRunTime.jobRunTime);
+    } 
+    return lastSuccessYmd;
+  }
+
+  protected async getDbDataToUpdate (): Promise<T[]> {
+    const lastSuccessYmd = await this.getLastSuccessData(this.getJobType());
+    const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
+    const analyticsData: T[] = await this.getPrevDataFromDbForAperiod(lastSuccessYmd, currentYmd);
+    if (lastSuccessYmd === '20230101' && analyticsData.length === 0) {
+      this.baseValues.jobInfo.jobRunTime = '2023010100';
+    }
+    return analyticsData;
+  }
+
+  protected abstract getPrevDataFromDbForAperiod(lastSuccessYmd: string, currentYmd: string): Promise<T[]>;
       
   protected abstract updateToDaily(queryResult: T, createdAtAndUpdatedAt: string): Promise<void>;
 }

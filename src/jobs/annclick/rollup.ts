@@ -1,8 +1,9 @@
 import { JobType } from '../../api-contract';
 import { RollUpBase } from '../base/rollup';
 import { queryToGetPrevDateData } from '../common_queries/jobs_queries';
-import {  AnalyticsAnnClickEntity, TableName } from '../../types';
+import {  AnalyticsAnnClickEntity, Job, JobInfo, TableName } from '../../types';
 import { updateAnnTourTypeToDaily } from './queries';
+import { getYmd } from '../../utils';
 
 
 export const rollupCurrentToDailyForAnnClickData = async () => {
@@ -11,7 +12,7 @@ export const rollupCurrentToDailyForAnnClickData = async () => {
 };
 
 export class RollupAnnClickJob extends RollUpBase<AnalyticsAnnClickEntity> {
-
+ 
   protected getJobType(): JobType {
     return JobType.ROLLUP_ANN_CLICK_CURRENT_TO_DAILY;
   }
@@ -20,9 +21,8 @@ export class RollupAnnClickJob extends RollUpBase<AnalyticsAnnClickEntity> {
     await updateAnnTourTypeToDaily(annClickData, updatedAt);
   }
 
-  protected async getPrevDateData (prevYmd: string): Promise<AnalyticsAnnClickEntity[]> {
-    const annTourClickData: AnalyticsAnnClickEntity[] = 
-    await queryToGetPrevDateData(prevYmd, TableName.AnalyticTourAnnClicks);
-    return annTourClickData;
+  protected async getPrevDataFromDbForAperiod(lastSuccessYmd: string, currentYmd: string): Promise<AnalyticsAnnClickEntity[]> {
+    return await queryToGetPrevDateData(lastSuccessYmd, currentYmd, TableName.AnalyticTourAnnClicks);
   }
+
 }
