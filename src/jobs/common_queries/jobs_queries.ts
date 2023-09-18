@@ -1,4 +1,4 @@
-import { TableName } from 'types';
+import { TableName } from '../../types';
 import { EntryDurationType, JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQuery } from '../mysql';
 

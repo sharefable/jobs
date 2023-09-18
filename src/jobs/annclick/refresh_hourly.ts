@@ -1,9 +1,10 @@
 import { JobType } from '../../api-contract';
 import { getAnnTourClicksData } from '../common_queries/athena_queries';
-import { JobInfo, AnalyticsAnnClickEntity, AthenaAnnClickEntity } from '../../types';
+import { JobInfo, AnalyticsAnnClickEntity, AthenaAnnClickEntity, TableName } from '../../types';
 import { calculateAverage } from '../../utils';
 import { getCurrentTypeForTourIdAnnIdAndYmd, updateViewsForAnnClickTour, insertAnnClick } from './queries';
 import { RefreshHourlyBase } from '../base/refresh_hourly';
+import { updateUpdatedAt } from '../common_queries/analytics_queries';
 
 /* TODO: we need to handle in case of hourly job gets failed at one point 
    and not able to change the entry type to CURRENT to DAILY */
@@ -23,9 +24,11 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
   
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
-    return successData ?
-      getAnnTourClicksData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
-      getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    if (!successData) {
+      this.baseValues.updateAnalyticsDataToLastHour = true;
+      return getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    } 
+    return getAnnTourClicksData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
   }
   
   protected async getDataFromAnalyticsDb (
@@ -62,4 +65,9 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
   protected async insertNewRow (queryResult: AthenaAnnClickEntity, currentAndUpdatedAt: string): Promise<void> {
     await insertAnnClick(queryResult, currentAndUpdatedAt);
   }
+
+  protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
+    await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticTourAnnClicks);
+  }
+
 }

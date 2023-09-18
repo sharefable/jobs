@@ -1,8 +1,9 @@
 import { JobType } from '../../api-contract';
 import { getMetricsData } from '../common_queries/athena_queries';
 import { RefreshHourlyBase } from '../base/refresh_hourly';
-import { AthenaMetricsEntity, AnalyticMetricsEntity, JobInfo } from '../../types';
+import { AthenaMetricsEntity, AnalyticMetricsEntity, JobInfo, TableName } from '../../types';
 import { insertMetrics, queryToFetchDataForTourIdAndDate, updateViewsForMetrics } from './queries';
+import { updateUpdatedAt } from '../common_queries/analytics_queries';
 
 export const refreshHourlyMetricsData = async () => {
   const metricsJob = new MetricsJob();
@@ -19,9 +20,11 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
 
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
-    return successData ? 
-      getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
-      getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    if (!successData) {
+      this.baseValues.updateAnalyticsDataToLastHour = true;
+      return getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    }
+    return getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
   }
 
   protected async getDataFromAnalyticsDb (queryResult: AthenaMetricsEntity): Promise<AnalyticMetricsEntity[]> {
@@ -50,5 +53,9 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
     createdAtAndUpdatedAt: string, 
   ): Promise<void> {
     await insertMetrics(queryResult, createdAtAndUpdatedAt);
+  }
+
+  protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
+    await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsTourMetrics);
   }
 }

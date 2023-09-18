@@ -6,7 +6,7 @@ import { captureException } from '@sentry/node';
 
 export abstract class JobBase {
 
-  protected baseValues = {jobKey: randomUUID(), jobInfo: getUTCTimesForJob()};
+  protected baseValues = {jobKey: randomUUID(), jobInfo: getUTCTimesForJob(), updateAnalyticsDataToLastHour: false};
   
   protected abstract getJobType(): JobType 
     

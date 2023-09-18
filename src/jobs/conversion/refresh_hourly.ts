@@ -1,8 +1,9 @@
 import { JobType } from '../../api-contract';
 import { getConversionData } from '../common_queries/athena_queries';
 import { RefreshHourlyBase } from '../base/refresh_hourly';
-import { JobInfo, AthenaConversionEntity, AnalyticConversionEntity } from '../../types';
+import { JobInfo, AthenaConversionEntity, AnalyticConversionEntity, TableName } from '../../types';
 import { queryToFetchDataForTourIdDateAndBtnId, updateClicks, insertConversion } from './queries';
+import { updateUpdatedAt } from '../common_queries/analytics_queries';
 
 export const refreshHourlyConversionData = async () => {
   const conversionJob = new ConversionJob();
@@ -19,9 +20,11 @@ export class ConversionJob extends RefreshHourlyBase<Conversion> {
  
   protected async getAthenaQuery (): Promise<string> {
     const successData: JobInfo = await this.getJobSuccessData();
-    return successData ? 
-      getConversionData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime):
-      getConversionData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    if (!successData) {
+      this.baseValues.updateAnalyticsDataToLastHour = true;
+      return getConversionData('2023010100', this.baseValues.jobInfo.jobRunTime);
+    }
+    return getConversionData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
   }
   
   protected async getDataFromAnalyticsDb (
@@ -44,5 +47,9 @@ export class ConversionJob extends RefreshHourlyBase<Conversion> {
     createdAtAndUpdatedAt: string,
   ): Promise<void> {
     await insertConversion(queryResult, createdAtAndUpdatedAt);
+  }
+
+  protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
+    await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsConversion);
   }
 }
