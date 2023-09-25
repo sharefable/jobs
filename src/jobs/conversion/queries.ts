@@ -1,5 +1,5 @@
 import { EntryDurationType } from '../../api-contract';
-import { executeQueryToFetchData, executeQueryToInsertOrUpdateData } from '../mysql';
+import { executeQuery } from '../mysql';
 import {  TableName, AnalyticConversionEntity, AthenaConversionEntity } from '../../types';
 
 export const queryToFetchDataForTourIdDateAndBtnId = async (
@@ -8,7 +8,7 @@ export const queryToFetchDataForTourIdDateAndBtnId = async (
   const query = `SELECT * From ${TableName.AnalyticsConversion} where tour_id = ${entityData.payload_tour_id} and 
                    date_ymd = ${entityData.ymd} and btn_id = '${entityData.payload_btn_id}' 
                    and entry_duration_type='${EntryDurationType.CURRENT}'`;
-  return await executeQueryToFetchData(query);
+  return await executeQuery(query);
 };
     
 export const updateConversionTypeToDaily = async (entityData: AnalyticConversionEntity, updatedAt: string) => {
@@ -16,7 +16,7 @@ export const updateConversionTypeToDaily = async (entityData: AnalyticConversion
                    entry_duration_type = '${EntryDurationType.DAILY}' 
                    WHERE date_ymd = ${entityData.date_ymd} AND tour_id = ${entityData.tour_id} 
                    AND btn_id = '${entityData.btn_id}' AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
-  await executeQueryToInsertOrUpdateData(query);
+  await executeQuery(query);
 };
   
 export const updateClicks = async (addedClicks: number, 
@@ -25,7 +25,7 @@ export const updateClicks = async (addedClicks: number,
   const query = `UPDATE ${TableName.AnalyticsConversion} SET updated_at= '${updatedAt}', clicks = ${addedClicks} 
                   WHERE date_ymd = ${entityData.ymd} AND tour_id = ${entityData.payload_tour_id} AND 
                   btn_id = '${entityData.payload_btn_id}' AND entry_duration_type = '${EntryDurationType.CURRENT}';`; 
-  await executeQueryToInsertOrUpdateData(query);
+  await executeQuery(query);
 };
   
 export const insertConversion = async (
@@ -36,5 +36,5 @@ export const insertConversion = async (
                   '${createdAndUpdatedAt}', ${entityData.ymd}, '${EntryDurationType.CURRENT}', 
                   ${entityData.payload_tour_id}, '${entityData.payload_btn_id}',
                   ${entityData.clicks})`;
-  await executeQueryToInsertOrUpdateData(query);
+  await executeQuery(query);
 };

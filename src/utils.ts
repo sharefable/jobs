@@ -69,15 +69,9 @@ export const getTimeFromUpdatedAt = (updatedAt: string) => {
   return `${hours}:${minutes}:${sec}`;
 };
 
-export function getPreviousDate(timestamp: string): string {
-  const year = parseInt(timestamp.substring(0, 4));
-  const month = parseInt(timestamp.substring(4, 6)) - 1; 
-  const day = parseInt(timestamp.substring(6, 8));
-  const hour = parseInt(timestamp.substring(8, 10));
-  const currentDate = new Date(year, month, day, hour);
-  currentDate.setDate(currentDate.getDate() - 1);
-  return getUtcDateHour(currentDate).substring(0,8);
-}
+export const getYmd = (dateAndHour: string) => {
+  return dateAndHour.substring(0, 8);
+};
 
 export const calculateAverage = (arr1: any[], arr2:any[]) => {
   const maxLength = Math.max(arr1.length, arr2.length);

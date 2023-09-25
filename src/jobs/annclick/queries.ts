@@ -1,5 +1,5 @@
 import { EntryDurationType } from '../../api-contract';
-import { executeQueryToFetchData, executeQueryToInsertOrUpdateData } from '../mysql';
+import { executeQuery } from '../mysql';
 import {  TableName, AnalyticsAnnClickEntity, AthenaAnnClickEntity } from '../../types';
 
 export const getCurrentTypeForTourIdAnnIdAndYmd = async (
@@ -8,7 +8,7 @@ export const getCurrentTypeForTourIdAnnIdAndYmd = async (
   const query = `SELECT * FROM ${TableName.AnalyticTourAnnClicks} WHERE tour_id = 
                   ${queryEntity.payload_tour_id} AND ann_id = '${queryEntity.payload_ann_id}'
                   AND entry_duration_type= '${EntryDurationType.CURRENT}' AND date_ymd = ${queryEntity.ymd};`;
-  return await executeQueryToFetchData(query); 
+  return await executeQuery(query); 
 };
   
 export const updateViewsForAnnClickTour = async (tour_id: number, 
@@ -22,14 +22,14 @@ export const updateViewsForAnnClickTour = async (tour_id: number,
                   views_all = ${addedViewsAll}, views_unique = ${addedViewsUnique},time_spent_dist = '${timeSpentDist}'
                   WHERE date_ymd = ${ymd} AND tour_id =${tour_id} AND ann_id = '${ann_id}' 
                   AND entry_duration_type = '${EntryDurationType.CURRENT}'`;
-  await executeQueryToInsertOrUpdateData(query);
+  await executeQuery(query);
 };
   
 export const updateAnnTourTypeToDaily =  async (entityData: AnalyticsAnnClickEntity, updatedAt: string) => {
   const query = `UPDATE ${TableName.AnalyticTourAnnClicks} SET updated_at = '${updatedAt}', 
                   entry_duration_type = '${EntryDurationType.DAILY}' WHERE tour_id = ${entityData.tour_id} 
-                  AND ann_id = '${entityData.ann_id}' AND entry_duration_type = '${EntryDurationType.CURRENT}';`;
-  await executeQueryToInsertOrUpdateData(query);
+                  AND ann_id = '${entityData.ann_id}' AND date_ymd = ${entityData.date_ymd} AND entry_duration_type = '${EntryDurationType.CURRENT}';`;
+  await executeQuery(query);
 };
   
 export const insertAnnClick =  async (
@@ -41,5 +41,5 @@ export const insertAnnClick =  async (
                   VALUES ('${currentAndUpdatedAt}', '${currentAndUpdatedAt}', ${entityData.ymd},
                   '${EntryDurationType.CURRENT}', ${entityData.payload_tour_id}, '${entityData.payload_ann_id}',
                   ${entityData.views_all}, ${entityData.views_unique}, '${entityData.time_spent_dist}')`;
-  await executeQueryToInsertOrUpdateData(query);
+  await executeQuery(query);
 };
