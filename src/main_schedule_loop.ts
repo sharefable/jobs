@@ -9,7 +9,7 @@ import cron from 'node-cron';
 import { sentryProgress, sentrySuccess } from './sentry';
 
 export default async function mainScheduleLoop() {
-  cron.schedule('0 */1 * * * ', async () => {
+  cron.schedule('15 * * * * ', async () => {
     const jobName = 'hourly-job';
     const checkInId = sentryProgress(jobName);
     const isSuccess: boolean = await refreshPartition(); 
