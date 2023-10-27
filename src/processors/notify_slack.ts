@@ -3,7 +3,7 @@ import { TMsgAttrs } from '../types';
 import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 import mailchimp from '@mailchimp/mailchimp_marketing';
-
+import { captureException } from '@sentry/node';
 
 mailchimp.setConfig({
   apiKey: process.env.MAILCHIMP_API_KEY,
@@ -52,7 +52,7 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
     } 
   } catch (error) {
     console.log(error);
-    // TODO: Raise sentry error
+    captureException(error as Error);
   }
 };
 

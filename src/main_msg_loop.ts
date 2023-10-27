@@ -10,6 +10,7 @@ import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
 import { processEventsToNotify } from './processors/notify_slack';
+import { createLinkedAccountForNewUser } from './processors/cobalt';
 
 const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -64,6 +65,9 @@ export default function mainMsgLoop() {
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
         if (msg.Body === 'NF') {
           await processEventsToNotify(msgAttrs);
+          await deleteMsg();
+        } else if (msg.Body === 'NEW_ORG') {
+          await createLinkedAccountForNewUser(msgAttrs);
           await deleteMsg();
         } else {
           if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
