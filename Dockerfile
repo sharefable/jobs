@@ -8,6 +8,7 @@ COPY . .
 
 FROM base as builder
 WORKDIR /usr/sqs_jobs
+RUN npm run tscv
 RUN npm run build
 
 FROM node:16.13.1-alpine3.15
