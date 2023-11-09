@@ -3,6 +3,7 @@ import {
   GetQueryExecutionCommand,
   GetQueryResultsCommand, 
   GetQueryResultsCommandOutput,
+  QueryExecutionState,
   StartQueryExecutionCommand, 
 } from '@aws-sdk/client-athena';
 
@@ -18,15 +19,15 @@ export const runAthenaQuery = async (query: string): Promise<string> => {
   if (queryExecution.$metadata.httpStatusCode === 200) {
     const queryExecutionId: string = queryExecution.QueryExecutionId as string;
     const getCommand = new GetQueryExecutionCommand({ QueryExecutionId: queryExecutionId });
-    let queryStatus;
-    while (queryStatus !== 'SUCCEEDED') {
+    let queryStatus: QueryExecutionState | string | undefined;
+    do {
+      await new Promise(resolve => setTimeout(resolve, 5000));
       const getResponse = await athenaClient.send(getCommand);
       queryStatus = getResponse.QueryExecution?.Status?.State;
-      if (queryStatus === 'FAILED' || queryStatus === 'CANCELLED') {
+      if (queryStatus === QueryExecutionState.FAILED || queryStatus === QueryExecutionState.CANCELLED) {
         throw new Error(queryStatus);
       }
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    }
+    } while (queryStatus !== QueryExecutionState.SUCCEEDED);
 
     return queryExecutionId;
   } else {

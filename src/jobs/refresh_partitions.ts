@@ -47,7 +47,7 @@ class RefreshPartition extends JobBase {
 
   private async waitForCrawlerReady (glueClient: GlueClient) {
     let crawlerState: CrawlerState | string | undefined;
-    do{
+    do {
       await new Promise(resolve => setTimeout(resolve, 5000));
       const getCommand = new GetCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
       const getResult: GetCrawlerCommandOutput = await glueClient.send(getCommand);
