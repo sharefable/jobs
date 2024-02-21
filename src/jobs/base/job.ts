@@ -3,6 +3,7 @@ import { JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQuery } from '../mysql';
 import { randomUUID } from 'crypto';
 import { captureException } from '@sentry/node';
+import * as log from '../../log';
 
 export abstract class JobBase {
 
@@ -37,6 +38,7 @@ export abstract class JobBase {
         ];
       };
     } catch (error) {
+      log.err('Something went wrong', (error as Error).message);
       captureException(error as Error);
     } 
   }
