@@ -3,6 +3,13 @@ import { TMsgAttrs } from '../types';
 import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 
+
+// mailchimp.setConfig({
+//   apiKey: "YOUR_API_KEY",
+//   server: "YOUR_SERVER_PREFIX",
+// });
+
+
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
 
 const PAYLOAD_PREFIX = 'payload_';
@@ -28,6 +35,7 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
       case NfEvents.NEW_USER_SIGNUP: {
         text = `\`\`\`\nevent_name: ${props.eventName}${payloadVarStr}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
+        await addMailChimpContact(props as Record<string,string>);
         break;
       } 
 
@@ -73,5 +81,9 @@ const notifySlack = async (url: string, text: string) => {
     return;
   } 
   log.info('Notification failed');
+};
+
+async function addMailChimpContact(payload: Record<string,string>) {
+
 };
   
