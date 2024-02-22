@@ -1,4 +1,5 @@
 import { 
+  CrawlerState,
   GetCrawlerCommand, 
   GetCrawlerCommandOutput, 
   GlueClient, 
@@ -28,12 +29,13 @@ class RefreshPartition extends JobBase {
       const command: StartCrawlerCommand = new StartCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
       const glueResult: StartCrawlerCommandOutput = await glueClient.send(command);
       if(glueResult.$metadata.httpStatusCode === 200) {
-        await this.getCrawlerStatus(glueClient);
+        await this.waitForCrawlerReady(glueClient);
         await success();
         return true;
       } else {
-        await failure('Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}');
-        Sentry.captureException(`Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}`);
+        await failure(`Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}`);
+        Sentry.captureException(
+          `Httpstatuscode exception while running the crawler ${glueResult.$metadata.httpStatusCode}`);
         return false;
       }
     } catch (error) {
@@ -43,16 +45,16 @@ class RefreshPartition extends JobBase {
     }
   }
 
-  private async getCrawlerStatus (glueClient: GlueClient) {
-    let crawlerStatus;
-    while (crawlerStatus !== 'READY') {
-      if (crawlerStatus === 'FAILED' || crawlerStatus === 'ERROR' || crawlerStatus === 'TIMEOUT') {
-        throw new Error(`crawlerStatus ${crawlerStatus}`);
-      } 
+  private async waitForCrawlerReady (glueClient: GlueClient) {
+    let crawlerState: CrawlerState | string | undefined;
+    do {
       await new Promise(resolve => setTimeout(resolve, 5000));
       const getCommand = new GetCrawlerCommand({ Name: process.env.AWS_GLUE_CRAWLER_NAME });
       const getResult: GetCrawlerCommandOutput = await glueClient.send(getCommand);
-      crawlerStatus = getResult.Crawler?.State;
-    }
+      if (getResult.$metadata.httpStatusCode !== 200) {
+        throw new Error(`Httpstatuscode exception while running the crawler ${getResult.$metadata.httpStatusCode}`);
+      }
+      crawlerState = getResult.Crawler!.State;
+    } while (crawlerState !== CrawlerState.READY);
   }
 }

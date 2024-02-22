@@ -9,7 +9,8 @@ export const pool  = createPool({
   host : cs.hostname,
   user : process.env.DB_USER,
   password : process.env.DB_PWD,
-  database : 'fable_tour_app',
+  database : process.env.DB_DB,
+  port : cs.port,
 });
 
 export const getConnection = promisify(pool.getConnection).bind(pool);
