@@ -1452,6 +1452,11 @@
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.14.tgz"
   integrity sha512-U3PUjAudAdJBeC2pgN8uTIKgxrb4nlDF3SF0++EldXQvQBGkpFZMSnwQiIoDU77tv45VgNkl/L4ouD+rEomujw==
 
+"@types/mailchimp__mailchimp_marketing@^3.0.18":
+  version "3.0.18"
+  resolved "https://registry.yarnpkg.com/@types/mailchimp__mailchimp_marketing/-/mailchimp__mailchimp_marketing-3.0.18.tgz#84248221bcfae08082690874f8d291e81011e549"
+  integrity sha512-YtdvNe6SzDpLC0fvMNPvnhwDlhBnMc1gcbSjV+yBsjGKMvkOZ8Ixq2aH2FWJ82Z6AMnaVt0xnpzwNv0+JEe0wA==
+
 "@types/mime@*":
   version "3.0.3"
   resolved "https://registry.npmjs.org/@types/mime/-/mime-3.0.3.tgz"
