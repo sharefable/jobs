@@ -22,6 +22,7 @@ const envLoadingStatus = [
   'DB_CONN_URL',
   'DB_USER',
   'DB_PWD',
+  'DB_DB',
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
   'AWS_S3_REGION',
