@@ -1,7 +1,7 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop from './main_schedule_loop';
+import mainScheduleLoop, {runHouerlyJob} from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
@@ -46,6 +46,11 @@ app.use(bodyParser.json());
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'up' });
+});
+
+app.post('/triggerhourly', () => {
+  runHouerlyJob();
+  log.info('Triggered');
 });
 
 app.get('/info', (req: Request, res: Response) => {

@@ -7,12 +7,15 @@ import { refreshHourlyMetricsData } from './jobs/metrics/refresh_hourly';
 import { refreshPartition } from './jobs/refresh_partitions';
 import cron from 'node-cron';
 import { sentryProgress, sentrySuccess } from './sentry';
+import {captureException} from '@sentry/node';
+import * as log from './log';
 
-export default async function mainScheduleLoop() {
-  cron.schedule('15 * * * * ', async () => {
-    const jobName = 'hourly-job';
-    const checkInId = sentryProgress(jobName);
-    const isSuccess: boolean = await refreshPartition(); 
+export async function runHouerlyJob() {
+  const jobName = 'hourly-job';
+  const checkInId = sentryProgress(jobName);
+  let isSuccess = false; 
+  try {
+    isSuccess = await refreshPartition();
     if(isSuccess) {
       await Promise.all([
         refreshHourlyAnnClickData(),
@@ -21,16 +24,34 @@ export default async function mainScheduleLoop() {
       ]);
     } 
     sentrySuccess(checkInId, jobName);
-  });
+  } catch (err) {
+    log.err('#runHouerlyJob', (err as Error).stack);
+    captureException(err as Error);
+  }
+}
 
-  cron.schedule('0 15 * * * ', async () => {
-    const jobName = 'roll-up';
-    const checkInId = sentryProgress(jobName);
+async function runRollup() {
+  const jobName = 'roll-up';
+  const checkInId = sentryProgress(jobName);
+  try {
     await Promise.all([
       rollupCurrentToDailyForAnnClickData(),
       rollupCurrentToDailyForConversionData(),
       rollupCurrentToDailyForMetricsData(),
     ]);
     sentrySuccess(checkInId, jobName);
+  } catch (err) {
+    log.err('#runRollup', (err as Error).stack);
+    captureException(err as Error);
+  }
+}
+
+export default async function mainScheduleLoop() {
+  cron.schedule('15 * * * * ', async () => {
+    await runHouerlyJob();
+  });
+
+  cron.schedule('0 15 * * * ', async () => {
+    await runRollup();
   });
 }
