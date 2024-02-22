@@ -13,21 +13,36 @@ const INFO = {
   timeInSecSinceLastPoll: 0,
 };
 
-if (!( process.env.APP_ENV
-  && process.env.SQS_Q_REGION
-  && process.env.SQS_Q_NAME
-  && process.env.DB_CONN_URL
-  && process.env.DB_USER
-  && process.env.DB_PWD
-  && process.env.ETS_REGION
-  && process.env.TRANSCODER_PIPELINE_ID
-  && process.env.AWS_S3_REGION
-  && process.env.AWS_GLUE_REGION
-  && process.env.AWS_GLUE_DB_NAME
-  && process.env.AWS_GLUE_CRAWLER_NAME
-  && process.env.AWS_ATHENA_OUTPUT_LOCATION
-  && process.env.AWS_ATHENA_REGION)) {
-  throw new Error('Environment vars are not loaded properly');
+
+let envLoadingHasErr = false;
+const envLoadingStatus = [
+  'APP_ENV',
+  'SQS_Q_REGION',
+  'SQS_Q_NAME',
+  'DB_CONN_URL',
+  'DB_USER',
+  'DB_PWD',
+  'ETS_REGION',
+  'TRANSCODER_PIPELINE_ID',
+  'AWS_S3_REGION',
+  'AWS_GLUE_REGION',
+  'AWS_GLUE_DB_NAME',
+  'AWS_GLUE_CRAWLER_NAME',
+  'AWS_ATHENA_OUTPUT_LOCATION',
+  'AWS_ATHENA_REGION',
+].reduce(( status, name ) => {
+  if (name in process.env) status[name] = 'ok';
+  else {
+    status[name] = 'not-found';
+    envLoadingHasErr = true;
+  }
+  return status;
+}, {} as Record<string, 'ok' | 'not-found'>);
+
+if (envLoadingHasErr) {
+  log.warn(JSON.stringify(envLoadingStatus, null, 2));
+  log.err('Required env variables are not found');
+  process.exit(1);
 }
 
 process.on('SIGTERM', shutDown);
