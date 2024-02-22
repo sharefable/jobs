@@ -31,7 +31,7 @@ const envLoadingStatus = [
   'AWS_ATHENA_OUTPUT_LOCATION',
   'AWS_ATHENA_REGION',
 ].reduce(( status, name ) => {
-  if (name in process.env) status[name] = 'ok';
+  if (process.env[name]) status[name] = 'ok';
   else {
     status[name] = 'not-found';
     envLoadingHasErr = true;
