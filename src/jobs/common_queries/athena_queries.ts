@@ -15,38 +15,54 @@ export const getMetricsData = (prevSuccessJobRunAt: string, currentJobRunTime: s
 };
   
 export const getConversionData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
-  const query = `SELECT payload_tour_id,payload_btn_id,ymd, COUNT(payload_ann_id) 
-                   as clicks FROM (select payload_tour_id, payload_ann_id, payload_btn_id,ymd 
-                   FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
-                   cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
-                   as bigint) >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
-                   lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                   < ${currentJobRunTime}) 
-                   subquery GROUP BY payload_tour_id, payload_btn_id, 
-                   ymd; `;
+  const query = `SELECT payload_tour_id,payload_btn_id,ymd, COUNT(payload_ann_id) as clicks 
+               FROM (
+                 select sid, payload_tour_id, payload_ann_id, payload_btn_id, ymd 
+                 FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
+                 cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
+                 as bigint) >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
+                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
+                 < ${currentJobRunTime} GROUP BY payload_tour_id, payload_btn_id, 
+                 ymd, sid, payload_ann_id) 
+                subquery GROUP BY payload_tour_id, payload_btn_id,ymd;`;
   return query;
 };
   
-export const getAnnTourClicksData= (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
+export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
   const query = `WITH datas AS (
-    SELECT payload_tour_id, ymd, payload_ann_id, COUNT(sid) AS viewss_all
-    FROM ${AWS_GLUE_TABLE_NAME}
-    WHERE payload_btn_type != 'prev'
-    AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
-    AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
-    GROUP BY payload_tour_id, ymd, payload_ann_id, sid 
-  )
-  , percentiles AS (
+    SELECT
+    ymd,
+    sid,
+    payload_tour_id,
+    payload_ann_id,
+    SUM(time_spent) AS total_time_spent
+    FROM (
+       SELECT
+          payload_tour_id,
+          ymd,
+          sid,
+          payload_ann_id,
+          COALESCE(uts - LAG(uts) OVER (PARTITION BY payload_tour_id, sid ORDER BY uts ASC), 5) AS time_spent
+       FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev'
+       AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
+       AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
+   ) AS subquery
+   GROUP BY
+    ymd,
+    payload_tour_id,
+    payload_ann_id,
+    sid
+  ), percentiles AS (
     SELECT payload_tour_id, ymd, payload_ann_id,
-           ARRAY[approx_percentile(viewss_all, 0.01) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.05) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.10) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.25) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.50) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.75) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.90) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.95) OVER (PARTITION BY payload_tour_id),
-                 approx_percentile(viewss_all, 0.99) OVER (PARTITION BY payload_tour_id)
+           ARRAY[approx_percentile(total_time_spent, 0.01) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.05) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.10) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.25) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.50) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.75) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.90) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.95) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd),
+                 approx_percentile(total_time_spent, 0.99) OVER (PARTITION BY payload_tour_id, payload_ann_id, ymd)
                 ] AS time_spent_dist
     FROM datas
   )
@@ -58,7 +74,7 @@ export const getAnnTourClicksData= (prevSuccessJobRunAt: string, currentJobRunTi
     AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
     GROUP BY payload_tour_id, payload_ann_id, ymd
   )
-  SELECT f.payload_ann_id, f.payload_tour_id, f.ymd, f.views_all, f.views_unique, p.time_spent_dist
+  SELECT DISTINCT f.payload_ann_id, f.payload_tour_id, f.ymd, f.views_all, f.views_unique, p.time_spent_dist
   FROM first_query f
   left JOIN percentiles p
   ON f.payload_tour_id = p.payload_tour_id AND f.payload_ann_id = p.payload_ann_id AND f.ymd = p.ymd;`;
