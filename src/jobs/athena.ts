@@ -25,7 +25,7 @@ export const runAthenaQuery = async (query: string): Promise<string> => {
       const getResponse = await athenaClient.send(getCommand);
       queryStatus = getResponse.QueryExecution?.Status?.State;
       if (queryStatus === QueryExecutionState.FAILED || queryStatus === QueryExecutionState.CANCELLED) {
-        throw new Error(queryStatus);
+        throw new Error(getResponse.QueryExecution?.Status?.AthenaError?.ErrorMessage || 'Query Failed');
       }
     } while (queryStatus !== QueryExecutionState.SUCCEEDED);
 
