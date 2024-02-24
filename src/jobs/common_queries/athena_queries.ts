@@ -15,15 +15,16 @@ export const getMetricsData = (prevSuccessJobRunAt: string, currentJobRunTime: s
 };
   
 export const getConversionData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
-  const query = `SELECT payload_tour_id,payload_btn_id,ymd, COUNT(payload_ann_id) 
-                   as clicks FROM (select payload_tour_id, payload_ann_id, payload_btn_id,ymd 
-                   FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
-                   cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
-                   as bigint) >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
-                   lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                   < ${currentJobRunTime}) 
-                   subquery GROUP BY payload_tour_id, payload_btn_id, 
-                   ymd; `;
+  const query = `SELECT payload_tour_id,payload_btn_id,ymd, COUNT(payload_ann_id) as clicks 
+               FROM (
+                 select sid, payload_tour_id, payload_ann_id, payload_btn_id, ymd 
+                 FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
+                 cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
+                 as bigint) >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
+                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
+                 < ${currentJobRunTime} GROUP BY payload_tour_id, payload_btn_id, 
+                 ymd, sid, payload_ann_id) 
+                subquery GROUP BY payload_tour_id, payload_btn_id,ymd;`;
   return query;
 };
   
