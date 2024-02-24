@@ -19,6 +19,8 @@ const envLoadingStatus = [
   'APP_ENV',
   'SQS_Q_REGION',
   'SQS_Q_NAME',
+  'MAILCHIMP_API_KEY',
+  'MAILCHIP_SERVER_PREFIX',
   'DB_CONN_URL',
   'DB_USER',
   'DB_PWD',

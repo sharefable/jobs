@@ -2,6 +2,13 @@ import fetch from 'node-fetch';
 import { TMsgAttrs } from '../types';
 import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
+import mailchimp from '@mailchimp/mailchimp_marketing';
+
+
+mailchimp.setConfig({
+  apiKey: process.env.MAILCHIMP_API_KEY,
+  server: process.env.MAILCHIP_SERVER_PREFIX,
+});
 
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
 
@@ -27,7 +34,10 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
     switch (props.eventName) {
       case NfEvents.NEW_USER_SIGNUP: {
         text = `\`\`\`\nevent_name: ${props.eventName}${payloadVarStr}\nenv: ${process.env.APP_ENV}\n\`\`\``;
-        await notifySlack(slackWebhookUrl, text);
+        await Promise.all([
+          notifySlack(slackWebhookUrl, text),
+          addMailChimpContact(props as Record<string,string>),
+        ]);
         break;
       } 
 
@@ -74,4 +84,32 @@ const notifySlack = async (url: string, text: string) => {
   } 
   log.info('Notification failed');
 };
+
+async function addMailChimpContact(payload: Record<string,string>) {
+  const email: string = payload.payload_emailId;
+  const firstName: string = payload.payload_firstName ?? undefined;
+  const lastName: string = payload.payload_lastName ?? undefined;
+
+  log.info(`email=[${email}] firstName=[${firstName}] lastName=[${lastName}]`);
+
+  if (!(email && firstName)) {
+    log.warn('Either email or firstName is empty. Expecting upstream to retry...');
+    return;
+  }
+
+  // listId found in Audience > all contact > settings > audience name and defaults tab
+  const response = await mailchimp.lists.addListMember('4309a88a36', {
+    email_address: email,
+    status: 'subscribed',
+    merge_fields: {
+      FNAME: firstName,
+      LNAME: lastName,
+    },
+    tags: ['Free Trial Signup'],
+  });
+  const data = (response as any).id ? { id: (response as any).id } : response;
+  log.info(
+    `mailchip contact addition response ${JSON.stringify(data, null, 2)}.`,
+  );
+}
   
