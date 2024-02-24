@@ -42,7 +42,9 @@ export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunT
           sid,
           payload_ann_id,
           COALESCE(uts - LAG(uts) OVER (PARTITION BY payload_tour_id, sid ORDER BY uts ASC), 5) AS time_spent
-       FROM ${AWS_GLUE_TABLE_NAME}
+       FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev'
+       AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
+       AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
    ) AS subquery
    GROUP BY
     ymd,
