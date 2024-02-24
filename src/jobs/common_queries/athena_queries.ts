@@ -4,27 +4,45 @@ import { AWS_GLUE_TABLE_NAME } from '../glue_tables';
 // Here currentJobRunTime represents 5:59:59 time
 
 export const getMetricsData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
-  const query = `SELECT payload_tour_id, ymd, COUNT(sid) AS views_all, COUNT(distinct aid) AS views_unique FROM 
-                   (SELECT aid, payload_tour_id, sid, ymd FROM 
-                   ${AWS_GLUE_TABLE_NAME} WHERE cast(concat(cast(ymd as varchar), 
-                   lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                   >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
-                   lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                   < ${currentJobRunTime}) subquery GROUP BY payload_tour_id, ymd`;
+  const query = `SELECT 
+                   payload_tour_id, 
+                   ymd, 
+                   COUNT(distinct sid) AS views_all, 
+                   COUNT(distinct aid) AS views_unique 
+                   FROM (
+                    SELECT 
+                    aid, 
+                    payload_tour_id, 
+                    sid, 
+                    ymd FROM  ${AWS_GLUE_TABLE_NAME} WHERE 
+                    cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
+                    AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime}
+                    ) subquery GROUP BY payload_tour_id, ymd`;
   return query;
 };
   
 export const getConversionData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
-  const query = `SELECT payload_tour_id,payload_btn_id,ymd, COUNT(payload_ann_id) as clicks 
-               FROM (
-                 select sid, payload_tour_id, payload_ann_id, payload_btn_id, ymd 
-                 FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
-                 cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) 
-                 as bigint) >= ${prevSuccessJobRunAt} AND cast(concat(cast(ymd as varchar), 
-                 lpad(cast(h as varchar(2)), 2, '0') ) as bigint)
-                 < ${currentJobRunTime} GROUP BY payload_tour_id, payload_btn_id, 
-                 ymd, sid, payload_ann_id) 
-                subquery GROUP BY payload_tour_id, payload_btn_id,ymd;`;
+  const query = `SELECT 
+                   payload_tour_id,
+                   payload_btn_id,
+                   ymd, 
+                   COUNT(payload_ann_id) as clicks 
+                 FROM (
+                   select 
+                      sid, 
+                      payload_tour_id, 
+                      payload_ann_id, 
+                      payload_btn_id, 
+                      ymd 
+                   FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type!='prev' AND 
+                  cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt}
+                  AND cast(concat(cast(ymd as varchar),lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime} 
+                  GROUP BY 
+                  payload_tour_id, 
+                  payload_btn_id, 
+                  ymd, sid, 
+                  payload_ann_id
+                  ) subquery GROUP BY payload_tour_id, payload_btn_id,ymd;`;
   return query;
 };
   
@@ -67,14 +85,27 @@ export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunT
     FROM datas
   )
   , first_query AS (
-    SELECT payload_ann_id, payload_tour_id, ymd, COUNT(sid) AS views_all, COUNT(DISTINCT aid) AS views_unique
-    FROM ${AWS_GLUE_TABLE_NAME}
-    WHERE payload_btn_type != 'prev'
+    SELECT 
+      payload_ann_id, 
+      payload_tour_id, 
+      ymd, 
+      COUNT(distinct sid) AS views_all,
+      COUNT(DISTINCT aid) AS views_unique
+    FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev'
     AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
     AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
-    GROUP BY payload_tour_id, payload_ann_id, ymd
+    GROUP BY 
+     payload_tour_id, 
+     payload_ann_id,
+     ymd
   )
-  SELECT DISTINCT f.payload_ann_id, f.payload_tour_id, f.ymd, f.views_all, f.views_unique, p.time_spent_dist
+  SELECT DISTINCT 
+    f.payload_ann_id, 
+    f.payload_tour_id, 
+    f.ymd,
+    f.views_all,
+    f.views_unique,
+    p.time_spent_dist
   FROM first_query f
   left JOIN percentiles p
   ON f.payload_tour_id = p.payload_tour_id AND f.payload_ann_id = p.payload_ann_id AND f.ymd = p.ymd;`;
