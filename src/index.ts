@@ -66,9 +66,10 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'up' });
 });
 
-app.post('/triggerhourly', () => {
+app.post('/triggerhourly', (req: Request, res: Response) => {
   runHouerlyJob();
   log.info('Triggered');
+  res.json({triggered: 'ok'});
 });
 
 app.get('/info', (req: Request, res: Response) => {

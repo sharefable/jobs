@@ -9,6 +9,7 @@ import {
 import { JobBase } from './base/job';
 import { JobType } from '../api-contract';
 import * as Sentry from '@sentry/node';
+import * as log from '../log';
 
 export const refreshPartition = async (): Promise<boolean> => {
   const crawlerJob = new RefreshPartition();
@@ -55,6 +56,7 @@ class RefreshPartition extends JobBase {
         throw new Error(`Httpstatuscode exception while running the crawler ${getResult.$metadata.httpStatusCode}`);
       }
       crawlerState = getResult.Crawler!.State;
+      log.info(`Crawler state: ${crawlerState}`);
     } while (crawlerState !== CrawlerState.READY);
   }
 }

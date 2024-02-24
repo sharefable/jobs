@@ -39,7 +39,7 @@ export abstract class RefreshHourlyBase<T> extends JobBase {
       }
       await success();
     } catch (error) {
-      await failure((error as Error).message);
+      await failure((error as Error).stack);
       captureException(error as Error);
     }
   }
