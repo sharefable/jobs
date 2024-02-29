@@ -1,7 +1,7 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop, {runHouerlyJob} from './main_schedule_loop';
+import mainScheduleLoop, {runHouerlyJob, runHouerlyJobForUserAssign} from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
@@ -28,9 +28,12 @@ const envLoadingStatus = [
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
   'AWS_S3_REGION',
+  'AWS_S3_BUCKET',
+  'AWS_S3_BUCKET_ROOT_FOLDER',
   'AWS_GLUE_REGION',
   'AWS_GLUE_DB_NAME',
   'AWS_GLUE_CRAWLER_NAME',
+  'AWS_GLUE_USER_ASSIGN_CRAWLER_NAME',
   'AWS_ATHENA_OUTPUT_LOCATION',
   'AWS_ATHENA_REGION',
 ].reduce(( status, name ) => {
@@ -68,6 +71,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 app.post('/triggerhourly', (req: Request, res: Response) => {
   runHouerlyJob();
+  runHouerlyJobForUserAssign();
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });

@@ -34,6 +34,16 @@ export interface AnalyticConversionEntity{
   clicks: string;
 }
 
+export interface AnalyticsUserAidMappingEntity{
+  email: string;
+  aid: string;
+}
+
+export interface AnalyticsAidSidMappingEntity{
+  sid: string;
+  aid: string;
+}
+
 export interface AthenaCommon{
   ymd: string;
   payload_tour_id: number;
@@ -56,10 +66,23 @@ export interface AthenaAnnClickEntity extends AthenaCommon {
   time_spent_dist: string;
 }
 
+export interface AthenaUserAidMappingEntity {
+  payload_user_email: string;
+  payload_tour_id: number
+  aid: string;
+}
+
+export interface AthenaAidSidMappingEntity {
+  sid: string;
+  aid: string;
+}
+
 export enum TableName {
   AnalyticsTourMetrics='analytics_tour_metrics',
   AnalyticsConversion='analytics_conversion',
   AnalyticTourAnnClicks='analytics_tour_ann_clicks',
+  AnalyticsUserAidMapping='analytics_user_aid_mapping',
+  AnalyticsAidSidMapping='analytics_aid_sid_mapping'
 }
 
 export interface AthenaEntityForViewAnnTourClick extends AthenaCommon {

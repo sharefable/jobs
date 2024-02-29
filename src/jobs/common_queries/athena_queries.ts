@@ -1,4 +1,4 @@
-import { AWS_GLUE_TABLE_NAME } from '../glue_tables';
+import { AWS_GLUE_TABLE_NAME, AWS_GLUE_USER_ASSIGN_TABLE_NAME } from '../glue_tables';
 
 // If a job is running @6.15pm we process previous hours data, i.e. data till 5:59:59 pm
 // Here currentJobRunTime represents 5:59:59 time
@@ -109,5 +109,26 @@ export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunT
   FROM first_query f
   left JOIN percentiles p
   ON f.payload_tour_id = p.payload_tour_id AND f.payload_ann_id = p.payload_ann_id AND f.ymd = p.ymd;`;
+  return query;
+};
+
+export const getUserAidMappingData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
+  const query = `SELECT DISTINCT
+                    payload_tour_id, 
+                    aid, 
+                    payload_user_email
+                    FROM ${AWS_GLUE_USER_ASSIGN_TABLE_NAME} WHERE 
+                    cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
+                    AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime}`;
+  return query;
+};
+
+export const getAidSidMappingData = (prevSuccessJobRunAt: string, currentJobRunTime: string) => {
+  const query = `SELECT DISTINCT
+                    aid, 
+                    sid
+                    FROM ${AWS_GLUE_TABLE_NAME} WHERE 
+                    cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
+                    AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime}`;
   return query;
 };
