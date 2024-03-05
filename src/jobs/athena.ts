@@ -91,14 +91,18 @@ export const processAthenaCsvDataToLocal = async (queryExecutionId: string): Pro
 
   const tempFilepath = `${tmpdir}/${queryExecutionId}.csv`;
   log.info(`Athena data is being written to ${tempFilepath}`);
+  let fileHandler;
   try {
     const response = await s3.send(new GetObjectCommand(params));
     const bodyStream = response.Body as Readable;
-    await pipeline(bodyStream, fs.createWriteStream(tempFilepath));
+    fileHandler = fs.createWriteStream(tempFilepath);
+    await pipeline(bodyStream, fileHandler);
     log.info(`Athena data is successfully written to ${tempFilepath}`);
     return tempFilepath;
   } catch (err) {
     log.err('Something went wrong while processing athena query to local temp file', (err as Error).message);
     throw new Error((err as Error).message);
+  } finally {
+    if (fileHandler) fileHandler.close();
   }
 };
