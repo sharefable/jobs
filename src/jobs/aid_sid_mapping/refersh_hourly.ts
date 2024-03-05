@@ -3,7 +3,8 @@ import { getAidSidMappingData } from '../common_queries/athena_queries';
 import { RefreshHourlyBase } from '../base/refresh_hourly';
 import { JobInfo, AthenaAidSidMappingEntity, AnalyticsAidSidMappingEntity } from '../../types';
 import { insertToAidSidMapping } from './queries';
-import { processDataFromCsvToDB } from '../../jobs/athena';
+import { executeQuery } from '../../jobs/mysql';
+import * as log from '../../log';
 
 export const refreshHourlyAidSidMapping = async () => {
   const aidSidMapping = new AidSidMappingJob();
@@ -26,9 +27,14 @@ export class AidSidMappingJob extends RefreshHourlyBase<AidSidMapping> {
     return getAidSidMappingData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
   }
 
-  protected async insertNewRow(queryResult: AthenaAidSidMappingEntity, queryExecutionId: string): Promise<void> {
-    const query = insertToAidSidMapping(queryExecutionId);
-    await processDataFromCsvToDB(query, queryExecutionId);
+  protected async insertNewRow(queryResult: AthenaAidSidMappingEntity, tempFilepath: string): Promise<void> {
+    try {
+      const query = insertToAidSidMapping(tempFilepath);
+      await executeQuery(query);
+    } catch (err) {
+      log.err('Something went wrong while trying to load csv data to database', (err as Error).message);
+      throw err;
+    }
   }
   
   protected async getDataFromAnalyticsDb (

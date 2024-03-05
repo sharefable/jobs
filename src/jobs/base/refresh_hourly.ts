@@ -1,10 +1,12 @@
-import { processDataFromRaw, runAthenaQuery } from '../athena';
+import { processAthenaCsvDataToLocal, processDataFromRaw, runAthenaQuery } from '../athena';
 import { JobBase } from './job';
 import { getCreatedAtAndUpdateAt, getYmd } from '../../utils';
 import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries';
 import { Job } from '../../types';
 import { captureException } from '@sentry/node';
 import { JobType } from '../../api-contract';
+import * as log from '../../log';
+import fs from 'fs';
 
 export abstract class RefreshHourlyBase<T> extends JobBase {
 
@@ -16,7 +18,7 @@ export abstract class RefreshHourlyBase<T> extends JobBase {
       this.baseValues.jobInfo.queryExecutionId = await runAthenaQuery(query);
       if (this.getJobType() === JobType.REFRESH_USER_AID_MAPPING 
           || this.getJobType() === JobType.REFRESH_AID_SID_MAPPING) {
-        await this.insertNewRow([] as T, this.baseValues.jobInfo.queryExecutionId);
+        await this.processCsvDataToDB(this.baseValues.jobInfo.queryExecutionId);
       } else {
         const athenaResult: T[] = await processDataFromRaw(this.baseValues.jobInfo.queryExecutionId);
         const createdAtAndUpdatedAt: string = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
@@ -47,6 +49,25 @@ export abstract class RefreshHourlyBase<T> extends JobBase {
     } catch (error) {
       await failure((error as Error).stack);
       captureException(error as Error);
+    }
+  }
+
+  protected async processCsvDataToDB(queryExecutionId: string): Promise<void> {
+    const tempFilepath = await processAthenaCsvDataToLocal(queryExecutionId);
+    try {
+      console.log('Job type', this.getJobType());
+      await this.insertNewRow([] as T, tempFilepath);
+    } catch (err) {
+      log.err('Something went wrong while trying to load csv data to database', (err as Error).message);
+      throw err;
+    } finally {
+      log.info(`CleanUp: Deleting the file ${tempFilepath}`);
+      try {
+        fs.unlinkSync(tempFilepath);
+        log.info(`CleanUp: Deleted the file ${tempFilepath}`);
+      } catch (err) {
+        log.warn('Something went wrong while deleting the file', (err as Error).stack);
+      }
     }
   }
     

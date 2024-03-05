@@ -1,7 +1,7 @@
 import { TableName } from '../../types';
 
-export const insertToUserAidMapping = (queryExecutionId: string) => {
-  return `LOAD DATA LOCAL INFILE '${queryExecutionId}.csv' INTO TABLE ${TableName.AnalyticsUserAidMapping} 
+export const insertToUserAidMapping = (tempFilepath: string) => {
+  return `LOAD DATA LOCAL INFILE '${tempFilepath}' INTO TABLE ${TableName.AnalyticsUserAidMapping} 
                  FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
                  (tour_id, aid, email)
                  SET

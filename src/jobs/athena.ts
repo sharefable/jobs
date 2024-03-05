@@ -13,6 +13,7 @@ import * as log from '../log';
 import { executeQuery } from './mysql';
 import { pipeline } from 'stream/promises';
 import { s3 } from '../singletons';
+import { tmpdir } from 'os';
 
 const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_ATHENA_REGION });
 
@@ -81,27 +82,23 @@ export const retriveExecutedQueryData = <T>(
   return results;
 };
 
-export const processDataFromCsvToDB = async (query: string, queryExecutionId: string): Promise<void>  => {
+export const processAthenaCsvDataToLocal = async (queryExecutionId: string): Promise<string>  => {
+  const ATHENA_OUTPUT_LOCATION = 'athena-query-result';
   const params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: `${process.env.AWS_S3_BUCKET_ROOT_FOLDER}/${queryExecutionId}.csv`,
+    Bucket: process.env.AWS_S3_ATHENA_OUTPUT_BUCKET,
+    Key: `${ATHENA_OUTPUT_LOCATION}/${queryExecutionId}.csv`,
   };
 
-  const tempFilepath = `${queryExecutionId}.csv`;
-
+  const tempFilepath = `${tmpdir}/${queryExecutionId}.csv`;
+  log.info(`Athena data is being written to ${tempFilepath}`);
   try {
-
     const response = await s3.send(new GetObjectCommand(params));
     const bodyStream = response.Body as Readable;
     await pipeline(bodyStream, fs.createWriteStream(tempFilepath));
-    await executeQuery(query);
-    log.info('File is successfully written');
-
+    log.info(`Athena data is successfully written to ${tempFilepath}`);
+    return tempFilepath;
   } catch (err) {
-    log.err('Something went wrong while processing athena query to database', (err as Error).message);
+    log.err('Something went wrong while processing athena query to local temp file', (err as Error).message);
     throw new Error((err as Error).message);
-  } finally {
-    log.info(`CleanUp: Deleting the file ${tempFilepath}`);
-    fs.unlinkSync(tempFilepath);
   }
 };
