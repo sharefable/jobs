@@ -6,16 +6,15 @@ import {
   QueryExecutionState,
   StartQueryExecutionCommand, 
 } from '@aws-sdk/client-athena';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import fs from 'fs';
 import * as log from '../log';
-import { executeQuery } from './mysql';
 import { pipeline } from 'stream/promises';
-import { s3 } from '../singletons';
 import { tmpdir } from 'os';
 
 const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_ATHENA_REGION });
+const s3Client: S3Client = new S3Client({ region: process.env.AWS_ATHENA_REGION });
 
 export const runAthenaQuery = async (query: string): Promise<string> => {
   const startCommand = new StartQueryExecutionCommand({
@@ -89,12 +88,13 @@ export const processAthenaCsvDataToLocal = async (queryExecutionId: string): Pro
   };
 
   const tempFilepath = `${tmpdir}/${queryExecutionId}.csv`;
-  log.info(`Athena data is being written to ${tempFilepath}`);
+  log.info(`Athena data will be written to ${tempFilepath}`);
   let fileHandler;
   try {
-    const response = await s3.send(new GetObjectCommand(params));
+    const response = await s3Client.send(new GetObjectCommand(params));
     const bodyStream = response.Body as Readable;
     fileHandler = fs.createWriteStream(tempFilepath);
+    log.info(`Athena data is being written to ${tempFilepath}`);
     await pipeline(bodyStream, fileHandler);
     log.info(`Athena data is successfully written to ${tempFilepath}`);
     return tempFilepath;
