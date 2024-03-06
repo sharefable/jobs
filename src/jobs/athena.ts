@@ -21,7 +21,7 @@ export const runAthenaQuery = async (query: string): Promise<string> => {
   const startCommand = new StartQueryExecutionCommand({
     QueryString: query,
     QueryExecutionContext: { Database: process.env.AWS_GLUE_DB_NAME },
-    ResultConfiguration: { OutputLocation: process.env.AWS_ATHENA_OUTPUT_LOCATION },
+    ResultConfiguration: { OutputLocation: `s3://${process.env.AWS_S3_ATHENA_OUTPUT_BUCKET}/${process.env.AWS_S3_ATHENA_OUTPUT_ROOT_DIR}/` }, 
   });
   const queryExecution = await athenaClient.send(startCommand);
   if (queryExecution.$metadata.httpStatusCode === 200) {
@@ -83,10 +83,9 @@ export const retriveExecutedQueryData = <T>(
 };
 
 export const processAthenaCsvDataToLocal = async (queryExecutionId: string): Promise<string>  => {
-  const ATHENA_OUTPUT_LOCATION = 'athena-query-result';
   const params = {
     Bucket: process.env.AWS_S3_ATHENA_OUTPUT_BUCKET,
-    Key: `${ATHENA_OUTPUT_LOCATION}/${queryExecutionId}.csv`,
+    Key: `${process.env.AWS_S3_ATHENA_OUTPUT_ROOT_DIR}/${queryExecutionId}.csv`,
   };
 
   const tempFilepath = `${tmpdir}/${queryExecutionId}.csv`;

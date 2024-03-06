@@ -28,12 +28,12 @@ const envLoadingStatus = [
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
   'AWS_S3_REGION',
-  'AWS_S3_ATHENA_OUTPUT_BUCKET',
   'AWS_GLUE_REGION',
   'AWS_GLUE_DB_NAME',
   'AWS_GLUE_CRAWLER_NAME',
   'AWS_GLUE_USER_ASSIGN_CRAWLER_NAME',
-  'AWS_ATHENA_OUTPUT_LOCATION',
+  'AWS_S3_ATHENA_OUTPUT_BUCKET',
+  'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
   'AWS_ATHENA_REGION',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
