@@ -1,6 +1,6 @@
 {
   "name": "sqs_jobs",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "index.js",
   "repository": "git@github.com:sharefable/sqs_jobs.git",
   "author": "akash@sharefable.com",

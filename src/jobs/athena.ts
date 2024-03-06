@@ -6,6 +6,14 @@ import {
   QueryExecutionState,
   StartQueryExecutionCommand, 
 } from '@aws-sdk/client-athena';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
+import fs from 'fs';
+import * as log from '../log';
+import { executeQuery } from './mysql';
+import { pipeline } from 'stream/promises';
+import { s3 } from '../singletons';
+import { tmpdir } from 'os';
 
 const athenaClient: AthenaClient = new AthenaClient({ region: process.env.AWS_ATHENA_REGION });
 
@@ -72,4 +80,29 @@ export const retriveExecutedQueryData = <T>(
     results.push(rowObject);
   }
   return results;
+};
+
+export const processAthenaCsvDataToLocal = async (queryExecutionId: string): Promise<string>  => {
+  const ATHENA_OUTPUT_LOCATION = 'athena-query-result';
+  const params = {
+    Bucket: process.env.AWS_S3_ATHENA_OUTPUT_BUCKET,
+    Key: `${ATHENA_OUTPUT_LOCATION}/${queryExecutionId}.csv`,
+  };
+
+  const tempFilepath = `${tmpdir}/${queryExecutionId}.csv`;
+  log.info(`Athena data is being written to ${tempFilepath}`);
+  let fileHandler;
+  try {
+    const response = await s3.send(new GetObjectCommand(params));
+    const bodyStream = response.Body as Readable;
+    fileHandler = fs.createWriteStream(tempFilepath);
+    await pipeline(bodyStream, fileHandler);
+    log.info(`Athena data is successfully written to ${tempFilepath}`);
+    return tempFilepath;
+  } catch (err) {
+    log.err('Something went wrong while processing athena query to local temp file', (err as Error).message);
+    throw new Error((err as Error).message);
+  } finally {
+    if (fileHandler) fileHandler.close();
+  }
 };

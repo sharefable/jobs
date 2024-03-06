@@ -4,25 +4,45 @@ import { rollupCurrentToDailyForMetricsData } from './jobs/metrics/rollup';
 import { refreshHourlyAnnClickData } from './jobs/annclick/refresh_hourly';
 import { refreshHourlyConversionData } from './jobs/conversion/refresh_hourly';
 import { refreshHourlyMetricsData } from './jobs/metrics/refresh_hourly';
-import { refreshPartition } from './jobs/refresh_partitions';
+import { refreshPartitionForAnnBtnClick,  refreshPartitionForUserAssign} from './jobs/refresh_partitions';
 import cron from 'node-cron';
 import { sentryProgress, sentrySuccess } from './sentry';
 import {captureException} from '@sentry/node';
 import * as log from './log';
+import { refreshHourlyAidSidMapping } from './jobs/aid_sid_mapping/refersh_hourly';
+import { refreshHourlyUserAidMapping } from './jobs/user_mapping/refresh_hourly';
+
+
+export async function runHouerlyJobForUserAssign() {
+  const jobName = 'hourly-job-user-assign';
+  const checkInId = sentryProgress(jobName);
+  let isSuccessForAnnUserAssign = false; 
+  try {
+    isSuccessForAnnUserAssign = await refreshPartitionForUserAssign();
+    if (isSuccessForAnnUserAssign) {
+      await refreshHourlyUserAidMapping();
+    } 
+    sentrySuccess(checkInId, jobName);
+  } catch (err) {
+    log.err('#runHouerlyJobForUserAssign', (err as Error).stack);
+    captureException(err as Error);
+  }
+}
 
 export async function runHouerlyJob() {
   const jobName = 'hourly-job';
   const checkInId = sentryProgress(jobName);
-  let isSuccess = false; 
+  let isSuccessForAnnBtnClick = false; 
   try {
-    isSuccess = await refreshPartition();
-    if(isSuccess) {
+    isSuccessForAnnBtnClick = await refreshPartitionForAnnBtnClick();
+    if(isSuccessForAnnBtnClick) {
       await Promise.all([
         refreshHourlyAnnClickData(),
         refreshHourlyConversionData(),
         refreshHourlyMetricsData(),
+        refreshHourlyAidSidMapping(),
       ]);
-    } 
+    }
     sentrySuccess(checkInId, jobName);
   } catch (err) {
     log.err('#runHouerlyJob', (err as Error).stack);
@@ -48,7 +68,10 @@ async function runRollup() {
 
 export default async function mainScheduleLoop() {
   cron.schedule('15 * * * * ', async () => {
-    await runHouerlyJob();
+    await Promise.all([
+      runHouerlyJob(),
+      runHouerlyJobForUserAssign(),
+    ]);
   });
 
   cron.schedule('0 15 * * * ', async () => {
