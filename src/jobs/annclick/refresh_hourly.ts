@@ -70,4 +70,9 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
     await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticTourAnnClicks);
   }
 
+  protected processTourUsersToS3(annClickEntity: AnalyticsAnnClickEntity[]): Promise<void> {
+    // No use of this function for this class
+    return Promise.resolve();
+  }
+
 }

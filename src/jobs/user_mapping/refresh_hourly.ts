@@ -56,4 +56,9 @@ export class UserAidMappingJob extends RefreshHourlyBase<UserAidMapping> {
     // No use of this function for this class
     return Promise.resolve();
   }
+
+  protected processTourUsersToS3(tourUsers: UserAidMapping[]): Promise<void> {
+    // No use of this function for this class
+    return Promise.resolve();
+  }
 }

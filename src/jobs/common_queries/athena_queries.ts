@@ -116,10 +116,11 @@ export const getUserAidMappingData = (prevSuccessJobRunAt: string, currentJobRun
   const query = `SELECT DISTINCT
                     payload_tour_id, 
                     aid, 
-                    payload_user_email
+                    payload_user_email,
+                    ymd
                     FROM ${AWS_GLUE_USER_ASSIGN_TABLE_NAME} WHERE 
                     cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
-                    AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime}`;
+                    AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime} ORDER BY ymd ASC`;
   return query;
 };
 
@@ -130,5 +131,10 @@ export const getAidSidMappingData = (prevSuccessJobRunAt: string, currentJobRunT
                     FROM ${AWS_GLUE_TABLE_NAME} WHERE 
                     cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
                     AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime}`;
+  return query;
+};
+
+export const getTourDataForAnUser = (aid: string, tourId: number): string => {
+  const query = `SELECT * FROM ${AWS_GLUE_TABLE_NAME} WHERE aid = '${aid}' AND payload_tour_id = ${tourId};`;
   return query;
 };

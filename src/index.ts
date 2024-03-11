@@ -6,6 +6,7 @@ import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
 import { sentryInitialize } from './sentry';
+import { refreshHourlyUserLevelAnalytics } from './jobs/user_level/refresh_hourly';
 
 const PORT = 8081;
 
@@ -35,6 +36,7 @@ const envLoadingStatus = [
   'AWS_S3_ATHENA_OUTPUT_BUCKET',
   'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
   'AWS_ATHENA_REGION',
+  'API_SERVER_ENDPOINT',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
@@ -71,6 +73,12 @@ app.get('/health', (req: Request, res: Response) => {
 app.post('/triggerhourly', (req: Request, res: Response) => {
   runHouerlyJob();
   runHouerlyJobForUserAssign();
+  log.info('Triggered');
+  res.json({triggered: 'ok'});
+});
+
+app.post('/triggerhourlyforUserLevelAnalytics', (req: Request, res: Response) => {
+  refreshHourlyUserLevelAnalytics();
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });

@@ -52,4 +52,9 @@ export class ConversionJob extends RefreshHourlyBase<Conversion> {
   protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
     await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsConversion);
   }
+
+  protected processTourUsersToS3(conversion: AnalyticConversionEntity[]): Promise<void> {
+    // No use of this function for this class
+    return Promise.resolve();
+  }
 }

@@ -34,12 +34,21 @@ export interface AnalyticConversionEntity{
   clicks: string;
 }
 
-export interface AnalyticsUserAidMappingEntity{
+export interface AnalyticsUserAidMappingEntity {
   email: string;
   aid: string;
+  tour_id: number
 }
 
-export interface AnalyticsAidSidMappingEntity{
+export interface AthenaTourUserEntity {
+  aid: string;
+  sid: string;
+  payload_tour_id: string;
+  payload_ann_id: string;
+  uts: string;
+}
+
+export interface AnalyticsAidSidMappingEntity {
   sid: string;
   aid: string;
 }

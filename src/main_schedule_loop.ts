@@ -11,6 +11,7 @@ import {captureException} from '@sentry/node';
 import * as log from './log';
 import { refreshHourlyAidSidMapping } from './jobs/aid_sid_mapping/refersh_hourly';
 import { refreshHourlyUserAidMapping } from './jobs/user_mapping/refresh_hourly';
+import { refreshHourlyUserLevelAnalytics } from './jobs/user_level/refresh_hourly';
 
 
 export async function runHouerlyJobForUserAssign() {
@@ -21,6 +22,7 @@ export async function runHouerlyJobForUserAssign() {
     isSuccessForAnnUserAssign = await refreshPartitionForUserAssign();
     if (isSuccessForAnnUserAssign) {
       await refreshHourlyUserAidMapping();
+      await refreshHourlyUserLevelAnalytics();
     } 
     sentrySuccess(checkInId, jobName);
   } catch (err) {

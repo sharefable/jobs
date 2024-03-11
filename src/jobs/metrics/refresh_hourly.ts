@@ -58,4 +58,9 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
   protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
     await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsTourMetrics);
   }
+
+  protected processTourUsersToS3(metrics: AnalyticMetricsEntity[]): Promise<void> {
+    // No use of this function for this class
+    return Promise.resolve();
+  }
 }

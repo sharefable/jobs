@@ -57,4 +57,9 @@ export class AidSidMappingJob extends RefreshHourlyBase<AidSidMapping> {
     // No use of this function for this class
     return Promise.resolve();
   }
+
+  protected processTourUsersToS3(aidSidEntity: AnalyticsAidSidMappingEntity[]): Promise<void> {
+    // No use of this function for this class
+    return Promise.resolve();
+  }
 }
