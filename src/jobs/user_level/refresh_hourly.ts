@@ -47,7 +47,7 @@ export class TourUsersJob extends RefreshHourlyBase<TourUsers> {
       if (!(resp.status >= 200 && resp.status < 300)) {
         throw new Error('Something went wrong while sending data to s3');
       } 
-      log.info('User level analytics is uploaded to s3 successfully');
+      log.info(`User level analytics is uploaded to s3 successfully for aid ${tourUser.aid}`);
     }
   }
 
