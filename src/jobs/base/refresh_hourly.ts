@@ -1,8 +1,8 @@
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { getCreatedAtAndUpdateAt, getYmd } from '../../utils';
-import { CommonBase } from './common';
+import { CommonAthenaBase } from './common_athena_base';
 
-export abstract class RefreshHourlyBase<T> extends CommonBase {
+export abstract class RefreshHourlyBase<T> extends CommonAthenaBase {
 
   public async execute() {
 

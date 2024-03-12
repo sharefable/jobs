@@ -2,7 +2,7 @@ import { Job } from '../../types';
 import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries';
 import { JobBase } from './job';
 
-export abstract class CommonBase extends JobBase {
+export abstract class CommonAthenaBase extends JobBase {
   
   protected abstract getAthenaQuery (): Promise<string>;
   

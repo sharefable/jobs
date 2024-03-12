@@ -1,9 +1,9 @@
 import * as log from '../../log';
 import fs from 'fs';
 import { downloadAthenaCsvDataToLocal, runAthenaQuery } from '../../jobs/athena';
-import { CommonBase } from './common';
+import { CommonAthenaBase } from './common_athena_base';
 
-export abstract class UserWithIdMappingBase extends CommonBase {
+export abstract class UserWithIdMappingBase extends CommonAthenaBase {
 
   protected async execute(): Promise<void> {
     const query = await this.getAthenaQuery();
