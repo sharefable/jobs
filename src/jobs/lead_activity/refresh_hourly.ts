@@ -40,7 +40,6 @@ export class TourLeadJob extends JobBase {
         body: JSON.stringify({ tourId: tourLead.tour_id, aid: tourLead.aid, data: JSON.stringify(queryResult)}),
       });
       if (!(resp.status >= 200 && resp.status < 300)) {
-        log.err(resp);
         throw new Error('Something went wrong while sending data to s3');
       } 
       log.info(`User level analytics is uploaded to s3 successfully for aid ${tourLead.aid}`);
