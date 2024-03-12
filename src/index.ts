@@ -1,12 +1,12 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop, {runHouerlyJob, runHouerlyJobForUserAssign} from './main_schedule_loop';
+import mainScheduleLoop, {runHouerlyJob, runHouerlyJobForUserAssign } from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
 import { sentryInitialize } from './sentry';
-import { refreshHourlyUserLevelAnalytics } from './jobs/user_level/refresh_hourly';
+import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 
 const PORT = 8081;
 
@@ -77,8 +77,8 @@ app.post('/triggerhourly', (req: Request, res: Response) => {
   res.json({triggered: 'ok'});
 });
 
-app.post('/triggerhourlyforUserLevelAnalytics', (req: Request, res: Response) => {
-  refreshHourlyUserLevelAnalytics();
+app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
+  refreshHourlyLeadActivity();
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });

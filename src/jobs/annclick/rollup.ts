@@ -1,14 +1,12 @@
 import { JobType } from '../../api-contract';
 import { RollUpBase } from '../base/rollup';
 import { queryToGetPrevDateData } from '../common_queries/jobs_queries';
-import {  AnalyticsAnnClickEntity, Job, JobInfo, TableName } from '../../types';
+import {  AnalyticsAnnClickEntity, TableName } from '../../types';
 import { updateAnnTourTypeToDaily } from './queries';
-import { getYmd } from '../../utils';
-
 
 export const rollupCurrentToDailyForAnnClickData = async () => {
   const rollupAnnClick = new RollupAnnClickJob();
-  await rollupAnnClick.executeRollupJob();
+  await rollupAnnClick.executeJob();
 };
 
 export class RollupAnnClickJob extends RollUpBase<AnalyticsAnnClickEntity> {

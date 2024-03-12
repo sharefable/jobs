@@ -1,28 +1,20 @@
 import { sqlQueryToSelectLastSuccessData } from '../common_queries/jobs_queries';
 import { getCreatedAtAndUpdateAt, getTimeFromUpdatedAt, getYmd } from '../../utils';
 import { JobBase } from './job';
-import { captureException } from '@sentry/node';
 import { Job, JobInfo } from '../../types';
-import { JobType } from 'api-contract';
+import { JobType } from '../../api-contract';
 
 export abstract class RollUpBase<T extends { updated_at: string }> extends JobBase {
     
-  public async executeRollupJob() {
-    const markAsInProgress = await this.createJob(this.getJobType());
-    const [success, failure] = await markAsInProgress();
-    try {
-      const annClicks: T[] = await this.getDbDataToUpdate();
-      for (const annClick of annClicks) {
-        const updatedAt: string = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
-        const timePortion = getTimeFromUpdatedAt(annClick.updated_at);
-        if (timePortion === '23:59:59') {
-          await this.updateToDaily(annClick, updatedAt);
-        } 
-      }
-      await success();
-    } catch (error) {
-      await failure((error as Error).message);
-      captureException(error as Error);
+  public async execute() {
+    const annClicks: T[] = await this.getDbDataToUpdate();
+    for (const annClick of annClicks) {
+      const updatedAt: string = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
+      const timePortion = getTimeFromUpdatedAt(annClick.updated_at);
+       
+      if (timePortion === '23:59:59') {
+        await this.updateToDaily(annClick, updatedAt);
+      } 
     }
   }
 
@@ -40,6 +32,7 @@ export abstract class RollUpBase<T extends { updated_at: string }> extends JobBa
     const lastSuccessYmd = await this.getLastSuccessData(this.getJobType());
     const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
     const analyticsData: T[] = await this.getPrevDataFromDbForAperiod(lastSuccessYmd, currentYmd);
+    
     if (lastSuccessYmd === '20230101' && analyticsData.length === 0) {
       this.baseValues.jobInfo.jobRunTime = '2023010100';
     }

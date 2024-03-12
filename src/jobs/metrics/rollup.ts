@@ -6,10 +6,9 @@ import { updateMetricsTypeToDaily } from './queries';
 
 export const rollupCurrentToDailyForMetricsData = async () => {
   const rollupMetrics = new RollupMetricsJob();
-  await rollupMetrics.executeRollupJob();
+  await rollupMetrics.executeJob();
 };
 
-  
 export class RollupMetricsJob extends RollUpBase<AnalyticMetricsEntity> {
 
   protected getJobType(): JobType {

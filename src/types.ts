@@ -40,7 +40,7 @@ export interface AnalyticsUserAidMappingEntity {
   tour_id: number
 }
 
-export interface AthenaTourUserEntity {
+export interface AthenaTourLeadEntity {
   aid: string;
   sid: string;
   payload_tour_id: string;

@@ -26,10 +26,12 @@ abstract class RefreshPartitionBase extends JobBase {
   public async runCrawler (crawlerName: string) {
     const markAsInProgress = await this.createJob(this.getJobType());
     const [success, failure] = await markAsInProgress();
+    
     try {
       const glueClient: GlueClient = new GlueClient({ region: process.env.AWS_GLUE_REGION });
       const command: StartCrawlerCommand = new StartCrawlerCommand({ Name: crawlerName});
       const glueResult: StartCrawlerCommandOutput = await glueClient.send(command);
+      
       if(glueResult.$metadata.httpStatusCode === 200) {
         await this.waitForCrawlerReady(glueClient, crawlerName);
         await success();
@@ -53,12 +55,18 @@ abstract class RefreshPartitionBase extends JobBase {
       await new Promise(resolve => setTimeout(resolve, 5000));
       const getCommand = new GetCrawlerCommand({ Name: crawlerName });
       const getResult: GetCrawlerCommandOutput = await glueClient.send(getCommand);
+      
       if (getResult.$metadata.httpStatusCode !== 200) {
         throw new Error(`Httpstatuscode exception while running the crawler ${getResult.$metadata.httpStatusCode}`);
       }
+  
       crawlerState = getResult.Crawler!.State;
       log.info(`Crawler state: ${crawlerState}`);
     } while (crawlerState !== CrawlerState.READY);
+  }
+
+  public async execute(): Promise<void> {
+    // No implementation over here
   }
 }
 

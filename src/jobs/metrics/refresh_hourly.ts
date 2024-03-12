@@ -22,6 +22,7 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
     const successData: JobInfo = await this.getJobSuccessData();
     if (!successData) {
       this.baseValues.updateAnalyticsDataToLastHour = true;
+      this.baseValues.jobInfo.jobDataScanningTime = '2023010100';
       return getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
     }
     return getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
@@ -57,10 +58,5 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
 
   protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
     await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsTourMetrics);
-  }
-
-  protected processTourUsersToS3(metrics: AnalyticMetricsEntity[]): Promise<void> {
-    // No use of this function for this class
-    return Promise.resolve();
   }
 }

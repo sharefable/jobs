@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-11 14:26:48.
+// Generated using typescript-generator version 2.35.1025 on 2024-03-11 17:17:19.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -79,16 +79,16 @@ export interface TourAnnWithViews {
     p95: number;
 }
 
+export interface TourLeads {
+    aid: string;
+    email: string;
+}
+
 export interface TourManifest {
     version: number;
     name: string;
     url: string;
     screenAssets: ScreenAssets[];
-}
-
-export interface TourUsers {
-    aid: string;
-    email: string;
 }
 
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
@@ -116,6 +116,12 @@ export interface ReqDuplicateTour {
 export interface ReqEntityAssetAssn {
     entityRid: string;
     entityType: EntityType;
+}
+
+export interface ReqLeadActivityDataPost {
+    tourId: number;
+    aid: string;
+    data: string;
 }
 
 export interface ReqMediaProcessing {
@@ -194,12 +200,6 @@ export interface ReqUpdateUser {
     lastName: string;
 }
 
-export interface ReqUserLevelAnalytics {
-    tourId: number;
-    aid: string;
-    data: string;
-}
-
 export interface RespCommonConfig extends ResponseBase {
     commonAssetPath: string;
     screenAssetPath: string;
@@ -223,6 +223,10 @@ export interface RespConversion {
 
 export interface RespHealth extends ResponseBase {
     status: string;
+}
+
+export interface RespLeadActivityUrl {
+    leadActivityUrl: string;
 }
 
 export interface RespMediaProcessingInfo extends ResponseBase {
@@ -290,8 +294,8 @@ export interface RespTourAnnWithPercentile {
     tourAnnInfo: TourAnnViewsWithPercentile[];
 }
 
-export interface RespTourUsers {
-    tourUsers: TourUsers[];
+export interface RespTourLeads {
+    tourLeads: TourLeads[];
     uniqueEmailCount: number;
 }
 
@@ -321,10 +325,6 @@ export interface RespUser extends ResponseBase {
     personalEmail: boolean;
     orgAssociation: UserOrgAssociation;
     active: boolean;
-}
-
-export interface RespUserLevelAnalyticsUrl {
-    analyticsUrl: string;
 }
 
 export interface Serializable {
@@ -372,7 +372,7 @@ export const enum JobType {
     REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
     REFRESH_USER_AID_MAPPING = "REFRESH_USER_AID_MAPPING",
     REFRESH_AID_SID_MAPPING = "REFRESH_AID_SID_MAPPING",
-    REFRESH_USERS_LEVEL_ANALYTICS = "REFRESH_USERS_LEVEL_ANALYTICS",
+    REFRESH_LEAD_ACTIVITY = "REFRESH_LEAD_ACTIVITY",
     ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
     ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
     ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",

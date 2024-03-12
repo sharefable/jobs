@@ -2,12 +2,27 @@ import { getUTCTimesForJob } from '../../utils';
 import { JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQuery } from '../mysql';
 import { randomUUID } from 'crypto';
+import { captureException } from '@sentry/node';
 
 export abstract class JobBase {
 
   protected baseValues = {jobKey: randomUUID(), jobInfo: getUTCTimesForJob(), updateAnalyticsDataToLastHour: false};
   
   protected abstract getJobType(): JobType 
+
+  protected abstract execute(): Promise<void>;
+
+  public async executeJob() {
+    const markAsInProgress = await this.createJob(this.getJobType());
+    const [success, failure] = await markAsInProgress();
+    try {
+      await this.execute();
+      await success();
+    } catch (error) {
+      await failure((error as Error).stack);
+      captureException(error as Error);
+    }
+  }
     
   public async createJob(jobType: JobType): Promise<any> {
     const row: any = await executeQuery(
