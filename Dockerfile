@@ -1,4 +1,4 @@
-FROM node:16.13.1 AS base
+FROM node:18.16.1 AS base
 
 WORKDIR /usr/sqs_jobs
 
