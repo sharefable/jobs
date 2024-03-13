@@ -26,6 +26,7 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
     const successData: JobInfo = await this.getJobSuccessData();
     if (!successData) {
       this.baseValues.updateAnalyticsDataToLastHour = true;
+      this.baseValues.jobInfo.jobDataScanningTime = '2023010100';
       return getAnnTourClicksData('2023010100', this.baseValues.jobInfo.jobRunTime);
     } 
     return getAnnTourClicksData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
@@ -69,5 +70,4 @@ export class AnnClickJob extends RefreshHourlyBase<AnnTourClick> {
   protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
     await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticTourAnnClicks);
   }
-
 }

@@ -22,6 +22,7 @@ export class MetricsJob extends RefreshHourlyBase<Metrics> {
     const successData: JobInfo = await this.getJobSuccessData();
     if (!successData) {
       this.baseValues.updateAnalyticsDataToLastHour = true;
+      this.baseValues.jobInfo.jobDataScanningTime = '2023010100';
       return getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
     }
     return getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);

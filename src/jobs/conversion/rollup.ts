@@ -6,7 +6,7 @@ import { updateConversionTypeToDaily } from './queries';
 
 export const rollupCurrentToDailyForConversionData = async () => {
   const rollupConversion = new RollupConversionJob();
-  await rollupConversion.executeRollupJob();
+  await rollupConversion.executeJob();
 };
 
 export class RollupConversionJob extends RollUpBase<AnalyticConversionEntity> {

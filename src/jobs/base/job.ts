@@ -2,12 +2,37 @@ import { getUTCTimesForJob } from '../../utils';
 import { JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQuery } from '../mysql';
 import { randomUUID } from 'crypto';
+import { captureException } from '@sentry/node';
+
+/*
+ * This is the parent class all job needs to inherit. It's just a fabric around job exection and status update based on
+ * execution status.
+ * We broadly have two main kind of jobs. One kind deals with athena and another kind deals with mysql.
+ * `CommonAthenaBase` provides interface implementation for all athena jobs. Any job that deals with athena must
+ * implement said Base class.
+ * `RefreshHourlyBase` is a base class that is used for few legacy jobs like conversion calculation, watch time
+ * calculation etc. There might be jobs that do not inherit from `RefreshHourlyBase` but still runs in hourly interval.
+ */
 
 export abstract class JobBase {
 
   protected baseValues = {jobKey: randomUUID(), jobInfo: getUTCTimesForJob(), updateAnalyticsDataToLastHour: false};
   
   protected abstract getJobType(): JobType 
+
+  protected abstract execute(): Promise<void>;
+
+  public async executeJob() {
+    const markAsInProgress = await this.createJob(this.getJobType());
+    const [success, failure] = await markAsInProgress();
+    try {
+      await this.execute();
+      await success();
+    } catch (error) {
+      await failure((error as Error).stack);
+      captureException(error as Error);
+    }
+  }
     
   public async createJob(jobType: JobType): Promise<any> {
     const row: any = await executeQuery(
