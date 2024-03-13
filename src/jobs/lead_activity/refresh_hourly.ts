@@ -6,7 +6,6 @@ import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
 import { getYmd } from '../../utils';
-import fetch from 'node-fetch';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
