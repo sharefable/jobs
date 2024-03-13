@@ -11,7 +11,7 @@ WORKDIR /usr/sqs_jobs
 RUN npm run tscv
 RUN npm run build
 
-FROM node:16.13.1-alpine3.15
+FROM node:18-alpine3.18
 WORKDIR /usr/sqs_jobs
 COPY package*.json ./
 RUN npm install --only=production

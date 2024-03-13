@@ -6,6 +6,7 @@ import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
 import { getYmd } from '../../utils';
+import fetch from 'node-fetch';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
@@ -31,17 +32,22 @@ export class TourLeadJob extends JobBase {
         log.info(`Response is empty for the queryExecutionId ${queryExecutionId}. So continuing`);
         continue;
       }
-
-      const resp = await fetch(`${process.env.API_SERVER_ENDPOINT}/v1/updleadanalytics`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tourId: tourLead.tour_id, aid: tourLead.aid, data: JSON.stringify(queryResult)}),
-      });
-      if (!(resp.status >= 200 && resp.status < 300)) {
-        throw new Error('Something went wrong while sending data to s3');
-      } 
+      try {
+        const resp = await fetch(`${process.env.API_SERVER_ENDPOINT}/v1/updleadanalytics`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tourId: tourLead.tour_id, aid: tourLead.aid, data: JSON.stringify(queryResult)}),
+        });
+        if (!(resp.status >= 200 && resp.status < 300)) {
+          log.err('Something went wrong while sending data to s3', resp.status);
+          throw new Error('Something went wrong while sending data to s3');
+        } 
+      } catch(err) {
+        log.err('Something went wrong while sending data server', err);
+        throw new Error('Something went wrong while sending data server');
+      }
       log.info(`User level analytics is uploaded to s3 successfully for aid ${tourLead.aid}`);
     }
   }
