@@ -4,6 +4,7 @@ import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 import mailchimp from '@mailchimp/mailchimp_marketing';
 import { captureException } from '@sentry/node';
+import { createLinkedAccountForNewUser } from '../processors/cobalt';
 
 mailchimp.setConfig({
   apiKey: process.env.MAILCHIMP_API_KEY,
@@ -26,7 +27,7 @@ function getPayloadProps(props: Record<string, string>): string {
 }
 
 type IProps = ReqNfHook & TMsgAttrs;
-export const processEventsToNotify = async (utProps: TMsgAttrs) => {
+export const processEventsForDestination = async (utProps: TMsgAttrs) => {
   const props = utProps as IProps;
   try {
     const payloadVarStr = getPayloadProps(props as Record<string,string>);
@@ -44,6 +45,11 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
       case NfEvents.EBOOK_DOWNLOAD: {
         text = `\`\`\`\nevent_name: ${props.eventName}${payloadVarStr}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await notifySlack(slackWebhookUrl, text);
+        break;
+      }
+
+      case NfEvents.NEW_ORG_CREATED : {
+        createLinkedAccountForNewUser(utProps);
         break;
       }
     

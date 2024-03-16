@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-11 17:17:19.
+// Generated using typescript-generator version 2.35.1025 on 2024-03-15 12:29:05.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -103,6 +103,11 @@ export interface ReqActivateOrDeactivateUser {
     shouldActivate: boolean;
 }
 
+export interface ReqCobaltEvent {
+    event: string;
+    payload: { [index: string]: string };
+}
+
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
@@ -200,6 +205,10 @@ export interface ReqUpdateUser {
     lastName: string;
 }
 
+export interface RespAccountToken extends ResponseBase {
+    token: string;
+}
+
 export interface RespCommonConfig extends ResponseBase {
     commonAssetPath: string;
     screenAssetPath: string;
@@ -227,6 +236,19 @@ export interface RespHealth extends ResponseBase {
 
 export interface RespLeadActivityUrl {
     leadActivityUrl: string;
+}
+
+export interface RespLinkedApps {
+    name: string;
+    icon: string;
+    description: string;
+    tags: string[];
+    version?: LinkedAppVersion;
+    connected?: boolean;
+    slug: string;
+    auth_type: string;
+    connected_accounts?: ConnectedAccounts[];
+    auth_input_map?: AuthInputMap[];
 }
 
 export interface RespMediaProcessingInfo extends ResponseBase {
@@ -327,6 +349,24 @@ export interface RespUser extends ResponseBase {
     active: boolean;
 }
 
+export interface AuthInputMap {
+    name: string;
+    label: string;
+    placeholder: string;
+    required: boolean;
+    type: string;
+}
+
+export interface ConnectedAccounts {
+    identifier: string;
+    connectedAt: string;
+}
+
+export interface LinkedAppVersion {
+    _v: string;
+    description: string;
+}
+
 export interface Serializable {
 }
 
@@ -410,6 +450,7 @@ export const enum ErrorCode {
 
 export const enum NfEvents {
     NEW_USER_SIGNUP = "NEW_USER_SIGNUP",
+    NEW_ORG_CREATED = "NEW_ORG_CREATED",
     EBOOK_DOWNLOAD = "EBOOK_DOWNLOAD",
 }
 

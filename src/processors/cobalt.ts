@@ -1,11 +1,10 @@
 import Cobalt from '@cobaltio/cobalt';
 import { TMsgAttrs } from '../types';
 import { captureException } from '@sentry/node';
-
-const COBALT_PROD_API_KEY = process.env.COBALT_PROD_API_KEY as string;
+import * as logs from '../log';
 
 const Client: Cobalt = new Cobalt({
-  apiKey: COBALT_PROD_API_KEY,
+  apiKey: process.env.COBALT_API_KEY as string,
 });
 
 interface NewOrgEvent {
@@ -29,8 +28,9 @@ export const createLinkedAccountForNewUser = async (utProps: TMsgAttrs) => {
   const props = utProps as IProps;
   const payload = getPayloadProps(props as Record<string, string>);
   try{
+    logs.info('[vendor] Creating link account in cobalt with id', payload.id);
     await Client.createLinkedAccount({
-      linked_account_id: payload.userEmail,
+      linked_account_id: payload.id,
     });
   } catch(error){
     captureException(error as Error);
