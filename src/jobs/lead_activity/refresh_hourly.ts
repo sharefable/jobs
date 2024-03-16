@@ -6,6 +6,7 @@ import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
 import { getYmd } from '../../utils';
+import { qUrlResp, sqsClient } from '../../main_msg_loop';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
@@ -19,15 +20,35 @@ export class TourLeadJob extends JobBase {
   }
 
   protected async execute(): Promise<void> {
+    let url: string | undefined;
+    if (!url) {
+      url = (await qUrlResp).QueueUrl;
+      if (!url) throw new Error('Queue url could not be retrieved');
+    }
     const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(currentYmd);
-    
+    const sendMessageRequest = {
+      QueueUrl: url, 
+      MessageBody: 'CBE',
+      MessageAttributes: {
+        demoLeads: {
+          DataType: 'String',
+          StringValue: JSON.stringify(tourLeads),
+        },
+      },
+    };
+    await Promise.all([
+      sqsClient.sendMessage(sendMessageRequest),
+      await this.sendLeadActivityToS3(tourLeads),
+    ]);
+  }
+
+  protected async sendLeadActivityToS3(tourLeads: AnalyticsUserAidMappingEntity[]): Promise<void>  {
     for (const tourLead of tourLeads) {
       const query = getLeadActivity(tourLead.aid, tourLead.tour_id);
       const queryExecutionId = await runAthenaQuery(query);
-      const queryResult: AthenaTourLeadEntity = await downloadRawData(queryExecutionId) as unknown as AthenaTourLeadEntity;
-      
-      if (Object.keys(queryResult).length === 0) {
+      const queryResult: AthenaTourLeadEntity[] = await downloadRawData(queryExecutionId) as AthenaTourLeadEntity[];
+      if (queryResult.length === 0) {
         log.info(`Response is empty for the queryExecutionId ${queryExecutionId}. So continuing`);
         continue;
       }

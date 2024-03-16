@@ -37,7 +37,8 @@ export interface AnalyticConversionEntity{
 export interface AnalyticsUserAidMappingEntity {
   email: string;
   aid: string;
-  tour_id: number
+  tour_id: number;
+  date_ymd: number;
 }
 
 export interface AthenaTourLeadEntity {
@@ -91,7 +92,8 @@ export enum TableName {
   AnalyticsConversion='analytics_conversion',
   AnalyticTourAnnClicks='analytics_tour_ann_clicks',
   AnalyticsUserAidMapping='analytics_user_aid_mapping',
-  AnalyticsAidSidMapping='analytics_aid_sid_mapping'
+  AnalyticsAidSidMapping='analytics_aid_sid_mapping',
+  Tour='tour'
 }
 
 export interface AthenaEntityForViewAnnTourClick extends AthenaCommon {
@@ -108,4 +110,15 @@ export interface AnalyticsAnnClickEntity {
   views_unique: number;
   views_all: number;
   time_spent_dist: string;
+}
+
+export interface Demo {
+  rid: string;
+  display_name: string;
+  created_by: number;
+  belongs_to_org: number;
+}
+
+export interface GroupedData {
+  [key: string]: AthenaTourLeadEntity[];
 }
