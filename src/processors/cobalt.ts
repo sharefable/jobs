@@ -97,7 +97,7 @@ export async function sendEventToCobalt(props: TMsgAttrs) {
   }
 }
 
-function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): GroupedData {
+export function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): GroupedData {
   const groupedData: GroupedData = {};
   queryResult.forEach((item: AthenaTourLeadEntity) => {
     if (!groupedData[item.sid]) {
@@ -108,7 +108,7 @@ function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): GroupedData
   return groupedData;
 }
 
-function timeSpentInDemo(groupedData: GroupedData): number {
+export function timeSpentInDemo(groupedData: GroupedData): number {
   let result = 0;
   for (const sid in groupedData) {
     const group: AthenaTourLeadEntity[] = groupedData[sid];
