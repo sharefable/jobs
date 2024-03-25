@@ -48,8 +48,8 @@ export class TourLeadJob extends JobBase {
     };
     await Promise.all([
       sqsClient.sendMessage(sendMessageRequest),
-      await this.sendLeadActivityToS3(tourLeads),
-      await this.populateLead360(tourLeads),
+      this.sendLeadActivityToS3(tourLeads),
+      this.populateLead360(tourLeads),
     ]);
   }
 
