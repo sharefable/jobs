@@ -147,7 +147,7 @@ export class TourLeadJob extends JobBase {
       timeSpentSec: timeSpentInATour,
       lastInteractedAt: lastInteractedAt,
       completionPercentage: Math.round((uniquePayloadAnnIds/tourAnnLength) * 100),
-      ctaClickRate:  matchedLead360WithTourId.length <= 0 ? 1 : matchedLead360WithTourId[0].ctaClickRate,
+      ctaClickRate:  matchedLead360WithTourId.length <= 0 ? 1 : matchedLead360WithTourId[0].ctaClickRate + 1,
     };
     updatedLead360.push(lead360);
     
