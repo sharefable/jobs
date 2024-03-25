@@ -33,8 +33,8 @@ export class TourLeadJob extends JobBase {
       if (!url) throw new Error('Queue url could not be retrieved');
     }
     const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
-    const lowerBound = getMidnightTimestamp(currentYmd);
-    const upperBound = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
+    const upperBound = getMidnightTimestamp(currentYmd);
+    const lowerBound = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
     const sendMessageRequest = {
       QueueUrl: url, 

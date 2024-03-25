@@ -86,9 +86,9 @@ export const getMidnightTimestamp = (currentYmd: string): string => {
   const year = currentYmd.slice(0, 4);
   const month = currentYmd.slice(4, 6);
   const day = currentYmd.slice(6, 8);
-  const hours = '00';
-  const minutes = '00'; 
-  const seconds = '00';
+  const hours = '23';
+  const minutes = '59'; 
+  const seconds = '59';
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
