@@ -1,11 +1,12 @@
 import Cobalt from '@cobaltio/cobalt';
-import { AnalyticsUserAidMappingEntity, AthenaTourLeadEntity, Demo, GroupedData, TMsgAttrs } from '../types';
+import { AnalyticsUserAidMappingEntity, AthenaTourLeadEntity, Demo, TMsgAttrs } from '../types';
 import { captureException } from '@sentry/node';
 import * as logs from '../log';
 import { getLeadActivity } from '../jobs/common_queries/athena_queries';
 import { downloadRawData, runAthenaQuery } from '../jobs/athena';
 import { getTourDetails } from '../jobs/lead_activity/queries';
 import * as log from '../log';
+import { filterDemoLeads, groupQueryResultBySid, timeSpentInDemo } from '../utils';
 
 const Client: Cobalt = new Cobalt({
   apiKey: process.env.COBALT_API_KEY as string,
@@ -95,41 +96,4 @@ export async function sendEventToCobalt(props: TMsgAttrs) {
       captureException(error as Error);
     }
   }
-}
-
-export function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): GroupedData {
-  const groupedData: GroupedData = {};
-  queryResult.forEach((item: AthenaTourLeadEntity) => {
-    if (!groupedData[item.sid]) {
-      groupedData[item.sid] = [];
-    }
-    groupedData[item.sid].push(item);
-  });
-  return groupedData;
-}
-
-export function timeSpentInDemo(groupedData: GroupedData): number {
-  let result = 0;
-  for (const sid in groupedData) {
-    const group: AthenaTourLeadEntity[] = groupedData[sid];
-    group.sort((a, b) => parseInt(a.uts) - parseInt(b.uts));
-    const firstUts = parseInt(group[0].uts);
-    const lastUts = parseInt(group[group.length - 1].uts);
-    const timeDifference = lastUts - firstUts;
-    result += timeDifference + 5;
-  }
-  return result;
-}
-
-function filterDemoLeads(demoLeads: AnalyticsUserAidMappingEntity[]): AnalyticsUserAidMappingEntity[] {
-  const emailMap: Record<string, AnalyticsUserAidMappingEntity> = {};
-
-  demoLeads.forEach((obj: AnalyticsUserAidMappingEntity) => {
-    if (obj.email && obj.email.trim() !== '') {
-      if (!(obj.email in emailMap) || emailMap[obj.email].date_ymd < obj.date_ymd) {
-        emailMap[obj.email] = obj;
-      }
-    }
-  });
-  return Object.values(emailMap);
 }

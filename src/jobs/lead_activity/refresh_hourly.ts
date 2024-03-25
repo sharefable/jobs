@@ -5,10 +5,15 @@ import { getTourDetails, getTourLeadsForYmd } from './queries';
 import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
-import {  getYmd, tourAnnoationsLength } from '../../utils';
+import { 
+  getCreatedAtAndUpdateAt,
+  getMidnightTimestamp,
+  getYmd,
+  groupQueryResultBySid,
+  timeSpentInDemo,
+  tourAnnoationsLength } from '../../utils';
 import { qUrlResp, sqsClient } from '../../main_msg_loop';
 import { getHouseLeadInfo, getTourAssetPath, getTourDataFile, saveLead360 } from '../../api';
-import { groupQueryResultBySid, timeSpentInDemo } from '../../processors/cobalt';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
@@ -28,7 +33,9 @@ export class TourLeadJob extends JobBase {
       if (!url) throw new Error('Queue url could not be retrieved');
     }
     const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
-    const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(currentYmd);
+    const lowerBound = getMidnightTimestamp(currentYmd);
+    const upperBound = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
+    const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
     const sendMessageRequest = {
       QueueUrl: url, 
       MessageBody: 'CBE',
@@ -79,27 +86,32 @@ export class TourLeadJob extends JobBase {
   }
 
   protected async populateLead360 (tourLeads: AnalyticsUserAidMappingEntity[]) : Promise<void> {
-    
-    for (const tourLead of tourLeads) {
-      const tour: Demo[] = await getTourDetails(tourLead.tour_id);
-
-      const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
-      if (!houseLeadInfo) {
-        log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
-        continue;
+    try {
+      for (const tourLead of tourLeads) {
+        const tour: Demo[] = await getTourDetails(tourLead.tour_id);
+  
+        const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
+        if (!houseLeadInfo) {
+          log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
+          continue;
+        }
+  
+        const query = getLeadActivity(tourLead.aid, tourLead.tour_id);
+        const queryExecutionId = await runAthenaQuery(query);
+        const queryResult: AthenaTourLeadEntity[] = await downloadRawData(queryExecutionId) as AthenaTourLeadEntity[];
+        
+        if (queryResult.length === 0) {
+          log.info(`Athena query response is empty for the queryExecutionId ${queryExecutionId}. So continuing`);
+          continue;
+        }
+        const reqListLead360: ReqListLead360 = await this.preapreDataToPopulateLead360(tourLead, houseLeadInfo, queryResult);
+        await saveLead360(reqListLead360);
       }
-
-      const query = getLeadActivity(tourLead.aid, tourLead.tour_id);
-      const queryExecutionId = await runAthenaQuery(query);
-      const queryResult: AthenaTourLeadEntity[] = await downloadRawData(queryExecutionId) as AthenaTourLeadEntity[];
-      
-      if (queryResult.length === 0) {
-        log.info(`Athena query response is empty for the queryExecutionId ${queryExecutionId}. So continuing`);
-        continue;
-      }
-      const reqListLead360: ReqListLead360 = await this.preapreDataToPopulateLead360(tourLead, houseLeadInfo, queryResult);
-      await saveLead360(reqListLead360);
+    } catch (err) {
+      log.err('Something went wrong while populating lead 360 table', err);
+      throw new Error(`Something went wrong while populating lead 360 table ${err}`);
     }
+   
   }
 
   protected async preapreDataToPopulateLead360 (

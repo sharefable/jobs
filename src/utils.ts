@@ -1,8 +1,11 @@
 import { 
+  AnalyticsUserAidMappingEntity,
   AnnotationPerScreenId,
   AnnotationPositions,
+  AthenaTourLeadEntity,
   CreateJourneyPositioning,
   CustomAnnDims,
+  GroupedData,
   IAnnotationButton,
   IAnnotationConfig,
   IAnnotationConfigWithLocation,
@@ -79,6 +82,16 @@ export const getCreatedAtAndUpdateAt = (timestamp: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
+export const getMidnightTimestamp = (currentYmd: string): string => {
+  const year = currentYmd.slice(0, 4);
+  const month = currentYmd.slice(4, 6);
+  const day = currentYmd.slice(6, 8);
+  const hours = '00';
+  const minutes = '00'; 
+  const seconds = '00';
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 
 export const getTimeFromUpdatedAt = (updatedAt: string) => {
   const date = new Date(updatedAt);
@@ -106,6 +119,43 @@ export const calculateAverage = (arr1: any[], arr2:any[]) => {
   const averages = sumArr.map((sum) => Math.round(sum / 2)); 
   return averages;
 };
+
+export function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): GroupedData {
+  const groupedData: GroupedData = {};
+  queryResult.forEach((item: AthenaTourLeadEntity) => {
+    if (!groupedData[item.sid]) {
+      groupedData[item.sid] = [];
+    }
+    groupedData[item.sid].push(item);
+  });
+  return groupedData;
+}
+
+export function timeSpentInDemo(groupedData: GroupedData): number {
+  let result = 0;
+  for (const sid in groupedData) {
+    const group: AthenaTourLeadEntity[] = groupedData[sid];
+    group.sort((a, b) => parseInt(a.uts) - parseInt(b.uts));
+    const firstUts = parseInt(group[0].uts);
+    const lastUts = parseInt(group[group.length - 1].uts);
+    const timeDifference = lastUts - firstUts;
+    result += timeDifference + 5;
+  }
+  return result;
+}
+
+export function filterDemoLeads(demoLeads: AnalyticsUserAidMappingEntity[]): AnalyticsUserAidMappingEntity[] {
+  const emailMap: Record<string, AnalyticsUserAidMappingEntity> = {};
+
+  demoLeads.forEach((obj: AnalyticsUserAidMappingEntity) => {
+    if (obj.email && obj.email.trim() !== '') {
+      if (!(obj.email in emailMap) || emailMap[obj.email].date_ymd < obj.date_ymd) {
+        emailMap[obj.email] = obj;
+      }
+    }
+  });
+  return Object.values(emailMap);
+}
 
 
 export function tourAnnoationsLength(data: TourData): number {
