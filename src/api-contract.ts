@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-23 12:37:38.
+// Generated using typescript-generator version 2.35.1025 on 2024-03-26 18:22:33.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -123,9 +123,13 @@ export interface ReqEntityAssetAssn {
     entityType: EntityType;
 }
 
+export interface ReqHouseLeadInfoWithInfo360 {
+    orgId: number;
+    leadEmailId: string;
+    info360: ReqLead360[];
+}
+
 export interface ReqLead360 {
-    houseLeadId: number;
-    id?: number;
     tourId: number;
     demoVisited: number;
     sessionsCreated: number;
@@ -139,10 +143,6 @@ export interface ReqLeadActivityDataPost {
     tourId: number;
     aid: string;
     data: string;
-}
-
-export interface ReqListLead360 {
-    reqLead360: ReqLead360[];
 }
 
 export interface ReqMediaProcessing {
@@ -251,7 +251,6 @@ export interface RespHealth extends ResponseBase {
 }
 
 export interface RespHouseLeadInfo extends ResponseBase {
-    id: number;
     orgId: number;
     leadEmailId: string;
     info360: Lead360[];
