@@ -5,15 +5,21 @@ import {
   ReqLeadActivityDataPost,
   RespHouseLeadInfo } from '../../api-contract';
 import { getLeadActivity } from '../common_queries/athena_queries';
-import { AnalyticsUserAidMappingEntity, AthenaTourLeadEntity, Demo, GroupedData, TourData } from '../../types';
+import { 
+  AnalyticsUserAidMappingEntity, 
+  AthenaTourLeadEntity, 
+  GroupedData, 
+  JobInfo, 
+  LeadAccessInfoOfTour, 
+  Tour, 
+  TourData } from '../../types';
 import { getTourDetails, getTourLeadsForYmd } from './queries';
 import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
 import { 
-  getCreatedAtAndUpdateAt,
+  getLowerBound,
   getMidnightTimestamp,
-  getYmd,
   groupQueryResultBySid,
   timeSpentInDemo,
   tourAnnoationsLength } from '../../utils';
@@ -42,27 +48,17 @@ export class TourLeadJob extends JobBase {
       url = (await qUrlResp).QueueUrl;
       if (!url) throw new Error('Queue url could not be retrieved');
     }
-    const currentYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
-    const upperBound = getMidnightTimestamp(currentYmd);
-    const lowerBound = getCreatedAtAndUpdateAt(this.baseValues.jobInfo.jobDataScanningTime);
+
+    const successData: JobInfo  = await this.getJobSuccessData();
+    const timestampToCalculateBounds = successData ? successData.jobRunTime : '2023010100';
+    const upperBound = getMidnightTimestamp(this.baseValues.jobInfo.jobRunTime);
+    const lowerBound = getLowerBound(timestampToCalculateBounds);
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
-    const sendMessageRequest = {
-      QueueUrl: url, 
-      MessageBody: 'CBE',
-      MessageAttributes: {
-        demoLeads: {
-          DataType: 'String',
-          StringValue: JSON.stringify(tourLeads),
-        },
-      },
-    };
-    await Promise.all([
-      sqsClient.sendMessage(sendMessageRequest),
-      this.sendLeadActivityToS3(tourLeads),
-    ]);
+    
+    await this.sendLeadActivityToS3(tourLeads, url);
   }
 
-  protected async sendLeadActivityToS3(tourLeads: AnalyticsUserAidMappingEntity[]): Promise<void>  {
+  protected async sendLeadActivityToS3(tourLeads: AnalyticsUserAidMappingEntity[], url: string): Promise<void>  {
     for (const tourLead of tourLeads) {
       const query = getLeadActivity(tourLead.aid, tourLead.tour_id);
       const queryExecutionId = await runAthenaQuery(query);
@@ -80,7 +76,7 @@ export class TourLeadJob extends JobBase {
           data: JSON.stringify(queryResult),
         };
         await Promise.all([
-          this.populateLead360(tourLead, queryResult),
+          this.populateLead360(tourLead, queryResult, url),
           uploadLeadactivityToS3(leadActivity),
         ]);
 
@@ -94,21 +90,24 @@ export class TourLeadJob extends JobBase {
 
   protected async populateLead360 (
     tourLead: AnalyticsUserAidMappingEntity,
-    queryResult: AthenaTourLeadEntity[] ) : Promise<void> {
+    queryResult: AthenaTourLeadEntity[],
+    sqlClientUrl: string ) : Promise<void> {
     try {
-      const tour: Demo[] = await getTourDetails(tourLead.tour_id);
+      const tour: Tour[] = await getTourDetails(tourLead.tour_id);
       const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
       if (!houseLeadInfo) {
         log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
         return;
       }
       const reqListLead360: ReqHouseLeadInfoWithInfo360 = await this.preapreDataToPopulateLead360(tourLead, houseLeadInfo, queryResult);
+      const aggregatedTourValue: ReqLead360 = reqListLead360.info360.filter(item => item.tourId === 0)[0];
+      
+      this.prepareAndSendSqsMessage(queryResult, tourLead, aggregatedTourValue, tour[0], sqlClientUrl);
       await addOrUpdateLead360(reqListLead360);
     } catch (err) {
       log.err('Something went wrong while populating lead 360 table', err);
       throw new Error(`Something went wrong while populating lead 360 table ${err}`);
     }
-   
   }
 
   protected async preapreDataToPopulateLead360 (
@@ -167,5 +166,40 @@ export class TourLeadJob extends JobBase {
     reqListLead360.info360 = updatedInfo360;
       
     return reqListLead360;
+  }
+
+  protected async prepareAndSendSqsMessage(
+    queryResult: AthenaTourLeadEntity[],
+    tourLead: AnalyticsUserAidMappingEntity,
+    aggregatedTourValue: ReqLead360,
+    tour: Tour,
+    sqlClientUrl: string) {
+    
+    const demoUniqueViews = [...new Set(queryResult.map(item => item.aid))].length;
+
+    const leadAccessInfoOfTour: LeadAccessInfoOfTour = {
+      email: tourLead.email,
+      ctaClickRate: aggregatedTourValue.ctaClickRate,
+      demoCompletion: aggregatedTourValue.completionPercentage,
+      totalTimeSpent: aggregatedTourValue.timeSpentSec,
+      demoUniqueViews,
+      demoTotalViews: aggregatedTourValue.sessionsCreated,
+      lastActiveAt: +aggregatedTourValue.lastInteractedAt,
+      activityUrl: `https://app.sharefable.com/a/demo/${tour.rid}/leads#${tourLead.aid}`,
+      demoName: tour.display_name,
+      orgId: tour.belongs_to_org,
+    };
+    
+    const sendMessageRequest = {
+      QueueUrl: sqlClientUrl, 
+      MessageBody: 'CBE',
+      MessageAttributes: {
+        payload : {
+          DataType: 'String',
+          StringValue: JSON.stringify(leadAccessInfoOfTour),
+        },
+      },
+    };
+    sqsClient.sendMessage(sendMessageRequest);
   }
 }

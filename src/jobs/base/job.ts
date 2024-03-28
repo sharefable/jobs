@@ -3,6 +3,8 @@ import { JobProcessingStatus, JobType } from '../../api-contract';
 import { executeQuery } from '../mysql';
 import { randomUUID } from 'crypto';
 import { captureException } from '@sentry/node';
+import { sqlQueryToSelectLastSuccessData } from '../../jobs/common_queries/jobs_queries';
+import { Job } from '../../types';
 
 /*
  * This is the parent class all job needs to inherit. It's just a fabric around job exection and status update based on
@@ -59,5 +61,10 @@ export abstract class JobBase {
         },
       ];
     };
+  }
+
+  protected async getJobSuccessData (): Promise<any> {
+    const jobData: Job[] = await sqlQueryToSelectLastSuccessData(this.getJobType());
+    return jobData.length !== 0 ?  JSON.parse(jobData.at(0)!.info) : null;
   }
 }

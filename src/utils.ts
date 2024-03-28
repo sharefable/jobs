@@ -82,6 +82,11 @@ export const getCreatedAtAndUpdateAt = (timestamp: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
+export const getLowerBound = (timestamp: string): string => {
+  const ymdHms = getCreatedAtAndUpdateAt(timestamp).replace(/59/g, '00');
+  return ymdHms;
+};
+
 export const getMidnightTimestamp = (currentYmd: string): string => {
   const year = currentYmd.slice(0, 4);
   const month = currentYmd.slice(4, 6);
@@ -158,6 +163,12 @@ export function filterDemoLeads(demoLeads: AnalyticsUserAidMappingEntity[]): Ana
 }
 
 
+
+/* The code below along side some code in `types.ts` are being copy pasted from app/client. 
+   This code contains logic for some operations with annotations.
+*/
+// TODO move this code inside app/common and npm install common to  this job repo.
+
 export function tourAnnoationsLength(data: TourData): number {
   const annotationAndOpts = getThemeAndAnnotationFromDataFile(data, false);
   const allAnnotationsForTour = getAnnsForTour(annotationAndOpts.annotations, annotationAndOpts.annotationsIdMap);
@@ -166,7 +177,6 @@ export function tourAnnoationsLength(data: TourData): number {
   if (annotationAndOpts.journey?.flows.length !== 0) {
     for (const flow of annotationAndOpts.journey.flows) {
       main = flow.main;
-      console.log(main);
       const annConfigss = getOrderedAnnotaionFromMain(allAnnotationsForTour, main);
       annConfigs.push(...annConfigss);
     }

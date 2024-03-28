@@ -1,12 +1,15 @@
 import Cobalt from '@cobaltio/cobalt';
-import { AnalyticsUserAidMappingEntity, AthenaTourLeadEntity, Demo, TMsgAttrs } from '../types';
+import { 
+  ActivityTimeline,  
+  CobaltEvents, 
+  ContactPropertyPayload, 
+  LeadAccessInfoOfTour, 
+  TMsgAttrs, 
+  Event } from '../types';
 import { captureException } from '@sentry/node';
 import * as logs from '../log';
-import { getLeadActivity } from '../jobs/common_queries/athena_queries';
-import { downloadRawData, runAthenaQuery } from '../jobs/athena';
-import { getTourDetails } from '../jobs/lead_activity/queries';
 import * as log from '../log';
-import { filterDemoLeads, groupQueryResultBySid, timeSpentInDemo } from '../utils';
+import { randomUUID } from 'crypto';
 
 const Client: Cobalt = new Cobalt({
   apiKey: process.env.COBALT_API_KEY as string,
@@ -42,58 +45,75 @@ export const createLinkedAccountForNewUser = async (utProps: TMsgAttrs) => {
   }
 };
 
-type EventIProps = AnalyticsUserAidMappingEntity[] & TMsgAttrs;
+export interface EventPayload {
+  payload: string;
+}
 
+type CBEventIProps = EventPayload & TMsgAttrs;
 export async function sendEventToCobalt(props: TMsgAttrs) {
-  const utProps = props as EventIProps;
-  const demoLeads: AnalyticsUserAidMappingEntity[]  = JSON.parse(utProps.demoLeads as string) as  AnalyticsUserAidMappingEntity[];
-  const filteredDemoLeads = filterDemoLeads(demoLeads);
   
-  for (const demoLead of filteredDemoLeads) {
-    try {
-      const query = getLeadActivity(demoLead.aid, demoLead.tour_id);
-      const queryExecutionId = await runAthenaQuery(query);
-      const queryResult: AthenaTourLeadEntity[] = await downloadRawData(queryExecutionId) as AthenaTourLeadEntity[];
-      if (queryResult.length === 0) {
-        log.info(`No activity found for ${demoLead.email} on tour ${demoLead.tour_id}`);
-        continue;
-      }
-      const demo: Demo[] = await getTourDetails(demoLead.tour_id);
-
-      const groupedData = groupQueryResultBySid(queryResult);
-      const timesLeadHasVisitedTheDemo = Object.keys(groupedData).length;
-      const totalTimeSpentInDemoByLead = timeSpentInDemo(groupedData);
-
-      if (demoLead.email) {
-        const cobaltEventPayload = {
-          event: 'Contact Property',
-          payload: {
-            demoLink: `https://app.sharefable.com/demo/${demo[0].rid}`,
-            demoName: demo[0].display_name,
-            email: demoLead.email,
-            timesLeadHasVisitedTheDemo,
-            totalTimeSpentInDemoByLead:`${totalTimeSpentInDemoByLead} sec`,
-          },
-        };
-
-        const resp = await fetch('https://api.gocobalt.io/api/v1/webhook/651e859faa1edef92d87b200', {
-          method: 'POST',
-          headers: {
-            'x-api-key': `${process.env.COBALT_PROD_API_KEY}`,
-            'Content-Type': 'application/json',
-            'linked_account_id':  demo[0].belongs_to_org.toString(),
-          },
-          body: JSON.stringify(cobaltEventPayload),
-        });
-      
-        if (!(resp.status >= 200 && resp.status < 300)) {
-          log.err('Something went wrong while sending the event to vendor', resp.status);
-          throw new Error('Something went wrong while sending the event to vendor');
-        } 
-      }
-    } catch(error) {
-      log.err('Something went wrong while sending Contact Property to vendor', error);
-      captureException(error as Error);
-    }
+  const utProps = props as CBEventIProps;
+  try {
+    await Promise.all([
+      refreshContactProperty(JSON.parse(utProps.payload) as LeadAccessInfoOfTour),
+      activityDemoEvent(JSON.parse(utProps.payload) as LeadAccessInfoOfTour),
+    ]);
+  } catch (err) {
+    log.err('Something went wrong while sending refreshing contact property or tour activity timeline event to vendor', err);
+    captureException(err as Error);
   }
 }
+
+async function refreshContactProperty (payload: LeadAccessInfoOfTour) {
+  
+  const contactPropertyPayload: ContactPropertyPayload = {
+    email: payload.email,
+    ctaClickRate: payload.ctaClickRate,
+    demoCompletion: payload.demoCompletion,
+    totalTimeSpent: payload.totalTimeSpent,
+    demoUniqueViews: payload.demoUniqueViews,
+    demoTotalViews: payload.demoTotalViews,
+    lastActiveAt: new Date(payload.lastActiveAt).setUTCHours(0, 0, 0, 0),
+  };
+  
+  const contactPropertyEvent: Event = {
+    event: CobaltEvents.REFRESH_CONTACT_PROPERTIES,
+    payload: contactPropertyPayload,
+  };
+  await cobaltEventApi(contactPropertyEvent, payload.orgId.toString());
+}
+
+async function activityDemoEvent (payload: LeadAccessInfoOfTour) {
+ 
+  const timelinePayload: ActivityTimeline = {
+    email: payload.email,
+    activityUrl: payload.activityUrl,
+    demoName: payload.demoName,
+    totalTimeSpent: payload.totalTimeSpent,
+    completionPercentage: payload.demoCompletion,
+    ourEventId: randomUUID(),
+  };
+
+  const contactPropertyEvent: Event = {
+    event: CobaltEvents.ACTIVITY_ON_DEMO,
+    payload: timelinePayload,
+  };
+  await cobaltEventApi(contactPropertyEvent, payload.orgId.toString());
+}
+
+async function cobaltEventApi (eventPayload: Event, accountId: string): Promise<void>  {
+  const resp = await fetch('https://api.gocobalt.io/api/v1/webhook/651e859faa1edef92d87b200', {
+    method: 'POST',
+    headers: {
+      'x-api-key': `${process.env.COBALT_API_KEY}`,
+      'Content-Type': 'application/json',
+      'linked_account_id': accountId,
+    },
+    body: JSON.stringify(eventPayload),
+  });
+      
+  if (!(resp.status >= 200 && resp.status < 300)) {
+    log.err(`Something went wrong while sending the event [ ${eventPayload.event} ] to vendor`, resp.status);
+    throw new Error(`Something went wrong while sending the event [ ${eventPayload.event} ] to vendor`);
+  } 
+} 

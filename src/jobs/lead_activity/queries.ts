@@ -1,5 +1,5 @@
 import { executeQuery } from '../mysql';
-import { AnalyticsUserAidMappingEntity, Demo, TableName } from '../../types';
+import { AnalyticsUserAidMappingEntity, Tour, TableName } from '../../types';
 
 export const getTourLeadsForYmd = async (lowerBound: string, upperBound: string) => {
   const query = `SELECT 
@@ -12,6 +12,6 @@ export const getTourLeadsForYmd = async (lowerBound: string, upperBound: string)
 
 export const getTourDetails = async (tourId: number) => {
   const query = `SELECT * From ${TableName.Tour} WHERE id = ${tourId};`;
-  const tour: Demo[] = await executeQuery(query);
+  const tour: Tour[] = await executeQuery(query);
   return tour;
 };

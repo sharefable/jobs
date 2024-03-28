@@ -113,7 +113,7 @@ export interface AnalyticsAnnClickEntity {
   time_spent_dist: string;
 }
 
-export interface Demo {
+export interface Tour {
   rid: string;
   display_name: string;
   created_by: number;
@@ -122,6 +122,48 @@ export interface Demo {
 
 export interface GroupedData {
   [key: string]: AthenaTourLeadEntity[];
+}
+
+export interface LeadAccessInfoOfTour {
+  email: string;
+  ctaClickRate: number;
+  demoCompletion: number;
+  totalTimeSpent: number;
+  demoUniqueViews: number;
+  demoTotalViews: number;
+  lastActiveAt: number,
+  activityUrl: string,
+  demoName: string,
+  orgId: number
+}
+
+export enum CobaltEvents {
+  REFRESH_CONTACT_PROPERTIES='REFRESH_CONTACT_PROPERTIES',
+  ACTIVITY_ON_DEMO='ACTIVITY_ON_DEMO',
+}
+
+export interface ContactPropertyPayload {
+  email: string;
+  ctaClickRate: number;
+  demoCompletion: number;
+  totalTimeSpent: number;
+  demoUniqueViews: number;
+  demoTotalViews: number;
+  lastActiveAt: number,
+}
+
+export interface Event {
+  event: string;
+  payload: ContactPropertyPayload | ActivityTimeline;
+}
+
+export interface ActivityTimeline {
+  email: string;
+  totalTimeSpent: number;
+  activityUrl: string,
+  demoName: string,
+  completionPercentage: number;
+  ourEventId: string;
 }
 
 export interface ScreenDiagnostics {
