@@ -1,5 +1,4 @@
 import { 
-  AnalyticsUserAidMappingEntity,
   AnnotationPerScreenId,
   AnnotationPositions,
   AthenaTourLeadEntity,
@@ -149,6 +148,34 @@ export function timeSpentInDemo(groupedData: GroupedData): number {
   return result;
 }
 
+
+export function getButtonIds(data: TourData): string[] {
+  const buttonIds: string[] = [];
+  const annotationAndOpts = getThemeAndAnnotationFromDataFile(data, false);
+  const allAnnotationsForTour = getAnnsForTour(annotationAndOpts.annotations, annotationAndOpts.annotationsIdMap);
+  for (const allAnns of allAnnotationsForTour) {
+    for (const annotation of allAnns.annotations) {
+      for (const button of annotation.buttons) {
+        if ((button.type === 'custom' || button.type === 'next') && button.hotspot && button.hotspot.actionType === 'open') {
+          buttonIds.push(button.id);
+        }
+      }
+    }
+  }
+  return buttonIds;
+}
+
+export function getCtaClickedRate(queryResult: AthenaTourLeadEntity[], data: TourData): number {  
+  let ctaClickRate = 0;
+  const btnIds: string[] = getButtonIds(data);
+  for (const athenaData of queryResult) {
+    if (btnIds.includes(athenaData.payload_btn_id)) {
+      ctaClickRate += 1;
+      break;
+    }
+  }
+  return ctaClickRate;
+}
 
 
 /* The code below along side some code in `types.ts` are being copy pasted from app/client. 
