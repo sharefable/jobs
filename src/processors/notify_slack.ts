@@ -3,7 +3,8 @@ import { TMsgAttrs } from '../types';
 import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 import mailchimp from '@mailchimp/mailchimp_marketing';
-
+import { captureException } from '@sentry/node';
+import { createLinkedAccountForNewUser } from '../processors/cobalt';
 
 mailchimp.setConfig({
   apiKey: process.env.MAILCHIMP_API_KEY,
@@ -26,7 +27,7 @@ function getPayloadProps(props: Record<string, string>): string {
 }
 
 type IProps = ReqNfHook & TMsgAttrs;
-export const processEventsToNotify = async (utProps: TMsgAttrs) => {
+export const processEventsForDestination = async (utProps: TMsgAttrs) => {
   const props = utProps as IProps;
   try {
     const payloadVarStr = getPayloadProps(props as Record<string,string>);
@@ -46,13 +47,18 @@ export const processEventsToNotify = async (utProps: TMsgAttrs) => {
         await notifySlack(slackWebhookUrl, text);
         break;
       }
+
+      case NfEvents.NEW_ORG_CREATED : {
+        createLinkedAccountForNewUser(utProps);
+        break;
+      }
     
       default:
         break;
     } 
   } catch (error) {
     console.log(error);
-    // TODO: Raise sentry error
+    captureException(error as Error);
   }
 };
 

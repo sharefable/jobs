@@ -9,10 +9,11 @@ import {JobProcessingStatus} from './api-contract';
 import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
-import { processEventsToNotify } from './processors/notify_slack';
+import { processEventsForDestination } from './processors/notify_slack';
+import { sendEventToCobalt } from './processors/cobalt';
 
-const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
-const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
+export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
+export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
 
 let url: string | undefined;
 
@@ -63,7 +64,10 @@ export default function mainMsgLoop() {
         const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
         if (msg.Body === 'NF') {
-          await processEventsToNotify(msgAttrs);
+          await processEventsForDestination(msgAttrs);
+          await deleteMsg();
+        } else if (msg.Body === 'CBE') {
+          await sendEventToCobalt(msgAttrs);
           await deleteMsg();
         } else {
           if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));

@@ -37,6 +37,7 @@ const envLoadingStatus = [
   'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
   'AWS_ATHENA_REGION',
   'API_SERVER_ENDPOINT',
+  'COBALT_API_KEY',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
