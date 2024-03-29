@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-26 18:22:33.
+// Generated using typescript-generator version 2.35.1025 on 2024-03-29 13:15:20.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -265,15 +265,8 @@ export interface RespLinkedApps {
     icon: string;
     description: string;
     type: string;
-    tags: string[];
-    version?: LinkedAppVersion;
     connected?: boolean;
     slug: string;
-    app_id: string;
-    auth_type: string;
-    connected_accounts?: ConnectedAccounts[];
-    auth_input_map?: AuthInputMap[];
-    reauth_required: boolean;
 }
 
 export interface RespMediaProcessingInfo extends ResponseBase {
@@ -398,6 +391,22 @@ export interface Identifiers {
 export interface LinkedAppVersion {
     _v: string;
     description: string;
+}
+
+export interface LinkedApps {
+    name: string;
+    icon: string;
+    description: string;
+    type: string;
+    tags: string[];
+    version?: LinkedAppVersion;
+    connected?: boolean;
+    slug: string;
+    app_id: string;
+    auth_type: string;
+    connected_accounts?: ConnectedAccounts[];
+    auth_input_map?: AuthInputMap[];
+    reauth_required: boolean;
 }
 
 export interface Serializable {
