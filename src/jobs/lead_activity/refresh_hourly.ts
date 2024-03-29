@@ -94,6 +94,11 @@ export class TourLeadJob extends JobBase {
     sqlClientUrl: string ) : Promise<void> {
     try {
       const tour: Tour[] = await getTourDetails(tourLead.tour_id);
+      if (tour.length <= 0) {
+        log.info(`No tour found for ${tourLead.tour_id} in db`);
+        return;
+      }
+
       const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
       if (!houseLeadInfo) {
         log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
@@ -145,7 +150,7 @@ export class TourLeadJob extends JobBase {
       timeSpentSec: timeSpentInATour,
       lastInteractedAt: lastInteractedAt,
       completionPercentage: Math.round((uniquePayloadAnnIds / tourAnnLength) * 100),
-      ctaClickRate:  matchedLead360WithTourId.length <= 0 ? 1 : matchedLead360WithTourId[0].ctaClickRate + 1,
+      ctaClickRate: 1,
     };
     updatedInfo360.push(lead360);
     
