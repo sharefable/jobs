@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-15 12:29:05.
+// Generated using typescript-generator version 2.35.1025 on 2024-03-29 13:15:20.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -123,6 +123,22 @@ export interface ReqEntityAssetAssn {
     entityType: EntityType;
 }
 
+export interface ReqHouseLeadInfoWithInfo360 {
+    orgId: number;
+    leadEmailId: string;
+    info360: ReqLead360[];
+}
+
+export interface ReqLead360 {
+    tourId: number;
+    demoVisited: number;
+    sessionsCreated: number;
+    timeSpentSec: number;
+    lastInteractedAt: Date;
+    completionPercentage: number;
+    ctaClickRate: number;
+}
+
 export interface ReqLeadActivityDataPost {
     tourId: number;
     aid: string;
@@ -234,6 +250,12 @@ export interface RespHealth extends ResponseBase {
     status: string;
 }
 
+export interface RespHouseLeadInfo extends ResponseBase {
+    orgId: number;
+    leadEmailId: string;
+    info360: Lead360[];
+}
+
 export interface RespLeadActivityUrl {
     leadActivityUrl: string;
 }
@@ -242,13 +264,9 @@ export interface RespLinkedApps {
     name: string;
     icon: string;
     description: string;
-    tags: string[];
-    version?: LinkedAppVersion;
+    type: string;
     connected?: boolean;
     slug: string;
-    auth_type: string;
-    connected_accounts?: ConnectedAccounts[];
-    auth_input_map?: AuthInputMap[];
 }
 
 export interface RespMediaProcessingInfo extends ResponseBase {
@@ -355,16 +373,40 @@ export interface AuthInputMap {
     placeholder: string;
     required: boolean;
     type: string;
+    options: string[];
 }
 
 export interface ConnectedAccounts {
-    identifier: string;
+    identifier: Identifiers;
     connectedAt: string;
+}
+
+export interface Identifiers {
+    portalId: number;
+    appId: number;
+    userId: number;
+    hub_domain: string;
 }
 
 export interface LinkedAppVersion {
     _v: string;
     description: string;
+}
+
+export interface LinkedApps {
+    name: string;
+    icon: string;
+    description: string;
+    type: string;
+    tags: string[];
+    version?: LinkedAppVersion;
+    connected?: boolean;
+    slug: string;
+    app_id: string;
+    auth_type: string;
+    connected_accounts?: ConnectedAccounts[];
+    auth_input_map?: AuthInputMap[];
+    reauth_required: boolean;
 }
 
 export interface Serializable {
@@ -378,9 +420,25 @@ export interface ResponseBase {
     updatedAt: Date;
 }
 
+export interface Lead360 extends EntityBase {
+    tourId: number;
+    demoVisited: number;
+    sessionsCreated: number;
+    timeSpentSec: number;
+    lastInteractedAt: Date;
+    completionPercentage: number;
+    ctaClickRate: number;
+}
+
 export interface SumViews {
     viewsAll: number;
     viewsUnique: number;
+}
+
+export interface EntityBase {
+    createdAt: Date;
+    updatedAt: Date;
+    id: number;
 }
 
 export const enum EntityType {
