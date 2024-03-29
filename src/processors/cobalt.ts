@@ -111,9 +111,9 @@ async function cobaltEventApi (eventPayload: Event, accountId: string): Promise<
     },
     body: JSON.stringify(eventPayload),
   });
-      
+
   if (!(resp.status >= 200 && resp.status < 300)) {
-    log.err(`Something went wrong while sending the event [ ${eventPayload.event} ] to vendor`, resp.status);
+    log.err(`Something went wrong while sending the event [ ${eventPayload.event} ] to vendor`, resp.statusText);
     throw new Error(`Something went wrong while sending the event [ ${eventPayload.event} ] to vendor`);
   } 
 } 

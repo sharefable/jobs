@@ -140,11 +140,11 @@ export class TourLeadJob extends JobBase {
     
     const lead360: ReqLead360 = {
       tourId: tourLead.tour_id,
-      demoVisited: matchedLead360WithTourId.length <= 0 ?  1 : matchedLead360WithTourId[0].demoVisited + 1,
+      demoVisited: 1,
       sessionsCreated: sessionsCreated,
       timeSpentSec: timeSpentInATour,
       lastInteractedAt: lastInteractedAt,
-      completionPercentage: Math.round((uniquePayloadAnnIds/tourAnnLength) * 100),
+      completionPercentage: Math.round((uniquePayloadAnnIds / tourAnnLength) * 100),
       ctaClickRate:  matchedLead360WithTourId.length <= 0 ? 1 : matchedLead360WithTourId[0].ctaClickRate + 1,
     };
     updatedInfo360.push(lead360);

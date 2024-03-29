@@ -149,19 +149,6 @@ export function timeSpentInDemo(groupedData: GroupedData): number {
   return result;
 }
 
-export function filterDemoLeads(demoLeads: AnalyticsUserAidMappingEntity[]): AnalyticsUserAidMappingEntity[] {
-  const emailMap: Record<string, AnalyticsUserAidMappingEntity> = {};
-
-  demoLeads.forEach((obj: AnalyticsUserAidMappingEntity) => {
-    if (obj.email && obj.email.trim() !== '') {
-      if (!(obj.email in emailMap) || emailMap[obj.email].date_ymd < obj.date_ymd) {
-        emailMap[obj.email] = obj;
-      }
-    }
-  });
-  return Object.values(emailMap);
-}
-
 
 
 /* The code below along side some code in `types.ts` are being copy pasted from app/client. 
