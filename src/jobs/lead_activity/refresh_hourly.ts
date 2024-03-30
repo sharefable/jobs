@@ -18,6 +18,7 @@ import * as log from '../../log';
 import { downloadRawData, runAthenaQuery } from '../athena';
 import { JobBase } from '../../jobs/base/job';
 import { 
+  getCtaClickedRate,
   getLowerBound,
   getMidnightTimestamp,
   groupQueryResultBySid,
@@ -94,6 +95,11 @@ export class TourLeadJob extends JobBase {
     sqlClientUrl: string ) : Promise<void> {
     try {
       const tour: Tour[] = await getTourDetails(tourLead.tour_id);
+      if (tour.length <= 0) {
+        log.info(`No tour found for ${tourLead.tour_id} in db`);
+        return;
+      }
+
       const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
       if (!houseLeadInfo) {
         log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
@@ -129,23 +135,20 @@ export class TourLeadJob extends JobBase {
     const uniquePayloadAnnIds = [...new Set(queryResult.map(item => item.payload_ann_id))].length;
 
     const groupedBySid: GroupedData = groupQueryResultBySid(queryResult);
-    const sessionsCreated: number = Object.keys(groupedBySid).length;
-    
-    const timeSpentInATour: number = timeSpentInDemo(groupedBySid);
+
     const lastInteractedAt: Date = new Date(Math.max(...queryResult.map(item => parseInt(item.uts))) * 1000);
 
-    const matchedLead360WithTourId: ReqLead360[] = houseLeadInfo!.info360.filter(item => item.tourId === tourLead.tour_id) as ReqLead360[];
     const aggregationRow: ReqLead360 = houseLeadInfo!.info360.filter(item => item.tourId === 0)[0] as ReqLead360;
     
     
     const lead360: ReqLead360 = {
       tourId: tourLead.tour_id,
       demoVisited: 1,
-      sessionsCreated: sessionsCreated,
-      timeSpentSec: timeSpentInATour,
+      sessionsCreated: Object.keys(groupedBySid).length,
+      timeSpentSec:  timeSpentInDemo(groupedBySid),
       lastInteractedAt: lastInteractedAt,
       completionPercentage: Math.round((uniquePayloadAnnIds / tourAnnLength) * 100),
-      ctaClickRate:  matchedLead360WithTourId.length <= 0 ? 1 : matchedLead360WithTourId[0].ctaClickRate + 1,
+      ctaClickRate: getCtaClickedRate(queryResult, dataFileTourData),
     };
     updatedInfo360.push(lead360);
     
