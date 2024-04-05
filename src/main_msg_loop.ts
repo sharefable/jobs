@@ -2,15 +2,15 @@ import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/c
 import {TMsgAttrs} from './types';
 import transcodeVideo from './processors/video_transcoder';
 import resizeImg from './processors/image_resizer';
-// import deleteAsset from './processors/delete_asset';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
 import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
-import { processEventsForDestination } from './processors/notify_slack';
+import { processEventsForDestination } from './processors/mics';
 import { sendEventToCobalt } from './processors/cobalt';
+import RetryableErr from './retryable-err';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -26,10 +26,13 @@ function deleteMsgPrep(qUrl: string, id: string | undefined): () => Promise<Dele
   };
 }
 
+const INTERNAL_MESSAGE_PREFIX = '__fable_internal__';
+
 function getMsgAttrMaps(attrs?: Record<string, MessageAttributeValue>): TMsgAttrs {
   attrs = attrs || {};
   const flatAttrs: Record<string, string | undefined | null> = {};
   for (const [key, val] of Object.entries(attrs)) {
+    if (key.startsWith(INTERNAL_MESSAGE_PREFIX)) continue;
     flatAttrs[key] = val.StringValue;
   }
   return flatAttrs;
@@ -64,8 +67,39 @@ export default function mainMsgLoop() {
         const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
         if (msg.Body === 'NF') {
-          await processEventsForDestination(msgAttrs);
-          await deleteMsg();
+          try {
+            await processEventsForDestination(msgAttrs);
+          } catch (e) {
+            if (e instanceof RetryableErr) {
+              if (!(e as RetryableErr).isRetryable) return;
+              let retryCount = 0;
+              if (`${INTERNAL_MESSAGE_PREFIX}retryCount` in (msg.MessageAttributes || {})) {
+                retryCount = +(msg.MessageAttributes![`${INTERNAL_MESSAGE_PREFIX}retryCount`]?.StringValue || '0');
+              }
+              if (retryCount >= 2) {
+                console.log('Retrying exhaused');
+                return;
+              }
+              console.log(`[${retryCount + 1}/3] Retrying...`);
+              sqsClient.sendMessage({
+                QueueUrl: url,
+                MessageBody: msg.Body,
+                DelaySeconds: 60 * 30,
+                MessageAttributes: {
+                  ...msg.MessageAttributes,
+                  [`${INTERNAL_MESSAGE_PREFIX}retryCount`]: {
+                    'DataType': 'String',
+                    'StringValue': String((retryCount + 1)),
+                  },
+                },
+              });
+            } else {
+              console.warn('Not retryable error');
+              console.error((e as Error).stack);
+            }
+          } finally {
+            await deleteMsg();
+          }
         } else if (msg.Body === 'CBE') {
           await sendEventToCobalt(msgAttrs);
           await deleteMsg();

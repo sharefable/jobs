@@ -1,5 +1,5 @@
 import { TourData } from 'types';
-import { ApiResp, ReqHouseLeadInfoWithInfo360, RespHouseLeadInfo, RespTour } from './api-contract';
+import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespFatTenantIntegration, RespHouseLeadInfo, RespTour } from './api-contract';
 import * as log from './log';
 
 export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
@@ -17,8 +17,20 @@ export async function addOrUpdateLead360 (body: ReqHouseLeadInfoWithInfo360): Pr
   await req('/poplead', 'POST', body);
 }
 
+export async function addToApplicationLog(logLine: ReqNewLog) {
+  await req('/new/log', 'POST', logLine);
+}
 
-type Resp = RespTour | RespHouseLeadInfo | string;
+export async function getTenantIntegration(id: number): Promise<RespFatTenantIntegration> {
+  return await req(`/fat/tenant_integration/${id}`) as RespFatTenantIntegration;
+}
+
+export async function getTourById(id: string): Promise<RespTour> {
+  return await req(`/tour/by/id/${id}`) as RespTour;
+}
+
+
+type Resp = RespTour | RespHouseLeadInfo | string | RespFatTenantIntegration;
 export async function req (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',

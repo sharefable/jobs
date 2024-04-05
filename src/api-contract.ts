@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-03-29 13:15:20.
+// Generated using typescript-generator version 2.35.1025 on 2024-04-05 13:11:34.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -40,9 +40,18 @@ export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
 export interface PaymentTerms {
 }
 
-export interface ReqTourPropUpdate {
-    tourRid: string;
-    inProgress?: boolean;
+export interface ReqNewLog {
+    orgId: number;
+    logType: LogType;
+    forObjectType: ForObjectType;
+    forObjectId: number;
+    logLine: any;
+}
+
+export interface RespFatTenantIntegration {
+    org: Org;
+    platformIntegration: PlatformIntegration;
+    tenantIntegration: TenantIntegration;
 }
 
 export interface ScreenAssets {
@@ -103,6 +112,13 @@ export interface ReqActivateOrDeactivateUser {
     shouldActivate: boolean;
 }
 
+export interface ReqAddOrUpdateLeadInfo {
+    tourId: number;
+    emailId: string;
+    value: string;
+    key: LeadInfoKey;
+}
+
 export interface ReqCobaltEvent {
     event: string;
     payload: { [index: string]: string };
@@ -111,6 +127,19 @@ export interface ReqCobaltEvent {
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
+}
+
+export interface ReqCreateOrUpdateTenantIntegration {
+    integrationType: string;
+    tenantIntegrationId?: number;
+    relayId?: number;
+    event: string;
+    disabled?: boolean;
+    tenantConfig: { [index: string]: any };
+}
+
+export interface ReqDeleteTenantIntegration {
+    tenantIntegrationId: number;
 }
 
 export interface ReqDuplicateTour {
@@ -148,6 +177,10 @@ export interface ReqLeadActivityDataPost {
 export interface ReqMediaProcessing {
     path: string;
     assn: ReqEntityAssetAssn;
+}
+
+export interface ReqNewLinkedAccount {
+    orgId: number;
 }
 
 export interface ReqNewOrg {
@@ -206,6 +239,11 @@ export interface ReqThumbnailCreation {
     screenRid: string;
 }
 
+export interface ReqTourPropUpdate {
+    tourRid: string;
+    inProgress?: boolean;
+}
+
 export interface ReqTourRid {
     tourRid: string;
 }
@@ -233,10 +271,6 @@ export interface RespCommonConfig extends ResponseBase {
     dataFileName: string;
     loaderFileName: string;
     editFileName: string;
-    pubDataFileName: string;
-    pubLoaderFileName: string;
-    pubEditFileName: string;
-    pubTourEntityFileName: string;
     manifestFileName: string;
     latestSchemaVersion: SchemaVersion;
 }
@@ -284,6 +318,17 @@ export interface RespOrg extends ResponseBase {
     thumbnail: string;
 }
 
+export interface RespPlatformIntegration extends ResponseBase {
+    type: string;
+    name: string;
+    icon: string;
+    description: string;
+    slug: string;
+    disabled: boolean;
+    platformConfig: { [index: string]: any };
+    tenantIntegrations: RespTenantIntegration[];
+}
+
 export interface RespProxyAsset extends ResponseBase {
     proxyUri: string;
     content?: string;
@@ -313,6 +358,14 @@ export interface RespSubscription extends ResponseBase {
     trialEndsOn: Date;
 }
 
+export interface RespTenantIntegration extends ResponseBase {
+    id: number;
+    disabled: boolean;
+    event: string;
+    tenantConfig: { [index: string]: any };
+    relay: number;
+}
+
 export interface RespTour extends ResponseBase {
     id: number;
     rid: string;
@@ -323,6 +376,10 @@ export interface RespTour extends ResponseBase {
     onboarding: boolean;
     inProgress: boolean;
     createdBy: RespUser;
+    pubDataFileName: string;
+    pubLoaderFileName: string;
+    pubEditFileName: string;
+    pubTourEntityFileName: string;
 }
 
 export interface RespTourAnnViews {
@@ -348,6 +405,7 @@ export interface RespTourView {
 export interface RespTourWithScreens extends RespTour {
     screens: RespScreen[];
     idxm?: { [index: string]: string };
+    cc: RespCommonConfig;
 }
 
 export interface RespUploadUrl {
@@ -415,6 +473,29 @@ export interface Serializable {
 export interface MapSerializable extends Serializable {
 }
 
+export interface Org extends EntityBaseWithReadableId {
+    displayName: string;
+    thumbnail: string;
+    domain: string;
+}
+
+export interface PlatformIntegration extends EntityBase {
+    type: string;
+    name: string;
+    icon: string;
+    description: string;
+    disabled: boolean;
+    platformConfig: { [index: string]: any };
+}
+
+export interface TenantIntegration extends EntityBase {
+    orgId: number;
+    disabled: boolean;
+    integrationId: number;
+    event: string;
+    tenantConfig: { [index: string]: any };
+}
+
 export interface ResponseBase {
     createdAt: Date;
     updatedAt: Date;
@@ -433,6 +514,10 @@ export interface Lead360 extends EntityBase {
 export interface SumViews {
     viewsAll: number;
     viewsUnique: number;
+}
+
+export interface EntityBaseWithReadableId extends EntityBase {
+    rid: string;
 }
 
 export interface EntityBase {
@@ -506,13 +591,28 @@ export const enum ErrorCode {
     NotFound = 101,
 }
 
+export const enum LogType {
+    WEBHOOK_EXEC = "WEBHOOK_EXEC",
+}
+
+export const enum ForObjectType {
+    TENANT_INTEGRATION = "TENANT_INTEGRATION",
+}
+
+export const enum LeadInfoKey {
+    HUBSPOT_CONTACT_ID = "HUBSPOT_CONTACT_ID",
+    SFDC_CONTACT_ID = "SFDC_CONTACT_ID",
+}
+
 export const enum NfEvents {
     NEW_USER_SIGNUP = "NEW_USER_SIGNUP",
     NEW_ORG_CREATED = "NEW_ORG_CREATED",
     EBOOK_DOWNLOAD = "EBOOK_DOWNLOAD",
+    RUN_INTEGRATION = "RUN_INTEGRATION",
 }
 
 export const enum Plan {
+    SOLO = "SOLO",
     STARTUP = "STARTUP",
     BUSINESS = "BUSINESS",
 }
