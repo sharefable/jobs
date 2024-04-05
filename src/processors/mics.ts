@@ -4,7 +4,9 @@ import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 import mailchimp from '@mailchimp/mailchimp_marketing';
 import { captureException } from '@sentry/node';
-import { createLinkedAccountForNewUser } from '../processors/cobalt';
+import { createLinkedAccountForNewUser } from './cobalt';
+import runIntegration from './integrations';
+import RetryableErr from '../retryable-err';
 
 mailchimp.setConfig({
   apiKey: process.env.MAILCHIMP_API_KEY,
@@ -52,13 +54,21 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
         createLinkedAccountForNewUser(utProps);
         break;
       }
+
+      case NfEvents.RUN_INTEGRATION: {
+        await runIntegration(utProps.payload_event, utProps.payload_eventPayload, utProps.payload_integrationId);
+        break;
+      }
     
       default:
         break;
     } 
   } catch (error) {
-    console.log(error);
+    console.log((error as Error).stack);
     captureException(error as Error);
+    if (error instanceof RetryableErr) {
+      throw error;
+    }
   }
 };
 
