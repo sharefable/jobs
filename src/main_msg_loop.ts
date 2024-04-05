@@ -84,7 +84,7 @@ export default function mainMsgLoop() {
               sqsClient.sendMessage({
                 QueueUrl: url,
                 MessageBody: msg.Body,
-                DelaySeconds: 10,
+                DelaySeconds: 60 * 30,
                 MessageAttributes: {
                   ...msg.MessageAttributes,
                   [`${INTERNAL_MESSAGE_PREFIX}retryCount`]: {
