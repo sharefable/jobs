@@ -138,13 +138,6 @@ export class TourLeadJob extends JobBase {
 
     const lastInteractedAt: Date = new Date(Math.max(...queryResult.map(item => parseInt(item.uts))) * 1000);
 
-    const aggregationRow: ReqLead360 = houseLeadInfo!.info360.filter(item => item.tourId === 0)[0] as ReqLead360;
-
-    const alreadyExistingCurrentTour: ReqLead360 = houseLeadInfo!.info360.filter(item => item.tourId === tourLead.tour_id)[0] as ReqLead360;
-    
-    const tourAlreadyExists: boolean = houseLeadInfo!.info360.some(item => item.tourId === tourLead.tour_id);
-
-    
     const lead360: ReqLead360 = {
       tourId: tourLead.tour_id,
       demoVisited: 1,
@@ -155,29 +148,22 @@ export class TourLeadJob extends JobBase {
       ctaClickRate: getCtaClickedRate(queryResult, dataFileTourData),
     };
     updatedInfo360.push(lead360);
-    
-    const aggregation: ReqLead360 = {
-      tourId: aggregationRow.tourId ,
-      demoVisited: tourAlreadyExists 
-        ? (aggregationRow.demoVisited - alreadyExistingCurrentTour.demoVisited) + lead360.demoVisited 
-        : aggregationRow.demoVisited + lead360.demoVisited,
-      sessionsCreated: tourAlreadyExists 
-        ? (aggregationRow.sessionsCreated - alreadyExistingCurrentTour.sessionsCreated) + lead360.sessionsCreated
-        : aggregationRow.sessionsCreated + lead360.sessionsCreated,
-      timeSpentSec: tourAlreadyExists 
-        ? (aggregationRow.timeSpentSec - alreadyExistingCurrentTour.timeSpentSec) + lead360.timeSpentSec 
-        : aggregationRow.timeSpentSec + lead360.timeSpentSec,
-      lastInteractedAt: lastInteractedAt,
-      completionPercentage: aggregationRow.completionPercentage === 0 
-        ? lead360.completionPercentage 
-        : Math.round((lead360.completionPercentage +  ( tourAlreadyExists ? (aggregationRow.completionPercentage - alreadyExistingCurrentTour.completionPercentage) : aggregationRow.completionPercentage)) / 2),
-      ctaClickRate: aggregationRow.completionPercentage === 0 
-        ? lead360.ctaClickRate 
-        : Math.round((lead360.ctaClickRate + (tourAlreadyExists ? (aggregationRow.ctaClickRate - alreadyExistingCurrentTour.ctaClickRate) : aggregationRow.ctaClickRate)) / 2),
-    };
+    const aggregation = { ...lead360, tourId: 0 };
+    for (const row of houseLeadInfo.info360) {
+      if (row.tourId === tourLead.tour_id || row.tourId === 0) {
+        continue;
+      }
+      aggregation.demoVisited += row.demoVisited;
+      aggregation.sessionsCreated += row.sessionsCreated;
+      aggregation.timeSpentSec += row.timeSpentSec;
+      aggregation.completionPercentage += row.completionPercentage;
+      aggregation.ctaClickRate += row.ctaClickRate;
+    }
+
+    aggregation.completionPercentage = Math.round(aggregation.completionPercentage / (houseLeadInfo.info360.length - 1));
+    aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / (houseLeadInfo.info360.length - 1));
+
     updatedInfo360.push(aggregation);
-    reqListLead360.info360 = updatedInfo360;
-      
     return reqListLead360;
   }
 
