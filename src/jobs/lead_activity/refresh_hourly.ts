@@ -164,6 +164,7 @@ export class TourLeadJob extends JobBase {
     aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / (houseLeadInfo.info360.length - 1));
 
     updatedInfo360.push(aggregation);
+    reqListLead360.info360 = updatedInfo360;
     return reqListLead360;
   }
 
