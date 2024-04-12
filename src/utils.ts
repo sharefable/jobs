@@ -82,7 +82,7 @@ export const getCreatedAtAndUpdateAt = (timestamp: string): string => {
 };
 
 export const getLowerBound = (timestamp: string): string => {
-  const ymdHms = getCreatedAtAndUpdateAt(timestamp).replace(/59/g, '00');
+  const ymdHms = getCreatedAtAndUpdateAt(timestamp);
   return ymdHms;
 };
 
@@ -426,12 +426,15 @@ export function normalizeBackwardCompatibilityForJourney(
   return journey;
 }
 
-export declare function getSampleJourneyData(): {
-  positioning: CreateJourneyPositioning;
-  title: string;
-  flows: never[];
-  primaryColor: string;
-};
+export function getSampleJourneyData() {
+  return {
+    positioning: CreateJourneyPositioning.Left_Bottom,
+    title: '',
+    flows: [],
+    primaryColor: '#7567FF',
+    hideModuleOnLoad: false,
+  };
+}
 
 export function remoteToLocalAnnotationConfig(rc: IAnnotationOriginConfig): IAnnotationConfig {
   return {
