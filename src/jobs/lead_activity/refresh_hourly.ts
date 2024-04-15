@@ -53,9 +53,9 @@ export class TourLeadJob extends JobBase {
     const successData: JobInfo  = await this.getJobSuccessData();
     const timestampToCalculateBounds = successData ? successData.jobRunTime : '2023010100';
     const upperBound = getMidnightTimestamp(this.baseValues.jobInfo.jobRunTime);
-    const lowerBound = getLowerBound(timestampToCalculateBounds);
+    const lowerBound = getLowerBound(timestampToCalculateBounds); 
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
-   
+
     await this.sendLeadActivityToS3(tourLeads, url);
   }
 
@@ -96,13 +96,13 @@ export class TourLeadJob extends JobBase {
     try {
       const tour: Tour[] = await getTourDetails(tourLead.tour_id);
       if (tour.length <= 0) {
-        log.info(`No tour found for ${tourLead.tour_id} in db`);
+        log.err(`No tour found for ${tourLead.tour_id} in db`);
         return;
       }
 
       const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
       if (!houseLeadInfo) {
-        log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
+        log.err(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
         return;
       }
       const reqListLead360: ReqHouseLeadInfoWithInfo360 = await this.preapreDataToPopulateLead360(tourLead, houseLeadInfo, queryResult);
@@ -153,8 +153,8 @@ export class TourLeadJob extends JobBase {
     updatedInfo360.push(lead360);
    
     const aggregation = { ...lead360, tourId: 0 };
-    let denomForCompletionPercentage = 1;
-    let denomForCtaClicked = 1;
+    let denomForAvgCompletionPercentageCal = 1;
+    let denomForAvgCalculation = 1;
 
     for (const row of houseLeadInfo.info360) {
       if (row.tourId === tourLead.tour_id || row.tourId === 0) {
@@ -165,18 +165,16 @@ export class TourLeadJob extends JobBase {
       aggregation.timeSpentSec += row.timeSpentSec;
       aggregation.completionPercentage += row.completionPercentage;
       aggregation.ctaClickRate += row.ctaClickRate;
+
+      denomForAvgCalculation += 1;
       if (row.completionPercentage !== 0) {
-        denomForCompletionPercentage += 1;
-      }
-  
-      if (row.ctaClickRate !== 0) {
-        denomForCtaClicked += 1;
+        denomForAvgCompletionPercentageCal += 1;
       }
     }
    
-    aggregation.completionPercentage = Math.round(aggregation.completionPercentage / denomForCompletionPercentage);
-    aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / denomForCtaClicked);
-   
+    aggregation.completionPercentage = Math.round(aggregation.completionPercentage / denomForAvgCompletionPercentageCal);
+    aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / denomForAvgCalculation);
+    
     updatedInfo360.push(aggregation);
     reqListLead360.info360 = updatedInfo360;
     return reqListLead360;
