@@ -53,9 +53,9 @@ export class TourLeadJob extends JobBase {
     const successData: JobInfo  = await this.getJobSuccessData();
     const timestampToCalculateBounds = successData ? successData.jobRunTime : '2023010100';
     const upperBound = getMidnightTimestamp(this.baseValues.jobInfo.jobRunTime);
-    const lowerBound = getLowerBound(timestampToCalculateBounds);
+    const lowerBound = getLowerBound(timestampToCalculateBounds); 
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
-    
+
     await this.sendLeadActivityToS3(tourLeads, url);
   }
 
@@ -96,20 +96,22 @@ export class TourLeadJob extends JobBase {
     try {
       const tour: Tour[] = await getTourDetails(tourLead.tour_id);
       if (tour.length <= 0) {
-        log.info(`No tour found for ${tourLead.tour_id} in db`);
+        log.err(`No tour found for ${tourLead.tour_id} in db`);
         return;
       }
 
       const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
       if (!houseLeadInfo) {
-        log.warn(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
+        log.err(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
         return;
       }
       const reqListLead360: ReqHouseLeadInfoWithInfo360 = await this.preapreDataToPopulateLead360(tourLead, houseLeadInfo, queryResult);
       const aggregatedTourValue: ReqLead360 = reqListLead360.info360.filter(item => item.tourId === 0)[0];
-      
-      this.prepareAndSendSqsMessage(queryResult, tourLead, aggregatedTourValue, tour[0], sqlClientUrl);
-      await addOrUpdateLead360(reqListLead360);
+     
+      await Promise.all([
+        this.prepareAndSendSqsMessage(queryResult, tourLead, aggregatedTourValue, tour[0], sqlClientUrl),
+        addOrUpdateLead360(reqListLead360),
+      ]);
     } catch (err) {
       log.err('Something went wrong while populating lead 360 table', err);
       throw new Error(`Something went wrong while populating lead 360 table ${err}`);
@@ -138,9 +140,6 @@ export class TourLeadJob extends JobBase {
 
     const lastInteractedAt: Date = new Date(Math.max(...queryResult.map(item => parseInt(item.uts))) * 1000);
 
-    const aggregationRow: ReqLead360 = houseLeadInfo!.info360.filter(item => item.tourId === 0)[0] as ReqLead360;
-    
-    
     const lead360: ReqLead360 = {
       tourId: tourLead.tour_id,
       demoVisited: 1,
@@ -150,24 +149,34 @@ export class TourLeadJob extends JobBase {
       completionPercentage: Math.round((uniquePayloadAnnIds / tourAnnLength) * 100),
       ctaClickRate: getCtaClickedRate(queryResult, dataFileTourData),
     };
+
     updatedInfo360.push(lead360);
+   
+    const aggregation = { ...lead360, tourId: 0 };
+    let denomForAvgCompletionPercentageCal = 1;
+    let denomForAvgCalculation = 1;
+
+    for (const row of houseLeadInfo.info360) {
+      if (row.tourId === tourLead.tour_id || row.tourId === 0) {
+        continue;
+      }
+      aggregation.demoVisited += row.demoVisited;
+      aggregation.sessionsCreated += row.sessionsCreated;
+      aggregation.timeSpentSec += row.timeSpentSec;
+      aggregation.completionPercentage += row.completionPercentage;
+      aggregation.ctaClickRate += row.ctaClickRate;
+
+      denomForAvgCalculation += 1;
+      if (row.completionPercentage !== 0) {
+        denomForAvgCompletionPercentageCal += 1;
+      }
+    }
+   
+    aggregation.completionPercentage = Math.round(aggregation.completionPercentage / denomForAvgCompletionPercentageCal);
+    aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / denomForAvgCalculation);
     
-    const aggregation: ReqLead360 = {
-      tourId: aggregationRow.tourId,
-      demoVisited: aggregationRow.demoVisited + lead360.demoVisited,
-      sessionsCreated: aggregationRow.sessionsCreated + lead360.sessionsCreated,
-      timeSpentSec: aggregationRow.timeSpentSec + lead360.timeSpentSec,
-      lastInteractedAt: lastInteractedAt,
-      completionPercentage: aggregationRow.completionPercentage === 0 
-        ? lead360.completionPercentage 
-        :  Math.round((lead360.completionPercentage + aggregationRow.completionPercentage) / 2),
-      ctaClickRate: aggregationRow.completionPercentage === 0 
-        ? lead360.ctaClickRate 
-        : Math.round((lead360.ctaClickRate + aggregationRow.ctaClickRate) / 2),
-    };
     updatedInfo360.push(aggregation);
     reqListLead360.info360 = updatedInfo360;
-      
     return reqListLead360;
   }
 
