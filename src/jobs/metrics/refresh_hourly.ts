@@ -1,9 +1,6 @@
 import { JobType } from '../../api-contract';
 import { getMetricsData } from '../common_queries/athena_queries';
-import { RefreshHourlyBase } from '../base/refresh_hourly';
-import { AthenaMetricsEntity, AnalyticMetricsEntity, JobInfo, TableName } from '../../types';
-import { insertMetrics, insertToMetrics, queryToFetchDataForTourIdAndDate, updateViewsForMetrics } from './queries';
-import { updateUpdatedAt } from '../common_queries/analytics_queries';
+import { insertToMetrics } from './queries';
 import { UserWithIdMappingBase } from '../../jobs/base/user_with_id_mapping';
 import * as log from '../../log';
 import { getYmd } from '../../utils';

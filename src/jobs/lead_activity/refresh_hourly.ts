@@ -168,15 +168,19 @@ export class TourLeadJob extends JobBase {
       aggregation.completionPercentage += row.completionPercentage;
       aggregation.ctaClickRate += row.ctaClickRate;
 
+      if (+aggregation.lastInteractedAt < +new Date(row.lastInteractedAt)) {
+        aggregation.lastInteractedAt = row.lastInteractedAt; 
+      }
+
       denomForAvgCalculation += 1;
       if (row.completionPercentage !== 0) {
         denomForAvgCompletionPercentageCal += 1;
       }
     }
-   
+
     aggregation.completionPercentage = Math.round(aggregation.completionPercentage / denomForAvgCompletionPercentageCal);
     aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / denomForAvgCalculation);
-    
+
     updatedInfo360.push(aggregation);
     reqListLead360.info360 = updatedInfo360;
     return reqListLead360;
