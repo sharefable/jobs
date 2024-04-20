@@ -2,61 +2,34 @@ import { JobType } from '../../api-contract';
 import { getMetricsData } from '../common_queries/athena_queries';
 import { RefreshHourlyBase } from '../base/refresh_hourly';
 import { AthenaMetricsEntity, AnalyticMetricsEntity, JobInfo, TableName } from '../../types';
-import { insertMetrics, queryToFetchDataForTourIdAndDate, updateViewsForMetrics } from './queries';
+import { insertMetrics, insertToMetrics, queryToFetchDataForTourIdAndDate, updateViewsForMetrics } from './queries';
 import { updateUpdatedAt } from '../common_queries/analytics_queries';
+import { UserWithIdMappingBase } from '../../jobs/base/user_with_id_mapping';
+import * as log from '../../log';
+import { getYmd } from '../../utils';
 
 export const refreshHourlyMetricsData = async () => {
   const metricsJob = new MetricsJob();
   await metricsJob.executeJob();
 };
-  
-type Metrics = AthenaMetricsEntity | AnalyticMetricsEntity
 
-export class MetricsJob extends RefreshHourlyBase<Metrics> {
- 
+export class MetricsJob extends UserWithIdMappingBase {
+
   protected getJobType(): JobType {
     return JobType.REFRESH_TOUR_METRICS;
   } 
 
-  protected async getAthenaQuery (): Promise<string> {
-    const successData: JobInfo = await this.getJobSuccessData();
-    if (!successData) {
-      this.baseValues.updateAnalyticsDataToLastHour = true;
-      this.baseValues.jobInfo.jobDataScanningTime = '2023010100';
-      return getMetricsData('2023010100', this.baseValues.jobInfo.jobRunTime);
-    }
-    return getMetricsData(successData.jobRunTime, this.baseValues.jobInfo.jobRunTime);
+  protected async getAthenaQuery(): Promise<string> {
+    return getMetricsData();
   }
-
-  protected async getDataFromAnalyticsDb (queryResult: AthenaMetricsEntity): Promise<AnalyticMetricsEntity[]> {
-    const queryYmd = parseInt(queryResult.ymd);
-    return  await queryToFetchDataForTourIdAndDate(queryResult.payload_tour_id, queryYmd);
-  }
-
-  protected async updateExistingData (
-    queryResult: AthenaMetricsEntity, 
-    metricsEntity: AnalyticMetricsEntity, 
-    createdAtAndUpdatedAt: string,
-  ): Promise<void> {
-    const addedViewsAll = parseInt(queryResult.views_all) + parseInt(metricsEntity.views_all);
-    const addedViewsUnique = parseInt(queryResult.views_unique) + parseInt(metricsEntity.views_unique);
-    const queryYmd = parseInt(queryResult.ymd);
-    await updateViewsForMetrics(
-      queryResult.payload_tour_id, 
-      addedViewsAll, 
-      addedViewsUnique, 
-      queryYmd, 
-      createdAtAndUpdatedAt);
-  }
-
-  protected async insertNewRow (
-    queryResult: AthenaMetricsEntity, 
-    createdAtAndUpdatedAt: string, 
-  ): Promise<void> {
-    await insertMetrics(queryResult, createdAtAndUpdatedAt);
-  }
-
-  protected async updateUpdatedAtOfAnalyticsDb(updatedAt: string, currentYmd: string) : Promise<void> {
-    await updateUpdatedAt(updatedAt, currentYmd, TableName.AnalyticsTourMetrics);
+  
+  protected async uploadAthenaCsvDataToDB(tempFilepath: string): Promise<void> {
+    try {
+      const dateYmd = getYmd(this.baseValues.jobInfo.jobDataScanningTime);
+      await insertToMetrics(tempFilepath, dateYmd);
+    } catch (err) {
+      log.err('Something went wrong while trying to load csv data to database', (err as Error).message);
+      throw err;
+    } 
   }
 }

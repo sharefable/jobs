@@ -52,10 +52,12 @@ export class TourLeadJob extends JobBase {
 
     const successData: JobInfo  = await this.getJobSuccessData();
     const timestampToCalculateBounds = successData ? successData.jobRunTime : '2023010100';
+    
     const upperBound = getMidnightTimestamp(this.baseValues.jobInfo.jobRunTime);
     const lowerBound = getLowerBound(timestampToCalculateBounds); 
+    
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
-
+    
     await this.sendLeadActivityToS3(tourLeads, url);
   }
 

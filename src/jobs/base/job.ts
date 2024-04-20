@@ -24,15 +24,17 @@ export abstract class JobBase {
 
   protected abstract execute(): Promise<void>;
 
-  public async executeJob() {
+  public async executeJob(): Promise<boolean> {
     const markAsInProgress = await this.createJob(this.getJobType());
     const [success, failure] = await markAsInProgress();
     try {
       await this.execute();
       await success();
+      return true;
     } catch (error) {
       await failure((error as Error).stack);
       captureException(error as Error);
+      return false;
     }
   }
     

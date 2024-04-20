@@ -1,7 +1,8 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop, {runHouerlyJob, runHouerlyJobForUserAssign } from './main_schedule_loop';
+//import mainScheduleLoop, {mainHourlyJob, runHouerlyJob, runHouerlyJobForUserAssign } from './main_schedule_loop';
+import mainScheduleLoop, { mainHourlyJob } from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
@@ -61,7 +62,7 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 } 
 
 mainMsgLoop();
-mainScheduleLoop();
+// mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -72,8 +73,9 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.post('/triggerhourly', (req: Request, res: Response) => {
-  runHouerlyJob();
-  runHouerlyJobForUserAssign();
+  mainHourlyJob();
+  //runHouerlyJob();
+  //runHouerlyJobForUserAssign();
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });
