@@ -136,7 +136,9 @@ export class TourLeadJob extends JobBase {
     const dataFileTourData: TourData = await getTourDataFile(tourDataFile);
     
     const tourAnnLength = tourAnnoationsLength(dataFileTourData);
-    const uniquePayloadAnnIds = [...new Set(queryResult.map(item => item.payload_ann_id))].length;
+    
+    const filteredResult = queryResult.filter(item => item.payload_ann_id !== '$journey' && item.payload_ann_id !== '$header');
+    const uniquePayloadAnnIds = [...new Set(filteredResult.map(item => item.payload_ann_id))].length;
 
     const groupedBySid: GroupedData = groupQueryResultBySid(queryResult);
 
@@ -168,18 +170,19 @@ export class TourLeadJob extends JobBase {
       aggregation.completionPercentage += row.completionPercentage;
       aggregation.ctaClickRate += row.ctaClickRate;
 
+      denomForAvgCalculation += 1;
+      
       if (+aggregation.lastInteractedAt < +new Date(row.lastInteractedAt)) {
         aggregation.lastInteractedAt = row.lastInteractedAt; 
       }
 
-      denomForAvgCalculation += 1;
       if (row.completionPercentage !== 0) {
         denomForAvgCompletionPercentageCal += 1;
       }
     }
 
     aggregation.completionPercentage = Math.round(aggregation.completionPercentage / denomForAvgCompletionPercentageCal);
-    aggregation.ctaClickRate = Math.round(aggregation.ctaClickRate / denomForAvgCalculation);
+    aggregation.ctaClickRate = parseFloat((aggregation.ctaClickRate / denomForAvgCalculation).toFixed(2));
 
     updatedInfo360.push(aggregation);
     reqListLead360.info360 = updatedInfo360;
@@ -191,7 +194,7 @@ export class TourLeadJob extends JobBase {
     tourLead: AnalyticsUserAidMappingEntity,
     aggregatedTourValue: ReqLead360,
     tour: Tour,
-    sqlClientUrl: string) {
+    sqlClientUrl: string): Promise<void> {
     
     const demoUniqueViews = [...new Set(queryResult.map(item => item.aid))].length;
 
@@ -218,6 +221,6 @@ export class TourLeadJob extends JobBase {
         },
       },
     };
-    sqsClient.sendMessage(sendMessageRequest);
+    await sqsClient.sendMessage(sendMessageRequest);
   }
 }
