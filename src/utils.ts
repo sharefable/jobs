@@ -169,7 +169,7 @@ export function getCtaClickedRate(queryResult: AthenaTourLeadEntity[], data: Tou
   let ctaClickRate = 0;
   const btnIds: string[] = getButtonIds(data);
   for (const athenaData of queryResult) {
-    if (btnIds.includes(athenaData.payload_btn_id)) {
+    if (btnIds.includes(athenaData.payload_btn_id) || athenaData.payload_btn_id === '$journey_cta' || athenaData.payload_btn_id === '$header_cta') {
       ctaClickRate += 1;
       break;
     }

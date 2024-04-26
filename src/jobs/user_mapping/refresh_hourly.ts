@@ -6,9 +6,9 @@ import { executeQuery } from '../../jobs/mysql';
 import * as log from '../../log';
 import { UserWithIdMappingBase } from '../../jobs/base/user_with_id_mapping';
 
-export const refreshHourlyUserAidMapping = async () => {
+export const refreshHourlyUserAidMapping = async (): Promise<boolean> => {
   const userAidMappingJob = new UserAidMappingJob();
-  await userAidMappingJob.executeJob();
+  return await userAidMappingJob.executeJob();
 };
 
 export class UserAidMappingJob extends UserWithIdMappingBase {
