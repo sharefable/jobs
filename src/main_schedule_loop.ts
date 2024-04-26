@@ -16,16 +16,10 @@ import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 const jobNameForAnalytics = 'hourly-job';
 const jobNameForUserAidMapping = 'hourly-job-user-assign';
 
-export async function refreshHourlyJobForUserAssign(
-  isCrawlerSuccess: boolean,
-  sentryCheckInId: string ): Promise<boolean> {
-  
+export async function refreshHourlyJobForUserAssign(sentryCheckInId: string ): Promise<boolean> {
   let userIdMapingStatus = false;
   try {
-    if (isCrawlerSuccess) {
-      userIdMapingStatus = await refreshHourlyUserAidMapping();
-    }
-
+    userIdMapingStatus = await refreshHourlyUserAidMapping();
     sentrySuccess(sentryCheckInId, jobNameForUserAidMapping);
     return userIdMapingStatus;
   } catch (err) {
@@ -46,33 +40,38 @@ export async function mainHourlyJob () {
   const checkInIdForAnalytics = sentryProgress(jobNameForAnalytics);
   const checkInIdUserAidMapping = sentryProgress(jobNameForUserAidMapping);
 
+  // This is the job orchestration part that is handled in the following part of the code since we don't have
+  // something like a airflow atm.
+
   try {
     const[isSuccessForAnnBtnClick, isSuccessForAnnUserAssign] = await refreshCrawlerHourly();
 
+    // If either of the crawler is failed, run partial job. check job_graph image
     const [userIdMapingStatus] = await Promise.all([
-      refreshHourlyJobForUserAssign(isSuccessForAnnUserAssign, checkInIdUserAidMapping),
-      runHouerlyJob(isSuccessForAnnBtnClick, checkInIdForAnalytics),
+      isSuccessForAnnUserAssign ? refreshHourlyJobForUserAssign(checkInIdUserAidMapping) : Promise.resolve(null),
+      isSuccessForAnnBtnClick ? runHouerlyJob(checkInIdForAnalytics) : Promise.resolve(null),
     ]);
 
     if (isSuccessForAnnBtnClick && userIdMapingStatus) {
       await refreshHourlyLeadActivity();
     } else {
-      log.warn('Any one of the crawler did not successfully run, so #REFRESH_LEAD_ACTIVITY did not run');
+      const errMsg = 'Any one of the crawler did not successfully run, so #REFRESH_LEAD_ACTIVITY did not run';
+      log.err(errMsg);
+      throw new Error(errMsg);
     }
   } catch (err) {
     log.err('#mainHourlyJob', (err as Error).stack);
     captureException(err as Error);
   }
 }
-export async function runHouerlyJob(isCrawlerSuccess: boolean, sentryCheckInId: string) {
+
+export async function runHouerlyJob(sentryCheckInId: string) {
   try {
-    if (isCrawlerSuccess) {
-      await Promise.all([
-        refreshHourlyAnnClickData(),
-        refreshHourlyConversionData(),
-        refreshHourlyMetricsData(),
-      ]);
-    }
+    await Promise.all([
+      refreshHourlyAnnClickData(),
+      refreshHourlyConversionData(),
+      refreshHourlyMetricsData(),
+    ]);
     sentrySuccess(sentryCheckInId, jobNameForAnalytics);
   } catch (err) {
     log.err('#runHouerlyJob', (err as Error).stack);
