@@ -56,7 +56,7 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
       }
 
       case NfEvents.RUN_INTEGRATION: {
-        await runIntegration(utProps.payload_event, utProps.payload_eventPayload, utProps.payload_integrationId);
+        runIntegration(utProps.payload_event, utProps.payload_eventPayload, utProps.payload_integrationId);
         break;
       }
     
