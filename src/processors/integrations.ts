@@ -1,4 +1,4 @@
-import {ForObjectType, LogType, ReqNewLog, RespTour} from 'api-contract';
+import {ForObjectType, LogType, PlatformIntegrationType, ReqNewLog, RespTour} from 'api-contract';
 import {addToApplicationLog, getTenantIntegration, getTourById} from '../api';
 import RetryableErr from '../retryable-err';
 import Handlebars from 'handlebars';
@@ -14,6 +14,86 @@ interface ReqNewLogForWebhook extends ReqNewLog {
     headers?: string;
     respTxt?:string;
   }
+}
+
+async function sendReq(
+  url: string,
+  headers: Record<string, string>,
+  body: Record<string, any> | string,
+  retrying: boolean | undefined,
+  commonLogParams: Omit<ReqNewLogForWebhook, 'logLine'>,
+  extraLogLineParams: Record<string, any> = {},
+) {
+  if (typeof body !== 'string' ) {
+    body = JSON.stringify(body);
+  }
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: body,
+    });
+  } catch (e) {
+    await addToApplicationLog({
+      ...commonLogParams,
+      logLine: {
+        ...extraLogLineParams,
+        isRetry: retrying,
+        status: 'failed',
+        reason: `Error from endpoint. Error: ${(e as Error).message}`,
+        body: body,
+        headers: headers,
+      },
+    });
+    console.error((e as Error).stack);
+    throw new RetryableErr(`Error from endpoint. Message: ${(e as Error).message}`, true);
+  }
+
+  if (resp.status >= 500) {
+    await addToApplicationLog({
+      ...commonLogParams,
+      logLine: {
+        ...extraLogLineParams,
+        isRetry: retrying,
+        status: 'failed',
+        reason: `Error from endpoint. Status ${resp.status}`,
+        httpStatus: resp.status,
+        body: body,
+        headers,
+        respTxt: await resp.text(),
+      },
+    });
+    throw new RetryableErr(`Error from endpoint. Status ${resp.status}.`, true);
+  } else if (resp.status >= 400) {
+    await addToApplicationLog({
+      ...commonLogParams,
+      logLine: {
+        ...extraLogLineParams,
+        isRetry: retrying,
+        status: 'failed',
+        reason: `Error from endpoint. Status ${resp.status}`,
+        httpStatus: resp.status,
+        body: body,
+        headers,
+        respTxt: await resp.text(),
+      },
+    });
+    throw new RetryableErr(`Error from endpoint. Status ${resp.status}.`, false);
+  }
+
+  await addToApplicationLog({
+    ...commonLogParams,
+    logLine: {
+      ...extraLogLineParams,
+      isRetry: retrying,
+      status: 'success',
+      httpStatus: resp.status,
+      body: body,
+      headers,
+    },
+  });
 }
 
 export default async function runIntegration(event?: string | null, payload?: string | null, id?: string | null, retrying?: boolean) {
@@ -76,121 +156,78 @@ export default async function runIntegration(event?: string | null, payload?: st
       throw new RetryableErr(`Can't find demo ${tourIdRaw}`, false);
     }
 
-    let webhookBody: Record<string, any>;
-    try {
-      webhookBody = JSON.parse(fatResp.tenantIntegration.tenantConfig.reqBody);
-    } catch (e) {
-      const rawBody = fatResp.tenantIntegration.tenantConfig.reqBody;
-      console.error('Webhook body can\'t be parsed', rawBody);
-      console.error((e as Error).stack);
-      await addToApplicationLog({
-        ...commonLogParams,
-        logLine: {
-          isRetry: retrying,
-          status: 'failed',
-          reason: `Can't parse webhook body becuase ${(e as Error).message}`,
-          payload: eventPayload,
-          body: rawBody,
-        },
-      });
-      throw new RetryableErr(`Can't parse webhook body ${(e as Error).message}`, false);
-    }
+    if (fatResp.platformIntegration.type === PlatformIntegrationType.FableWebhook) {
+      let webhookBody: Record<string, any>;
+      try {
+        webhookBody = JSON.parse(fatResp.tenantIntegration.tenantConfig.reqBody);
+      } catch (e) {
+        const rawBody = fatResp.tenantIntegration.tenantConfig.reqBody;
+        console.error('Webhook body can\'t be parsed', rawBody);
+        console.error((e as Error).stack);
+        await addToApplicationLog({
+          ...commonLogParams,
+          logLine: {
+            isRetry: retrying,
+            status: 'failed',
+            reason: `Can't parse webhook body becuase ${(e as Error).message}`,
+            payload: eventPayload,
+            body: rawBody,
+          },
+        });
+        throw new RetryableErr(`Can't parse webhook body ${(e as Error).message}`, false);
+      }
 
-    let webhookHeaders: Record<string, any>;
-    try {
-      webhookHeaders = JSON.parse(fatResp.tenantIntegration.tenantConfig.reqHeaders);
-    } catch (e) {
-      const rawHeaders = fatResp.tenantIntegration.tenantConfig.reqHeaders;
-      console.error('Webhook headers can\'t be parsed', rawHeaders);
-      console.error((e as Error).stack);
-      await addToApplicationLog({
-        ...commonLogParams,
-        logLine: {
-          isRetry: retrying,
-          status: 'failed',
-          reason: `Can't parse webhook headers because ${(e as Error).message}`,
-          payload: eventPayload,
-          body: webhookBody,
-          headers: rawHeaders,
-        },
-      });
-      throw new RetryableErr(`Can't parse webhook headers ${(e as Error).message}`, false);
-    }
+      let webhookHeaders: Record<string, any>;
+      try {
+        webhookHeaders = JSON.parse(fatResp.tenantIntegration.tenantConfig.reqHeaders);
+      } catch (e) {
+        const rawHeaders = fatResp.tenantIntegration.tenantConfig.reqHeaders;
+        console.error('Webhook headers can\'t be parsed', rawHeaders);
+        console.error((e as Error).stack);
+        await addToApplicationLog({
+          ...commonLogParams,
+          logLine: {
+            isRetry: retrying,
+            status: 'failed',
+            reason: `Can't parse webhook headers because ${(e as Error).message}`,
+            payload: eventPayload,
+            body: webhookBody,
+            headers: rawHeaders,
+          },
+        });
+        throw new RetryableErr(`Can't parse webhook headers ${(e as Error).message}`, false);
+      }
 
-    let resp: Response;
-    let bodyStr;
-    try {
       const template = Handlebars.compile(JSON.stringify(webhookBody));
-      bodyStr = template({
+      const bodyStr = template({
         ...eventPayload,
         demo_rid: tour.rid,
       });
 
-      resp = await fetch(fatResp.tenantIntegration.tenantConfig.url, {
-        method: 'POST',
-        headers: webhookHeaders,
-        body: bodyStr,
-      });
-    } catch (e) {
-      await addToApplicationLog({
-        ...commonLogParams,
-        logLine: {
-          isRetry: retrying,
-          status: 'failed',
-          reason: `Error from endpoint. Error: ${(e as Error).message}`,
-          payload: eventPayload,
-          body: bodyStr,
-          headers: webhookHeaders,
-        },
-      });
-      console.error((e as Error).stack);
-      throw new RetryableErr(`Error from endpoint. Message: ${(e as Error).message}`, true);
-    }
-
-    if (resp.status >= 500) {
-      await addToApplicationLog({
-        ...commonLogParams,
-        logLine: {
-          isRetry: retrying,
-          status: 'failed',
-          reason: `Error from endpoint. Status ${resp.status}`,
-          httpStatus: resp.status,
-          payload: eventPayload,
-          body: bodyStr,
-          headers: webhookHeaders,
-          respTxt: await resp.text(),
-        },
-      });
-      throw new RetryableErr(`Error from endpoint. Status ${resp.status}.`, true);
-    } else if (resp.status >= 400) {
-      await addToApplicationLog({
-        ...commonLogParams,
-        logLine: {
-          isRetry: retrying,
-          status: 'failed',
-          reason: `Error from endpoint. Status ${resp.status}`,
-          httpStatus: resp.status,
-          payload: eventPayload,
-          body: bodyStr,
-          headers: webhookHeaders,
-          respTxt: await resp.text(),
-        },
-      });
-      throw new RetryableErr(`Error from endpoint. Status ${resp.status}.`, false);
-    }
-
-    await addToApplicationLog({
-      ...commonLogParams,
-      logLine: {
-        isRetry: retrying,
-        status: 'success',
+      sendReq(fatResp.tenantIntegration.tenantConfig.url, webhookHeaders, bodyStr, retrying, commonLogParams, {
         payload: eventPayload,
-        httpStatus: resp.status,
-        body: bodyStr,
-        headers: webhookHeaders,
-      },
-    });
-
+      });
+    } else if (fatResp.platformIntegration.type === PlatformIntegrationType.Zapier) {
+      const hookUrl = fatResp.tenantIntegration.tenantConfig.hookUrl;
+      const nEventPayload = {
+        ...eventPayload,
+      };
+      delete nEventPayload.ti;
+      nEventPayload.demo_rid = tour.rid;
+      nEventPayload.demo_name = tour.displayName;
+      sendReq(hookUrl, {}, nEventPayload, retrying, commonLogParams);
+    } else {
+      await addToApplicationLog({
+        ...commonLogParams,
+        logLine: {
+          isRetry: retrying,
+          status: 'failed',
+          reason: `Unknown integration type ${JSON.stringify(fatResp, null, 2)}`,
+          payload: eventPayload,
+        },
+      });
+      throw new RetryableErr(`Unknown integration type ${fatResp.platformIntegration.type}`, false);
+    }
   } else {
     await addToApplicationLog({
       ...commonLogParams,
