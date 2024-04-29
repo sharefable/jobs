@@ -3,15 +3,31 @@ import { AWS_GLUE_TABLE_NAME, AWS_GLUE_USER_ASSIGN_TABLE_NAME } from '../glue_ta
 // If a job is running @6.15pm we process previous hours data, i.e. data till 5:59:59 pm
 // Here currentJobRunTime represents 5:59:59 time
 
-
 export const getMetricsData = () => {
   const query = `SELECT 
-                   payload_tour_id, 
-                   ymd, 
-                   COUNT(distinct sid) AS views_all, 
-                   COUNT(distinct aid) AS views_unique 
-                   FROM  ${AWS_GLUE_TABLE_NAME}
-                   GROUP BY payload_tour_id, ymd`;
+                  t1.payload_tour_id, 
+                  t1.ymd, 
+                  t1.views_all,
+                  t2.views_unique
+                FROM (
+                  SELECT 
+                    payload_tour_id, 
+                    ymd, 
+                    COUNT(DISTINCT sid) AS views_all 
+                    FROM ${AWS_GLUE_TABLE_NAME} 
+                    GROUP BY 
+                      payload_tour_id, 
+                      ymd
+                  ) AS t1
+                JOIN (
+                  SELECT 
+                    payload_tour_id, 
+                    COUNT(DISTINCT aid) AS views_unique 
+                    FROM ${AWS_GLUE_TABLE_NAME} 
+                    GROUP BY 
+                      payload_tour_id
+                  ) AS t2
+                ON t1.payload_tour_id = t2.payload_tour_id;`;
   return query;
 };
   

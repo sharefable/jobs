@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-04-10 16:26:34.
+// Generated using typescript-generator version 2.35.1025 on 2024-04-29 14:45:02.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -37,6 +37,12 @@ export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     deletable: boolean;
 }
 
+export interface OnboardingTourForPrev {
+    rid: string;
+    name: string;
+    description: string;
+}
+
 export interface PaymentTerms {
 }
 
@@ -45,6 +51,7 @@ export interface ReqNewLog {
     logType: LogType;
     forObjectType: ForObjectType;
     forObjectId: number;
+    forObjectKey?: string;
     logLine: any;
 }
 
@@ -233,6 +240,7 @@ export interface ReqScreenTour {
 export interface ReqSubscriptionInfo {
     pricingPlan: Plan;
     pricingInterval: Interval;
+    lifetimeLicense?: string;
 }
 
 export interface ReqThumbnailCreation {
@@ -241,7 +249,9 @@ export interface ReqThumbnailCreation {
 
 export interface ReqTourPropUpdate {
     tourRid: string;
+    site?: { [index: string]: any };
     inProgress?: boolean;
+    responsive?: boolean;
 }
 
 export interface ReqTourRid {
@@ -380,6 +390,8 @@ export interface RespTour extends ResponseBase {
     pubLoaderFileName: string;
     pubEditFileName: string;
     pubTourEntityFileName: string;
+    site: { [index: string]: any };
+    responsive: boolean;
 }
 
 export interface RespTourAnnViews {
@@ -398,7 +410,8 @@ export interface RespTourLeads {
 
 export interface RespTourView {
     tourId: number;
-    totalViews: SumViews;
+    totalViews: number;
+    uniqueViews: number;
     totalVisitorsByYmd: TotalVisitorsByYmd[];
 }
 
@@ -511,11 +524,6 @@ export interface Lead360 extends EntityBase {
     ctaClickRate: number;
 }
 
-export interface SumViews {
-    viewsAll: number;
-    viewsUnique: number;
-}
-
 export interface EntityBaseWithReadableId extends EntityBase {
     rid: string;
 }
@@ -593,10 +601,12 @@ export const enum ErrorCode {
 
 export const enum LogType {
     WEBHOOK_EXEC = "WEBHOOK_EXEC",
+    SUBSCRIPTION = "SUBSCRIPTION",
 }
 
 export const enum ForObjectType {
     TENANT_INTEGRATION = "TENANT_INTEGRATION",
+    LIFETIME_LICENSE_KEY = "LIFETIME_LICENSE_KEY",
 }
 
 export const enum LeadInfoKey {
@@ -615,11 +625,15 @@ export const enum Plan {
     SOLO = "SOLO",
     STARTUP = "STARTUP",
     BUSINESS = "BUSINESS",
+    LIFETIME_TIER1 = "LIFETIME_TIER1",
+    LIFETIME_TIER2 = "LIFETIME_TIER2",
+    LIFETIME_TIER3 = "LIFETIME_TIER3",
 }
 
 export const enum Interval {
     MONTHLY = "MONTHLY",
     YEARLY = "YEARLY",
+    LIFETIME = "LIFETIME",
 }
 
 export const enum Status {
