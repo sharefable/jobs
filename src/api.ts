@@ -1,5 +1,5 @@
 import { TourData } from 'types';
-import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespFatTenantIntegration, RespHouseLeadInfo, RespTour } from './api-contract';
+import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespCommonConfig, RespFatTenantIntegration, RespHouseLeadInfo, RespTour } from './api-contract';
 import * as log from './log';
 
 export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
@@ -29,8 +29,33 @@ export async function getTourById(id: string): Promise<RespTour> {
   return await req(`/tour/by/id/${id}`) as RespTour;
 }
 
+export async function getTourByRid(rid: string): Promise<RespTour> {
+  return await req(`/tour?rid=${rid}`) as RespTour;
+}
 
-type Resp = RespTour | RespHouseLeadInfo | string | RespFatTenantIntegration;
+export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
+  liveTour: RespTour,
+  publishedTour: RespTour | undefined,
+  gifUrl: string | undefined
+}> {
+  const cconfig = await req('/cconfig') as RespCommonConfig;
+  const tourPath = `${cconfig.pubTourAssetPath}${rid}/0_d_data.json`;
+
+  const liveTour = await getTourByRid(rid);
+  let publishedTourData: ApiResp<RespTour> | undefined;
+  if (liveTour.lastPublishedDate) {
+    publishedTourData = (await fetch(tourPath).then(resp => resp.json())) as ApiResp<RespTour>;
+  }
+
+  return {
+    liveTour: liveTour,
+    publishedTour: publishedTourData && publishedTourData.data,
+    gifUrl: publishedTourData && `${cconfig.pubTourAssetPath}${rid}/demo.gif`,
+  };
+}
+
+
+type Resp = RespTour | RespHouseLeadInfo | string | RespFatTenantIntegration | RespCommonConfig;
 export async function req (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',

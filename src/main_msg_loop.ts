@@ -11,6 +11,8 @@ import {CONCURRENCY} from './consts';
 import { processEventsForDestination } from './processors/mics';
 import { sendEventToCobalt } from './processors/cobalt';
 import RetryableErr from './retryable-err';
+import createDemoGif from './processors/demo_gif';
+import * as Sentry from '@sentry/node';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -131,6 +133,11 @@ export default function mainMsgLoop() {
                 jobInfo = await resizeImg(msgAttrs);
                 break;
               }
+
+              case 'CREATE_DEMO_GIF': {
+                jobInfo = await createDemoGif(msgAttrs);
+                break;
+              }
             
               // case 'DELETE_ASSET': {
               //   jobInfo = await deleteAsset(msgAttrs);
@@ -154,6 +161,7 @@ export default function mainMsgLoop() {
             });
             await deleteMsg();
           } catch (e) {
+            Sentry.captureException(e);
             await new Promise((res, rej) => {
               conn!.query(
                 'UPDATE jobs SET processing_status = ?, failure_reason = ? WHERE job_key = ?',
