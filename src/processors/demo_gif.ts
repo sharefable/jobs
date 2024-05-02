@@ -3,7 +3,8 @@ import {s3} from '../singletons';
 import { rmSync, existsSync, mkdirSync, createReadStream } from 'fs';
 import {GetObjectCommand, PutObjectCommand} from '@aws-sdk/client-s3';
 import {Readable} from 'stream';
-import fs, {createWriteStream} from 'fs';
+import {finished} from 'stream/promises';
+import {createWriteStream} from 'fs';
 import { v4 as uuid } from 'uuid';
 import * as log from '../log';
 import gm from 'gm';
@@ -23,7 +24,7 @@ export default async function(utProps: TMsgAttrs): Promise<object> {
     if (!existsSync(tmpDir)) mkdirSync(tmpDir, {recursive: true});
 
     const manifestSource = getS3FileLocationFromURI(props.manifestFilePath);
-    
+
     const {Body: body0} = await s3.send(new GetObjectCommand({
       Bucket: manifestSource.bucketName,
       Key: manifestSource.fullFilePath,
@@ -43,21 +44,12 @@ export default async function(utProps: TMsgAttrs): Promise<object> {
 
     const ps: Array<Promise<any>> = [];
     for (let i = 0; i < thumbnails.length; i++) {
-      ps.push(
-        new Promise((resolve, reject) => {
-          const mgSource = getS3FileLocationFromURI(thumbnails[i]);
-          s3.send(new GetObjectCommand({
-            Bucket: mgSource.bucketName,
-            Key: mgSource.fullFilePath,
-          })).then((resp) => {
-            const body = resp.Body as Readable;
-            const fileName = `${tmpDir}/thumb_${i}`;
-            body.pipe(createWriteStream(fileName))
-              .on('error', err => reject(err))
-              .on('close', () => resolve(fileName));
-          });
-        }),
-      );
+      const fileName = `${tmpDir}/thumb_${i}`;
+      const outStream = createWriteStream(fileName);
+      const { body: fileBody } = await fetch(thumbnails[i]);
+      if (fileBody) {
+        ps.push(finished(Readable.fromWeb(fileBody).pipe(outStream)).then(() => fileName));
+      }
     }
 
     let files = await Promise.all(ps);
