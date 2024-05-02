@@ -7,6 +7,7 @@ import {promisify} from 'util';
 import {pool} from './db';
 import { sentryInitialize } from './sentry';
 import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
+import addSlackHttpListeners from './http/slack';
 
 const PORT = 8081;
 
@@ -38,6 +39,7 @@ const envLoadingStatus = [
   'AWS_ATHENA_REGION',
   'API_SERVER_ENDPOINT',
   'COBALT_API_KEY',
+  'SLACK_FABLE_BOT_BOT_USER_TOKEN',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
@@ -70,6 +72,8 @@ app.use(bodyParser.json());
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'up' });
 });
+
+addSlackHttpListeners(app);
 
 app.post('/triggerhourly', (req: Request, res: Response) => {
   mainHourlyJob();
