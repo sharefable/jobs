@@ -40,7 +40,7 @@ export default async function(utProps: TMsgAttrs): Promise<object> {
     const manifest = JSON.parse(manifestStr);
 
     const screenAssets = (manifest.screenAssets || []);
-    const thumbnails = screenAssets.map((asset: any) => asset.thumbnail).filter((_: string) => _);
+    const thumbnails = screenAssets.map((asset: any) => asset.thumbnail).filter((_: string) => _).slice(0, 6);
 
     const ps: Array<Promise<any>> = [];
     for (let i = 0; i < thumbnails.length; i++) {
