@@ -34,14 +34,6 @@ function getMsgBlockFor(route: 'public' | 'private', data: {
     } as any);
   }
 
-  if (data.gif) {
-    blocks.blocks.push({
-      'type': 'image',
-      'image_url': data.gif,
-      'alt_text': 'Fable demo hightlight gif',
-    } as any);
-  }
-
   if (route === 'public') {
     const ctaLink = (tour.site || {}).ctaLink;
     const ctaText = (tour.site || {}).ctaText;
@@ -131,6 +123,7 @@ async function unFurlSlackContent(urls: URL[], opts: {
   try {
     const unfurls: Record<string, any> = {};
     for (const url of urls) {
+      if (url.searchParams.get('nf') === '1') continue;
       let pathname = url.pathname;
       if(pathname.endsWith('/')) pathname = pathname.substring(0, pathname.length - 1);
       let rid = '';
