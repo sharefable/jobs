@@ -4,6 +4,7 @@ import {
   AthenaTourLeadEntity,
   CreateJourneyPositioning,
   CustomAnnDims,
+  GroupedAidData,
   GroupedData,
   IAnnotationButton,
   IAnnotationConfig,
@@ -133,6 +134,20 @@ export function groupQueryResultBySid(queryResult: AthenaTourLeadEntity[]): Grou
     groupedData[item.sid].push(item);
   });
   return groupedData;
+}
+
+export function groupQueryResultByAid(queryResult: AthenaTourLeadEntity[]): GroupedAidData {
+  const groupedAidData: GroupedAidData = {};
+
+  queryResult.forEach((item: AthenaTourLeadEntity) => {
+    const aid = item.aid;
+    if (!groupedAidData[aid]) {
+      groupedAidData[aid] = [];
+    }
+    groupedAidData[aid].push(item);
+  });
+
+  return groupedAidData;
 }
 
 export function timeSpentInDemo(groupedData: GroupedData): number {
