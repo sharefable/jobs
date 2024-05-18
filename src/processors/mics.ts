@@ -138,23 +138,24 @@ async function addContactToSmartLeads(payload: Record<string,string>): Promise<v
     first_name: firstName,
     last_name: lastName,
   }];
-
-
-  const campaignId: number | undefined = findCampaignId(subs);
-  if (campaignId === undefined) {
-    log.err(`Campaign not found for the plan ${subs}`);
-    return;
-  }
-
-  const campaigns: Campaign[] = await listAllCampaigns();
-  const isCampaignExists = findCampaignIdInCampaignList(campaigns, campaignId);
+  try {
+    const campaignId: number | undefined = findCampaignId(subs);
+    if (campaignId === undefined) {
+      throw new Error(`Campaign not found for the plan ${subs}`);
+    }
   
-  if (!isCampaignExists) {
-    log.err(`Campaign id ${campaignId} doesn't exist in listed campaign`);
-    return;
+    const campaigns: Campaign[] = await listAllCampaigns();
+    const isCampaignExists = findCampaignIdInCampaignList(campaigns, campaignId);
+    
+    if (!isCampaignExists) {
+      throw new Error(`Campaign id ${campaignId} doesn't exist in listed campaign`);
+    }
+    
+    await addLeads(leadList, campaignId);
+  } catch (err) {
+    log.err((err as Error).message);
+    captureException(err as Error);
   }
-  
-  await addLeads(leadList, campaignId);
 }
 
 export async function addLeads(leadList: Lead[], campaignId: number): Promise<void> {
@@ -168,8 +169,7 @@ export async function addLeads(leadList: Lead[], campaignId: number): Promise<vo
 
   });
   if (!resp.ok) {
-    log.err('Adding lead to a campaing is failed',  resp);
-    return;
+    throw new Error(`Adding lead to a campaing is failed ${resp}`);
   } 
   log.info(`Successfully added lead [ ${leadList[0].email} ] to a campaing`);
 }
@@ -179,8 +179,7 @@ export async function listAllCampaigns(): Promise<Campaign[]> {
     method: 'GET',
   });
   if (!resp.ok) {
-    log.err('Listing of campaigns failed', resp);
-    return [];
+    throw new Error(`Listing of campaigns failed ${resp}`);
   } 
   return await resp.json();
 }
