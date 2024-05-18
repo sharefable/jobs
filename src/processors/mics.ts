@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { TMsgAttrs } from '../types';
+import { Campaign, Lead, TMsgAttrs } from '../types';
 import * as log from '../log';
 import { NfEvents, ReqNfHook } from 'api-contract';
 import mailchimp from '@mailchimp/mailchimp_marketing';
@@ -14,6 +14,9 @@ mailchimp.setConfig({
 });
 
 const slackWebhookUrl = 'https://hooks.slack.com/services/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';
+const SMART_LEAD_API_KEY = process.env.SMART_LEAD_API_KEY;
+
+const SMART_LEAD_BASE_URL = 'https://server.smartlead.ai/api/v1';
 
 const PAYLOAD_PREFIX = 'payload_';
 function getPayloadProps(props: Record<string, string>): string {
@@ -39,7 +42,7 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
         text = `\`\`\`\nevent_name: ${props.eventName}${payloadVarStr}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await Promise.all([
           notifySlack(slackWebhookUrl, text),
-          addMailChimpContact(props as Record<string,string>),
+          //addMailChimpContact(props as Record<string,string>),
         ]);
         break;
       } 
@@ -57,6 +60,12 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
 
       case NfEvents.RUN_INTEGRATION: {
         runIntegration(utProps.payload_event, utProps.payload_eventPayload, utProps.payload_integrationId);
+        break;
+      }
+
+      case NfEvents.NEW_USER_SIGNUP_WITH_SUBS: {
+        console.log('NEW_USER_SIGNUP_WITH_SUBS', props);
+        addContactToSmartLeads(props as Record<string,string>);
         break;
       }
     
@@ -101,10 +110,21 @@ const notifySlack = async (url: string, text: string) => {
   log.info('Notification failed');
 };
 
-async function addMailChimpContact(payload: Record<string,string>) {
-  const email: string = payload.payload_emailId;
+
+const availableCampaigns: Record<number, string[]> = {
+  381576 : ['LIFETIME_TIER1'],
+  381741 : ['LIFETIME_TIER2'],
+  381747 : ['LIFETIME_TIER3'],
+  381455 : ['SOLO'],
+  381761 : ['STARTUP', 'BUSINESS'],
+};
+
+async function addContactToSmartLeads(payload: Record<string,string>): Promise<void> {
+  
+  const email: string = payload.payload_email;
   const firstName: string = payload.payload_firstName ?? undefined;
   const lastName: string = payload.payload_lastName ?? undefined;
+  const subs: string = payload.payload_subs;
 
   log.info(`email=[${email}] firstName=[${firstName}] lastName=[${lastName}]`);
 
@@ -113,19 +133,74 @@ async function addMailChimpContact(payload: Record<string,string>) {
     return;
   }
 
-  // listId found in Audience > all contact > settings > audience name and defaults tab
-  const response = await mailchimp.lists.addListMember('4309a88a36', {
-    email_address: email,
-    status: 'subscribed',
-    merge_fields: {
-      FNAME: firstName,
-      LNAME: lastName,
-    },
-    tags: ['Free Trial Signup'],
-  });
-  const data = (response as any).id ? { id: (response as any).id } : response;
-  log.info(
-    `mailchip contact addition response ${JSON.stringify(data, null, 2)}.`,
-  );
-}
+  const leadList: Lead[] = [{
+    email,
+    first_name: firstName,
+    last_name: lastName,
+  }];
+
+
+  const campaignId: number | undefined = findCampaignId(subs);
+  if (campaignId === undefined) {
+    log.err(`Campaign not found for the plan ${subs}`);
+    return;
+  }
+
+  const campaigns: Campaign[] = await listAllCampaigns();
+  const isCampaignExists = findCampaignIdInCampaignList(campaigns, campaignId);
   
+  if (!isCampaignExists) {
+    log.err(`Campaign id ${campaignId} doesn't exist in listed campaign`);
+    return;
+  }
+  
+  await addLeads(leadList, campaignId);
+}
+
+export async function addLeads(leadList: Lead[], campaignId: number): Promise<void> {
+
+  const resp = await fetch(`${SMART_LEAD_BASE_URL}/campaigns/${campaignId}/leads?api_key=${SMART_LEAD_API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body:JSON.stringify({lead_list: leadList}),
+
+  });
+  if (!resp.ok) {
+    log.err('Adding lead to a campaing is failed',  resp);
+    return;
+  } 
+  log.info(`Successfully added lead [ ${leadList[0].email} ] to a campaing`);
+}
+
+export async function listAllCampaigns(): Promise<Campaign[]> {
+  const resp = await fetch(`SMART_LEAD_BASE_URL/campaigns?api_key=${SMART_LEAD_API_KEY}`, {
+    method: 'GET',
+  });
+  if (!resp.ok) {
+    log.err('Listing of campaigns failed', resp);
+    return [];
+  } 
+  return await resp.json();
+}
+
+function findCampaignId (subs: string ): number | undefined {
+
+  for (const [key, value] of  Object.entries<string[]>(availableCampaigns)) {
+    if (value.includes(subs)) {
+      return parseInt(key);
+    }
+  }
+  return undefined;
+}
+
+function findCampaignIdInCampaignList(campaignList: Campaign[], campaignId: number | undefined): boolean {
+  
+  for (const campaign of campaignList) {
+    if (campaign.id === campaignId) {
+      return true;
+    }
+  }
+  return false;
+}

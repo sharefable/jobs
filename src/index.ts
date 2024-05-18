@@ -8,6 +8,7 @@ import {pool} from './db';
 import { sentryInitialize } from './sentry';
 import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
+import { addLeads, listAllCampaigns } from './processors/mics';
 
 const PORT = 8081;
 
@@ -63,7 +64,7 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 } 
 
 mainMsgLoop();
-mainScheduleLoop();
+// mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -83,6 +84,21 @@ app.post('/triggerhourly', (req: Request, res: Response) => {
 
 app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
   refreshHourlyLeadActivity();
+  log.info('Triggered');
+  res.json({triggered: 'ok'});
+});
+
+app.post('/leads', (req: Request, res: Response) => {
+  const campaignId = 381455;
+  const leads = [];
+  const lead = {
+    email: 'fahumitha@sharefable.com',
+    first_name: 'Fahumitha',
+    last_name: 'Zeerin',
+  };
+  leads.push(lead);
+  addLeads(leads, campaignId);
+  // listAllCampaigns();
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });
