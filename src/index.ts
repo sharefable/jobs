@@ -8,7 +8,7 @@ import {pool} from './db';
 import { sentryInitialize } from './sentry';
 import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
-import { addLeads, listAllCampaigns } from './processors/mics';
+import { addContactToSmartLeads } from './processors/mics';
 
 const PORT = 8081;
 
@@ -89,17 +89,16 @@ app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
   res.json({triggered: 'ok'});
 });
 
-app.post('/leads', (req: Request, res: Response) => {
-  const campaignId = 381455;
-  const leads = [];
-  const lead = {
-    email: 'fahumitha@sharefable.com',
-    first_name: 'Fahumitha',
-    last_name: 'Zeerin',
+app.post('/leads', async (req: Request, res: Response) => {
+  const payload: Record<string, string> = {
+    payload_email: 'john@acme.com',
+    payload_firstName: 'John',
+    payload_lastName: '',
+    payload_subs: 'LIFETIME_TIER1',
   };
-  leads.push(lead);
-  addLeads(leads, campaignId);
-  // listAllCampaigns();
+
+  addContactToSmartLeads(payload);
+  
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });

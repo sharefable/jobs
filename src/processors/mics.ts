@@ -119,7 +119,7 @@ const availableCampaigns: Record<number, string[]> = {
   381761 : ['STARTUP', 'BUSINESS'],
 };
 
-async function addContactToSmartLeads(payload: Record<string,string>): Promise<void> {
+export async function addContactToSmartLeads(payload: Record<string,string>): Promise<void> {
   
   const email: string = payload.payload_email;
   const firstName: string = payload.payload_firstName ?? undefined;
