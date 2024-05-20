@@ -8,6 +8,7 @@ import {pool} from './db';
 import { sentryInitialize } from './sentry';
 import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
+import { addContactToSmartLeads } from './processors/mics';
 
 const PORT = 8081;
 
@@ -40,6 +41,7 @@ const envLoadingStatus = [
   'API_SERVER_ENDPOINT',
   'COBALT_API_KEY',
   'SLACK_FABLE_BOT_BOT_USER_TOKEN',
+  'SMART_LEAD_API_KEY',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
@@ -83,6 +85,20 @@ app.post('/triggerhourly', (req: Request, res: Response) => {
 
 app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
   refreshHourlyLeadActivity();
+  log.info('Triggered');
+  res.json({triggered: 'ok'});
+});
+
+app.post('/leads', async (req: Request, res: Response) => {
+  const payload: Record<string, string> = {
+    payload_email: 'john@acme.com',
+    payload_firstName: 'John',
+    payload_lastName: '',
+    payload_subs: 'LIFETIME_TIER1',
+  };
+
+  addContactToSmartLeads(payload);
+  
   log.info('Triggered');
   res.json({triggered: 'ok'});
 });
