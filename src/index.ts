@@ -65,7 +65,7 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 } 
 
 mainMsgLoop();
-// mainScheduleLoop();
+mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));

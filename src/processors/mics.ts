@@ -42,7 +42,6 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
         text = `\`\`\`\nevent_name: ${props.eventName}${payloadVarStr}\nenv: ${process.env.APP_ENV}\n\`\`\``;
         await Promise.all([
           notifySlack(slackWebhookUrl, text),
-          //addMailChimpContact(props as Record<string,string>),
         ]);
         break;
       } 
