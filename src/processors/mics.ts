@@ -175,7 +175,7 @@ export async function addLeads(leadList: Lead[], campaignId: number): Promise<vo
 }
 
 export async function listAllCampaigns(): Promise<Campaign[]> {
-  const resp = await fetch(`SMART_LEAD_BASE_URL/campaigns?api_key=${SMART_LEAD_API_KEY}`, {
+  const resp = await fetch(`${SMART_LEAD_BASE_URL}/campaigns?api_key=${SMART_LEAD_API_KEY}`, {
     method: 'GET',
   });
   if (!resp.ok) {

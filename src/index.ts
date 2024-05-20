@@ -41,6 +41,7 @@ const envLoadingStatus = [
   'API_SERVER_ENDPOINT',
   'COBALT_API_KEY',
   'SLACK_FABLE_BOT_BOT_USER_TOKEN',
+  'SMART_LEAD_API_KEY',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
