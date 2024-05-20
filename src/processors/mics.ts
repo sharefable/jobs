@@ -63,7 +63,6 @@ export const processEventsForDestination = async (utProps: TMsgAttrs) => {
       }
 
       case NfEvents.NEW_USER_SIGNUP_WITH_SUBS: {
-    
         addContactToSmartLeads(props as Record<string,string>);
         break;
       }
