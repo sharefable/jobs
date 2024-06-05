@@ -27,19 +27,7 @@ export class AudioTranscoder extends TranscoderBase<AudioTranscodingJobInfo> {
     const dest = getS3FileLocationFromURI(props.processedFilePath);
     let jobParams: CreateJobCommandInput;
    
-    if (props.sub === AudioProcessingSub.CONVERT_TO_MP3) {
-      jobParams = {
-        PipelineId: process.env.TRANSCODER_PIPELINE_ID,
-        OutputKeyPrefix: `${dest.dir}/`, // the output would be produced inside this folder
-        Input: {
-          Key: source.fullFilePath,
-        },
-        Outputs: [{
-          Key: dest.fileName,
-          PresetId: '1351620000001-300020', // PRESET_ID for mp3 web
-        }],
-      };
-    } else if (props.sub === AudioProcessingSub.CONVERT_TO_HLS) {
+    if (props.sub === AudioProcessingSub.CONVERT_TO_HLS) {
       jobParams = {
         PipelineId: process.env.TRANSCODER_PIPELINE_ID,
         OutputKeyPrefix: `${dest.dir}/`, // the output would be produced inside this folder
