@@ -1,12 +1,19 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-05-17 23:57:53.
+// Generated using typescript-generator version 2.35.1025 on 2024-06-05 11:37:22.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
     data: T;
     errStr: string;
     errCode: ErrorCode;
+}
+
+export interface AudioTranscodingJobInfo extends JobProcessingInfo {
+    sourceFilePath: string;
+    processedFilePath: string;
+    sub: AudioProcessingSub;
+    meta: string;
 }
 
 export interface ButtonClicks {
@@ -30,6 +37,11 @@ export interface ImgResizingJobInfo extends JobProcessingInfo {
     resolution: string;
 }
 
+export interface InviteCode {
+    invitedEmail: string;
+    orgId: number;
+}
+
 export interface JobProcessingInfo extends MapSerializable {
     __id: number;
     duration: string;
@@ -49,8 +61,9 @@ export interface OnboardingTourForPrev {
 }
 
 export interface OrgInfo {
-    useCases: string[];
-    othersText: string;
+    useCases?: string[];
+    othersText?: string;
+    bet?: any;
 }
 
 export interface PaymentTerms {
@@ -66,7 +79,7 @@ export interface ReqNewLog {
 }
 
 export interface RespFatTenantIntegration {
-    org: Org;
+    org: RespOrg;
     platformIntegration: PlatformIntegration;
     tenantIntegration: TenantIntegration;
 }
@@ -117,6 +130,11 @@ export interface TourManifest {
     screenAssets: ScreenAssets[];
 }
 
+export interface TourSettings {
+    vpdWidth: number;
+    vpdHeight: number;
+}
+
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
     sourceFilePath: string;
     processedFilePath: string;
@@ -136,6 +154,10 @@ export interface ReqAddOrUpdateLeadInfo {
     key: LeadInfoKey;
 }
 
+export interface ReqAssignOrgToUser {
+    orgId: number;
+}
+
 export interface ReqCobaltEvent {
     event: string;
     payload: { [index: string]: string };
@@ -144,6 +166,12 @@ export interface ReqCobaltEvent {
 export interface ReqCopyScreen {
     parentId: number;
     tourRid: string;
+}
+
+export interface ReqCreateOrDeleteNewVanityDomain {
+    domainName: string;
+    subdomainName: string;
+    apexDomainName: string;
 }
 
 export interface ReqCreateOrUpdateTenantIntegration {
@@ -197,6 +225,12 @@ export interface ReqMediaProcessing {
     assn: ReqEntityAssetAssn;
 }
 
+export interface ReqNewInvite {
+    invitedEmail: string;
+    expiryTimeUnit?: ExpiryTimeUnit;
+    expireAfter?: number;
+}
+
 export interface ReqNewLinkedAccount {
     orgId: number;
 }
@@ -219,6 +253,7 @@ export interface ReqNewScreen {
 export interface ReqNewTour {
     name: string;
     description?: string;
+    settings?: TourSettings;
 }
 
 export interface ReqNfHook {
@@ -268,6 +303,12 @@ export interface ReqTourPropUpdate {
 
 export interface ReqTourRid {
     tourRid: string;
+}
+
+export interface ReqTransferTour {
+    email: string;
+    orgId: number;
+    rids: string[];
 }
 
 export interface ReqUpdateOrg {
@@ -344,11 +385,17 @@ export interface RespMediaProcessingInfo extends ResponseBase {
     failureReason: string;
 }
 
+export interface RespNewInvite {
+    code: string;
+}
+
 export interface RespOrg extends ResponseBase {
+    id: number;
     rid: string;
     displayName: string;
     thumbnail: string;
     info: OrgInfo;
+    createdBy: RespUser;
 }
 
 export interface RespPlatformIntegration extends ResponseBase {
@@ -381,6 +428,10 @@ export interface RespScreen extends ResponseBase {
     responsive: boolean;
     type: ScreenType;
     uploadUrl?: string;
+}
+
+export interface RespSubsValidation {
+    cardPresent: boolean;
 }
 
 export interface RespSubscription extends ResponseBase {
@@ -416,6 +467,8 @@ export interface RespTour extends ResponseBase {
     site: { [index: string]: any };
     responsive: boolean;
     responsive2: Responsiveness;
+    deleted: TourDeleted;
+    settings?: TourSettings;
 }
 
 export interface RespTourAnnViews {
@@ -460,6 +513,17 @@ export interface RespUser extends ResponseBase {
     personalEmail: boolean;
     orgAssociation: UserOrgAssociation;
     active: boolean;
+    orgs: RespOrg[];
+}
+
+export interface RespVanityDomain {
+    subdomainName: string;
+    apexDomainName: string;
+    domainName: string;
+    createdAt: Date;
+    status: VanityDomainDeploymentStatus;
+    records: VanityDomainRecords[];
+    rejectionReason?: string;
 }
 
 export interface AuthInputMap {
@@ -505,13 +569,6 @@ export interface Serializable {
 export interface MapSerializable extends Serializable {
 }
 
-export interface Org extends EntityBaseWithReadableId {
-    displayName: string;
-    thumbnail: string;
-    domain: string;
-    info: OrgInfo;
-}
-
 export interface PlatformIntegration extends EntityBase {
     type: PlatformIntegrationType;
     name: string;
@@ -545,14 +602,31 @@ export interface Lead360 extends EntityBase {
     ctaClickRate: number;
 }
 
-export interface EntityBaseWithReadableId extends EntityBase {
-    rid: string;
+export interface VanityDomainRecords {
+    recordType: DomainRecordType;
+    recordDes: string;
+    recordKey: string;
+    recordValue: string;
 }
 
 export interface EntityBase {
     createdAt: Date;
     updatedAt: Date;
     id: number;
+}
+
+export const enum ConfigEntityType {
+    Org = "Org",
+}
+
+export const enum UnauthorizedReason {
+    OrgSuggestedButInvalidAssociation = "OrgSuggestedButInvalidAssociation",
+}
+
+export const enum AudioProcessingSub {
+    CONVERT_TO_MP3 = "CONVERT_TO_MP3",
+    CONVERT_TO_HLS = "CONVERT_TO_HLS",
+    CONVERT_TO_WEBM = "CONVERT_TO_WEBM",
 }
 
 export const enum EntityType {
@@ -575,6 +649,7 @@ export const enum JobProcessingStatus {
 
 export const enum JobType {
     TRANSCODE_VIDEO = "TRANSCODE_VIDEO",
+    TRANSCODE_AUDIO = "TRANSCODE_AUDIO",
     RESIZE_IMG = "RESIZE_IMG",
     CREATE_DEMO_GIF = "CREATE_DEMO_GIF",
     DELETE_ASSET = "DELETE_ASSET",
@@ -600,6 +675,11 @@ export const enum ScreenType {
     SerDom = 1,
 }
 
+export const enum TourDeleted {
+    ACTIVE = 0,
+    DELETED = 1,
+}
+
 export const enum VideoProcessingSub {
     CONVERT_TO_MP4 = "CONVERT_TO_MP4",
     CONVERT_TO_HLS = "CONVERT_TO_HLS",
@@ -609,6 +689,9 @@ export const enum MediaType {
     VIDEO_HLS = "VIDEO_HLS",
     VIDEO_MP4 = "VIDEO_MP4",
     IMG_MULTI = "IMG_MULTI",
+    AUDIO_MP3 = "AUDIO_MP3",
+    AUDIO_HLS = "AUDIO_HLS",
+    AUDIO_WEBM = "AUDIO_WEBM",
     GIF = "GIF",
 }
 
@@ -640,6 +723,11 @@ export const enum LeadInfoKey {
 export const enum PlatformIntegrationType {
     FableWebhook = "FableWebhook",
     Zapier = "Zapier",
+}
+
+export const enum ExpiryTimeUnit {
+    d = "d",
+    h = "h",
 }
 
 export const enum NfEvents {
@@ -685,4 +773,18 @@ export const enum UserOrgAssociation {
     Implicit = "Implicit",
     Explicit = "Explicit",
     NA = "NA",
+}
+
+export const enum VanityDomainDeploymentStatus {
+    Requested = "Requested",
+    ManualInterventionNeeded = "ManualInterventionNeeded",
+    InProgress = "InProgress",
+    VerificationPending = "VerificationPending",
+    DeploymentPending = "DeploymentPending",
+    Issued = "Issued",
+    Failed = "Failed",
+}
+
+export const enum DomainRecordType {
+    CNAME = "CNAME",
 }
