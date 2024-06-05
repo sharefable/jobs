@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-06-05 11:37:22.
+// Generated using typescript-generator version 2.35.1025 on 2024-06-05 13:51:33.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -624,7 +624,6 @@ export const enum UnauthorizedReason {
 }
 
 export const enum AudioProcessingSub {
-    CONVERT_TO_MP3 = "CONVERT_TO_MP3",
     CONVERT_TO_HLS = "CONVERT_TO_HLS",
     CONVERT_TO_WEBM = "CONVERT_TO_WEBM",
 }
