@@ -35,6 +35,7 @@ export class AudioTranscoder extends TranscoderBase<AudioTranscodingJobInfo> {
           Key: source.fullFilePath,
         },
         Outputs: [{
+          SegmentDuration: '4.0',
           Key: dest.fileName,
           PresetId: '1351620000001-200060', // PRESET_ID for hls
         }],
