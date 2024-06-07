@@ -47,19 +47,19 @@ export abstract class JobBase {
     const rowId: number = row.insertId;
     return async () => {
       await executeQuery(
-        `UPDATE jobs SET processing_status = ${JobProcessingStatus.InProcess} WHERE id = ${rowId}`);
+        `UPDATE jobs SET processing_status = ${JobProcessingStatus.InProcess}, updated_at=CURRENT_TIMESTAMP() WHERE id = ${rowId}`);
       return [
         async () => {
           await executeQuery(
             `UPDATE jobs SET processing_status = ${JobProcessingStatus.Processed}, 
-              info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}' 
+              info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}',updated_at=CURRENT_TIMESTAMP()
               WHERE id = ${rowId}`);
         },
         async (failureReason?: string) => {
           await executeQuery(
             `UPDATE jobs SET processing_status = ${JobProcessingStatus.Failed},
               failure_reason = '${JSON.stringify(failureReason).replace(/'/g, '\'\'')}', 
-              info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}' WHERE id = ${rowId}`);
+              info = '${JSON.stringify(this.baseValues.jobInfo, null, 2)}', updated_at=CURRENT_TIMESTAMP() WHERE id = ${rowId}`);
         },
       ];
     };
