@@ -1,6 +1,7 @@
 import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/client-sqs';
 import {TMsgAttrs} from './types';
-import transcodeVideo from './processors/video_transcoder';
+import transcodeVideo from './processors/media/video_transcoder';
+import transcodeAudio from './processors/media/audio_transcoder';
 import resizeImg from './processors/image_resizer';
 import * as log from './log';
 import {getConnection} from './db';
@@ -136,6 +137,11 @@ export default function mainMsgLoop() {
 
               case 'CREATE_DEMO_GIF': {
                 jobInfo = await createDemoGif(msgAttrs);
+                break;
+              }
+
+              case  'TRANSCODE_AUDIO': {
+                jobInfo = await transcodeAudio(msgAttrs);
                 break;
               }
             
