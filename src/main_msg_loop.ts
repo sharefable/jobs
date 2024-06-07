@@ -2,7 +2,7 @@ import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/c
 import {TMsgAttrs} from './types';
 import transcodeVideo from './processors/media/video_transcoder';
 import transcodeAudio from './processors/media/audio_transcoder';
-import resizeImg from './processors/image_resizer';
+// import resizeImg from './processors/image_resizer';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
@@ -130,10 +130,12 @@ export default function mainMsgLoop() {
                 break;
               }
 
-              case 'RESIZE_IMG': {
-                jobInfo = await resizeImg(msgAttrs);
-                break;
-              }
+              // WARN we stoped resizing for the timebeing due to compatibility issue of ffmpeg with node build version
+              //      right now resizing is not done for any kind of assets
+              // case 'RESIZE_IMG': {
+              //   jobInfo = await resizeImg(msgAttrs);
+              //   break;
+              // }
 
               case 'CREATE_DEMO_GIF': {
                 jobInfo = await createDemoGif(msgAttrs);
