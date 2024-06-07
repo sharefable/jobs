@@ -135,6 +135,6 @@ export const getUserAidMappingData = (prevSuccessJobRunAt: string, currentJobRun
 };
 
 export const getLeadActivity = (aid: string, tourId: number): string => {
-  const query = `SELECT * FROM ${AWS_GLUE_TABLE_NAME} WHERE aid = '${aid}' AND payload_tour_id = ${tourId};`;
+  const query = `SELECT * FROM ${AWS_GLUE_TABLE_NAME} WHERE aid IN (${aid}) AND payload_tour_id = ${tourId};`;
   return query;
 };

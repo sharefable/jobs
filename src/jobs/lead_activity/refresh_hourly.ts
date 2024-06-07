@@ -21,6 +21,7 @@ import {
   getCtaClickedRate,
   getLowerBound,
   getMidnightTimestamp,
+  groupQueryResultByAid,
   groupQueryResultBySid,
   timeSpentInDemo,
   tourAnnoationsLength } from '../../utils';
@@ -31,6 +32,7 @@ import {
   getTourAssetPath, 
   getTourDataFile, 
   uploadLeadactivityToS3 } from '../../api';
+import fs from 'fs';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
@@ -57,15 +59,15 @@ export class TourLeadJob extends JobBase {
     const lowerBound = getLowerBound(timestampToCalculateBounds); 
     
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
-    
-    await this.sendLeadActivityToS3(tourLeads, url);
+
+    await this.processAndSendLeadActivityToS3AndDB(tourLeads, url);
   }
 
-  protected async sendLeadActivityToS3(tourLeads: AnalyticsUserAidMappingEntity[], url: string): Promise<void>  {
+  protected async processAndSendLeadActivityToS3AndDB(tourLeads: AnalyticsUserAidMappingEntity[], url: string): Promise<void>  {
     for (const tourLead of tourLeads) {
       const query = getLeadActivity(tourLead.aid, tourLead.tour_id);
       const queryExecutionId = await runAthenaQuery(query);
-      
+     
       const queryResult: AthenaTourLeadEntity[] = await downloadRawData(queryExecutionId) as AthenaTourLeadEntity[];
       if (queryResult.length === 0) {
         log.info(`Response is empty for the queryExecutionId ${queryExecutionId}. So continuing`);
@@ -73,14 +75,9 @@ export class TourLeadJob extends JobBase {
       }
 
       try {
-        const leadActivity: ReqLeadActivityDataPost = {
-          tourId: tourLead.tour_id,
-          aid: tourLead.aid,
-          data: JSON.stringify(queryResult),
-        };
         await Promise.all([
           this.populateLead360(tourLead, queryResult, url),
-          uploadLeadactivityToS3(leadActivity),
+          this.sendLeadActivityToS3(tourLead, queryResult),
         ]);
 
       } catch(err) {
@@ -208,7 +205,7 @@ export class TourLeadJob extends JobBase {
       demoName: tour.display_name,
       orgId: tour.belongs_to_org,
     };
-    
+
     const sendMessageRequest = {
       QueueUrl: sqlClientUrl, 
       MessageBody: 'CBE',
@@ -220,5 +217,22 @@ export class TourLeadJob extends JobBase {
       },
     };
     await sqsClient.sendMessage(sendMessageRequest);
+  }
+
+  protected async sendLeadActivityToS3(
+    tourLead: AnalyticsUserAidMappingEntity,
+    queryResult: AthenaTourLeadEntity[],
+  ): Promise<void> { 
+    const groupedAid = groupQueryResultByAid(queryResult);
+    for (const aid in groupedAid)
+      if (Object.prototype.hasOwnProperty.call(groupedAid, aid)) {
+        const group = groupedAid[aid];
+        const leadActivity: ReqLeadActivityDataPost = {
+          tourId: tourLead.tour_id,
+          aid: aid,
+          data: JSON.stringify(group),
+        };
+        uploadLeadactivityToS3(leadActivity);
+      }
   }
 }

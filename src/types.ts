@@ -38,7 +38,6 @@ export interface AnalyticsUserAidMappingEntity {
   email: string;
   aid: string;
   tour_id: number;
-  date_ymd: number;
 }
 
 export interface AthenaTourLeadEntity {
@@ -123,6 +122,11 @@ export interface Tour {
 export interface GroupedData {
   [key: string]: AthenaTourLeadEntity[];
 }
+
+export interface GroupedAidData {
+  [key: string]: AthenaTourLeadEntity[];
+}
+
 
 export interface LeadAccessInfoOfTour {
   email: string;
