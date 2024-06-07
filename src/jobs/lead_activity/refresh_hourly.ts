@@ -196,14 +196,12 @@ export class TourLeadJob extends JobBase {
     tour: Tour,
     sqlClientUrl: string): Promise<void> {
     
-    const demoUniqueViews = [...new Set(queryResult.map(item => item.aid))].length;
-
     const leadAccessInfoOfTour: LeadAccessInfoOfTour = {
       email: tourLead.email,
       ctaClickRate: aggregatedTourValue.ctaClickRate,
       demoCompletion: aggregatedTourValue.completionPercentage,
       totalTimeSpent: aggregatedTourValue.timeSpentSec,
-      demoUniqueViews,
+      demoUniqueViews: aggregatedTourValue.demoVisited,
       demoTotalViews: aggregatedTourValue.sessionsCreated,
       lastActiveAt: +aggregatedTourValue.lastInteractedAt,
       activityUrl: `https://app.sharefable.com/a/demo/${tour.rid}/leads#${tourLead.aid}`,
