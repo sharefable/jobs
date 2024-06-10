@@ -115,6 +115,8 @@ const availableCampaigns: Record<number, string[]> = {
   381747 : ['LIFETIME_TIER3'],
   381455 : ['SOLO'],
   381761 : ['STARTUP', 'BUSINESS'],
+  424055 : ['LIFETIME_TIER4'],
+  424065 : ['LIFETIME_TIER5'],
 };
 
 export async function addContactToSmartLeads(payload: Record<string,string>): Promise<void> {
