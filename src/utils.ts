@@ -83,7 +83,7 @@ export const getCreatedAtAndUpdateAt = (timestamp: string): string => {
 };
 
 export const getLowerBound = (timestamp: string): string => {
-  const ymdHms = getCreatedAtAndUpdateAt(timestamp);
+  const ymdHms = getCreatedAtAndUpdateAt(timestamp).replace(/59/g, '00');
   return ymdHms;
 };
 
