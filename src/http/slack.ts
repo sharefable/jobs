@@ -188,45 +188,49 @@ export default function addHttpListeners(app: Express) {
   });
 
   app.post('/v1/slack/pango/user-details', async (req: Request, res: Response) => {
-    const payloadStr = req.body.text;
-    if (!payloadStr) {
-      res.type('text/plain').send('Empty not allowd');
-      return;
-    }
+    try {
+      const payloadStr = req.body.text;
+      if (!payloadStr) {
+        res.type('text/plain').send('Empty not allowd');
+        return;
+      }
 
-    // format: email=hello@mail.com
-    const nPayloadStr = payloadStr.trim();
-    const [key, value] = nPayloadStr.split('=').map((w: string) => w.trim());
-    if (key !== 'email') {
-      res.type('text/plain').send('Invalid');
-      return;
-    }
+      // format: email=hello@mail.com
+      const nPayloadStr = payloadStr.trim();
+      const [key, value] = nPayloadStr.split('=').map((w: string) => w.trim());
+      if (key !== 'email') {
+        res.type('text/plain').send('Invalid');
+        return;
+      }
 
-    const result: any[] = await executeQuery(`SELECT * from user RIGHT OUTER JOIN user_org_join ON user.id = user_org_join.user_id
+      const result: any[] = await executeQuery(`SELECT * from user RIGHT OUTER JOIN user_org_join ON user.id = user_org_join.user_id
     INNER JOIN org ON user_org_join.org_id = org.id
     INNER JOIN subscriptions ON org.id = subscriptions.org_id
 where  user.email like '${value}'`);
 
-    if (result.length == 0) {
-      res.type('text/plain').send(`No data found for user ${value}`);
-      return;
-    }
+      if (result.length == 0) {
+        res.type('text/plain').send(`No data found for user ${value}`);
+        return;
+      }
 
-    let tableStr = `Data for user: ${value}\n\n`;
-    let i = 0;
-    for (const r of result) {
-      const t = new Table.AsciiTable3(`Entry ${++i}`).setAligns([Table.AlignmentEnum.LEFT, Table.AlignmentEnum.LEFT]);
-      Object.entries(r).forEach(([k, v]) => {
-        if (k === 'auth_id' || k === 'avatar') return;
-        t.addRow(k, v == undefined || v === null ? '<null>' : v);
-      });
-      tableStr += `${t.toString()}\n\n`;
-    }
+      let tableStr = `Data for user: ${value}\n\n`;
+      let i = 0;
+      for (const r of result) {
+        const t = new Table.AsciiTable3(`Entry ${++i}`).setAligns([Table.AlignmentEnum.LEFT, Table.AlignmentEnum.LEFT]);
+        Object.entries(r).forEach(([k, v]) => {
+          if (k === 'auth_id' || k === 'avatar') return;
+          t.addRow(k, v == undefined || v === null ? '<null>' : v);
+        });
+        tableStr += `${t.toString()}\n\n`;
+      }
 
-    res.type('text/plain').send(`
+      res.type('text/plain').send(`
 \`\`\`
 ${tableStr}
 \`\`\` `);
+    } catch (e) {
+      res.type('text/plain').send(`Error while serving command. Error: ${(e as Error).message}`);
+    }
   });
 
   app.post('/v1/slack/pango/update-feature', async (req: Request, res: Response) => {
