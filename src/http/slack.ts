@@ -314,7 +314,7 @@ where  user.email like '${value}'`);
 
       nFeatureOverride = nFeatureOverride.substring(3, nFeatureOverride.length - 3);
       try {
-        let info;
+        let info = org.info;
         if (!info) {
           info = {
             useCases: ['marketing'],
