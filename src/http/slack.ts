@@ -5,8 +5,6 @@ import * as log from '../log';
 import * as Sentry from '@sentry/node';
 import { executeQuery } from '../jobs/mysql';
 
-const Table = require('ascii-table3');
-
 function getMsgBlockFor(route: 'public' | 'private', data: {
   host: string,
   fullUrl: string,
@@ -213,32 +211,60 @@ where  user.email like '${value}'`);
         return;
       }
 
-      let tableStr = `Data for user: ${value}\n\n`;
+      const blocks = [];
+      // let tableStr = `Data for user: ${value}\n\n`;
       let i = 0;
       for (const r of result) {
-        const t = new Table.AsciiTable3(`Entry ${++i}`).setAligns([Table.AlignmentEnum.LEFT, Table.AlignmentEnum.LEFT]);
-        Object.entries(r).forEach(([k, v]) => {
-          if (k === 'auth_id' || k === 'avatar') return;
-          t.addRow(k, v == undefined || v === null ? '<null>' : v);
-        });
-        tableStr += `${t.toString()}\n\n`;
+        delete r.avatar;
+        delete r.auth_id;
+        blocks.push(`Result: [${++i}/${result.length}]`);
+        blocks.push(`\`\`\`${  JSON.stringify(r, null, 2)}\`\`\``);
       }
 
-      res.type('text/plain').send(`
-\`\`\`
-${tableStr}
-\`\`\` `);
+      const blks = blocks.map(block => ({
+        'type': 'section',
+        'text': {
+          'type': 'mrkdwn',
+          'text': block,
+        },
+      }));
+      res.type('application/json').send({
+        blocks: blks,
+        response_type: 'in_channel', 
+      });
     } catch (e) {
       res.type('text/plain').send(`Error while serving command. Error: ${(e as Error).message}`);
     }
   });
 
   app.post('/v1/slack/pango/update-feature', async (req: Request, res: Response) => {
+    const err = (errMsg: string) => {
+      const blocks = [{
+        'type': 'section',
+        'text': {
+          'type': 'mrkdwn',
+          'text': `:bangbang: ${errMsg}`,
+        },
+      }];
+      if (req.body.text.trim()) {
+        blocks.push({
+          'type': 'section',
+          'text': {
+            'type': 'mrkdwn',
+            'text': req.body.text,
+          },
+        });
+      }
+      res.type('application/json').send({
+        'response_type': 'ephemeral',
+        blocks,
+      });
+    };
+
     try {
       const payloadStr = req.body.text;
       if (!payloadStr) {
-        res.type('text/plain').send('Empty not allowd');
-        return;
+        return err('Invalid');
       }
 
       const nPayloadStr = payloadStr.trim();
@@ -248,31 +274,42 @@ ${tableStr}
 
       const [key, orgId] = orgIdStr.split('=').map((w: string) => w.trim()); 
       if (key.toLowerCase() !== 'orgid') {
-        res.type('text/plain').send('Invalid');
-        return;
+        return err('Invalid. Argument received ---');
       }
+
       const nOrgId = +(orgId.trim());
       if (Number.isNaN(nOrgId)) {
-        res.type('text/plain').send('Invalid orgId. It could only be a number');
-        return;
+        return err('Invalid orgId. It could only be a number. Argument received -');
       }
 
       const orgs = await executeQuery(`select * from org where id = ${nOrgId}`);
       const org: any = orgs[0];
       if (!org) {
-        res.type('text/plain').send(`Org with id ${nOrgId} not found`);
-        return;
-      }
-
-      if (!featureOverride) {
-        res.type('text/plain').send('Invalid feature override. It should be in ```json``` format');
-        return;
+        return err(`Org with id ${nOrgId} not found. Argument received -`);
       }
 
       let nFeatureOverride = featureOverride.trim();
+      if (!nFeatureOverride) {
+        return res.type('application/json').send({
+          blocks: [{
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': `:white_check_mark: Current featuregatematrix for orgId=${ nOrgId}`,
+            },
+          },  {
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': `\`\`\`${  JSON.stringify(JSON.parse(org.info), null, 2)  }\`\`\``,
+            },
+          }],
+          response_type: 'in_channel', 
+        });
+      }
+
       if (!(nFeatureOverride.startsWith('```') && nFeatureOverride.endsWith('```'))) {
-        res.type('text/plain').send('Invalid feature override. It should be in ```json``` format');
-        return;
+        return err('Invalid feature override. It should be in json format');
       }
 
       nFeatureOverride = nFeatureOverride.substring(3, nFeatureOverride.length - 3);
@@ -293,8 +330,7 @@ ${tableStr}
             || 'othersText' in featureOverrideJson
             || 'bet' in featureOverrideJson
             || 'featureGateOverride' in featureOverrideJson) {
-            res.type('text/plain').send('Feature override should not have useCases or othersText or bet or featureGateOverride');
-            return;
+            return err('Feature override should not have useCases or othersText or bet or featureGateOverride');
           }
 
           info = {
@@ -306,23 +342,47 @@ ${tableStr}
         }
 
         await executeQuery(`update org set info = '${JSON.stringify(info)}' where id = ${nOrgId}`);
-        res.type('text/plain').send(`Updated featuregatematrix for orgId=${nOrgId}.
-From:
-\`\`\`
-${JSON.stringify(JSON.parse(org.info), null, 2)}
-\`\`\`
-To:
-\`\`\`
-${JSON.stringify(info, null, 2)}
-\`\`\` `);
+        res.type('application/json').send({
+          blocks: [{
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': `:white_check_mark: Updated featuregatematrix for orgId=${ nOrgId}`,
+            },
+          }, {
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': 'From',
+            },
+          }, {
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': `\`\`\`${  JSON.stringify(JSON.parse(org.info), null, 2)  }\`\`\``,
+            },
+          }, {
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': 'To',
+            },
+          }, {
+            'type': 'section',
+            'text': {
+              'type': 'mrkdwn',
+              'text': `\`\`\`${  JSON.stringify(info, null, 2)  }\`\`\``,
+            },
+          }],
+          response_type: 'in_channel', 
+        });
       } catch (e) {
         // eslint-disable-next-line prefer-template
-        res.type('text/plain').send('Invalid feature override. It should be in ```json``` format. Error: ' + (e as Error).message);
-        return;
+        return err('Invalid feature override. It should be in json format. Error: ');
       }
     } catch(e) {
       // eslint-disable-next-line prefer-template
-      res.type('text/plain').send('Error while updating feature override' + (e as Error).message);
+      return err('Error while updating feature override' + (e as Error).message);
     }
   });
 
