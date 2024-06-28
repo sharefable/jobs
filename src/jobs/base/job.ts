@@ -65,8 +65,8 @@ export abstract class JobBase {
     };
   }
 
-  protected async getJobSuccessData (): Promise<any> {
-    const jobData: Job[] = await sqlQueryToSelectLastSuccessData(this.getJobType());
+  protected async getJobSuccessData (jobType: JobType): Promise<any> {
+    const jobData: Job[] = await sqlQueryToSelectLastSuccessData(jobType);
     return jobData.length !== 0 ?  JSON.parse(jobData.at(0)!.info) : null;
   }
 }
