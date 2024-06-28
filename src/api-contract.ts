@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-06-17 11:56:28.
+// Generated using typescript-generator version 2.35.1025 on 2024-06-28 14:55:07.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
@@ -120,7 +120,8 @@ export interface TourAnnWithViews {
 
 export interface TourLeads {
     aid: string;
-    email: string;
+    primaryKey: string;
+    leadFormInfo: any;
 }
 
 export interface TourManifest {
@@ -133,6 +134,7 @@ export interface TourManifest {
 export interface TourSettings {
     vpdWidth: number;
     vpdHeight: number;
+    primaryKey: string;
 }
 
 export interface VideoTranscodingJobInfo extends JobProcessingInfo {
@@ -303,6 +305,7 @@ export interface ReqTourPropUpdate {
     inProgress?: boolean;
     responsive?: boolean;
     responsive2?: Responsiveness;
+    settings?: TourSettings;
 }
 
 export interface ReqTourRid {

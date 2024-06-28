@@ -32,7 +32,6 @@ import {
   getTourAssetPath, 
   getTourDataFile, 
   uploadLeadactivityToS3 } from '../../api';
-import fs from 'fs';
 
 export const refreshHourlyLeadActivity = async () => {
   const tourLeadJob = new TourLeadJob();
@@ -45,6 +44,15 @@ export class TourLeadJob extends JobBase {
     return JobType.REFRESH_LEAD_ACTIVITY;
   }
 
+  protected async setJobInfo(): Promise<void> {
+    const successData: JobInfo  = await this.getJobSuccessData(JobType.REFRESH_USER_AID_MAPPING);
+    this.baseValues.jobInfo = {
+      jobDataScanningTime: this.baseValues.jobInfo.jobDataScanningTime,
+      jobRunTime: this.baseValues.jobInfo.jobRunTime,
+      userIdMappingRunTime: successData.jobRunTime,
+    };
+  }
+
   protected async execute(): Promise<void> {
     let url: string | undefined;
     if (!url) {
@@ -52,12 +60,12 @@ export class TourLeadJob extends JobBase {
       if (!url) throw new Error('Queue url could not be retrieved');
     }
 
-    const successData: JobInfo  = await this.getJobSuccessData();
-    const timestampToCalculateBounds = successData ? successData.jobRunTime : '2023010100';
+    await this.setJobInfo();
+    const successData: JobInfo  = await this.getJobSuccessData(this.getJobType());
+    const timestampToCalculateBounds = successData ? successData.userIdMappingRunTime as string : '2023010100';
     
     const upperBound = getMidnightTimestamp(this.baseValues.jobInfo.jobRunTime);
     const lowerBound = getLowerBound(timestampToCalculateBounds); 
-    
     const tourLeads: AnalyticsUserAidMappingEntity[] = await getTourLeadsForYmd(lowerBound, upperBound);
 
     await this.processAndSendLeadActivityToS3AndDB(tourLeads, url);
@@ -99,7 +107,7 @@ export class TourLeadJob extends JobBase {
         return;
       }
 
-      const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.email);
+      const houseLeadInfo: RespHouseLeadInfo | null = await getHouseLeadInfo(tour[0].belongs_to_org, tourLead.primaryKey);
       if (!houseLeadInfo) {
         log.err(`House lead info not found for for tour ${tourLead.tour_id}, skipping`);
         return;
@@ -108,7 +116,7 @@ export class TourLeadJob extends JobBase {
       const aggregatedTourValue: ReqLead360 = reqListLead360.info360.filter(item => item.tourId === 0)[0];
      
       await Promise.all([
-        this.prepareAndSendSqsMessage(queryResult, tourLead, aggregatedTourValue, tour[0], sqlClientUrl),
+        this.prepareAndSendSqsMessage(tourLead, aggregatedTourValue, tour[0], sqlClientUrl),
         addOrUpdateLead360(reqListLead360),
       ]);
     } catch (err) {
@@ -187,14 +195,14 @@ export class TourLeadJob extends JobBase {
   }
 
   protected async prepareAndSendSqsMessage(
-    queryResult: AthenaTourLeadEntity[],
     tourLead: AnalyticsUserAidMappingEntity,
     aggregatedTourValue: ReqLead360,
     tour: Tour,
     sqlClientUrl: string): Promise<void> {
     
+    const primaryKeyField: string = tour.settings.primaryKey || 'email';
     const leadAccessInfoOfTour: LeadAccessInfoOfTour = {
-      email: tourLead.email,
+      [primaryKeyField]: tourLead.primaryKey,
       ctaClickRate: aggregatedTourValue.ctaClickRate,
       demoCompletion: aggregatedTourValue.completionPercentage,
       totalTimeSpent: aggregatedTourValue.timeSpentSec,

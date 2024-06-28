@@ -5,13 +5,13 @@ export const getTourLeadsForYmd = async (
   lowerBound: string, 
   upperBound: string,
 ): Promise<AnalyticsUserAidMappingEntity[]> => {
-  const query = `SELECT t.email, t.tour_id, CONCAT("'", GROUP_CONCAT(DISTINCT t.aid SEPARATOR "', '"), "'") AS aid
+  const query = `SELECT t.primary_key, t.tour_id, CONCAT("'", GROUP_CONCAT(DISTINCT t.aid SEPARATOR "', '"), "'") AS aid
                   FROM ${TableName.AnalyticsUserAidMapping}  t
                     JOIN (
-                        SELECT DISTINCT email
+                        SELECT DISTINCT primary_key
                         FROM ${TableName.AnalyticsUserAidMapping} 
                         WHERE updated_at > '${lowerBound}' AND updated_at <= '${upperBound}'
-                    ) sub ON t.email = sub.email GROUP BY t.email, t.tour_id;`;
+                    ) sub ON t.primary_key = sub.primary_key GROUP BY t.primary_key, t.tour_id;`;
   const tourLeads: AnalyticsUserAidMappingEntity[] = await executeQuery(query);
   return tourLeads;
 };

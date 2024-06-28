@@ -71,7 +71,7 @@ export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunT
           sid,
           payload_ann_id,
           COALESCE(uts - LAG(uts) OVER (PARTITION BY payload_tour_id, sid ORDER BY uts ASC), 5) AS time_spent
-       FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev'
+       FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev' AND payload_ann_id!='$header' AND payload_ann_id!='$journey'
        AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
        AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
    ) AS subquery
@@ -101,7 +101,7 @@ export const getAnnTourClicksData = (prevSuccessJobRunAt: string, currentJobRunT
       ymd, 
       COUNT(distinct sid) AS views_all,
       COUNT(DISTINCT aid) AS views_unique
-    FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev'
+    FROM ${AWS_GLUE_TABLE_NAME} WHERE payload_btn_type != 'prev' AND payload_ann_id!='$header' AND payload_ann_id!='$journey'
     AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT)) >= ${prevSuccessJobRunAt}
     AND (CAST(CONCAT(CAST(ymd AS VARCHAR), LPAD(CAST(h AS VARCHAR(2)), 2, '0')) AS BIGINT))  < ${currentJobRunTime}
     GROUP BY 
@@ -127,7 +127,8 @@ export const getUserAidMappingData = (prevSuccessJobRunAt: string, currentJobRun
                     payload_tour_id, 
                     aid, 
                     payload_user_email,
-                    ymd
+                    ymd,
+                    payload_others
                     FROM ${AWS_GLUE_USER_ASSIGN_TABLE_NAME} WHERE 
                     cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) >= ${prevSuccessJobRunAt} 
                     AND cast(concat(cast(ymd as varchar), lpad(cast(h as varchar(2)), 2, '0') ) as bigint) < ${currentJobRunTime} ORDER BY ymd ASC`;

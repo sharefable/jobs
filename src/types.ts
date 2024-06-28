@@ -1,4 +1,4 @@
-import { JobProcessingStatus, RespScreen, RespTour, SchemaVersion } from './api-contract';
+import { JobProcessingStatus, RespScreen, RespTour, SchemaVersion, TourSettings } from './api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
@@ -6,6 +6,7 @@ export interface JobInfo {
   jobRunTime: string;
   jobDataScanningTime: string;
   queryExecutionId?: string;
+  userIdMappingRunTime?: string;
 }
 
 export interface Job {
@@ -35,7 +36,7 @@ export interface AnalyticConversionEntity{
 }
 
 export interface AnalyticsUserAidMappingEntity {
-  email: string;
+  primaryKey: string;
   aid: string;
   tour_id: number;
 }
@@ -117,6 +118,7 @@ export interface Tour {
   display_name: string;
   created_by: number;
   belongs_to_org: number;
+  settings: TourSettings
 }
 
 export interface GroupedData {
@@ -129,7 +131,7 @@ export interface GroupedAidData {
 
 
 export interface LeadAccessInfoOfTour {
-  email: string;
+  [key: string]: any
   ctaClickRate: number;
   demoCompletion: number;
   totalTimeSpent: number;
