@@ -1,12 +1,16 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-06-28 14:55:07.
+// Generated using typescript-generator version 2.35.1025 on 2024-07-10 15:13:18.
 
 export interface ApiResp<T> {
     status: ResponseStatus;
     data: T;
     errStr: string;
     errCode: ErrorCode;
+}
+
+export interface EntityInfo {
+    thumbnail: string;
 }
 
 export interface AudioTranscodingJobInfo extends JobProcessingInfo {
@@ -144,6 +148,15 @@ export interface VideoTranscodingJobInfo extends JobProcessingInfo {
     meta: string;
 }
 
+export interface EntityUpdateBase {
+    site?: { [index: string]: any };
+    inProgress?: boolean;
+    responsive?: boolean;
+    responsive2?: Responsiveness;
+    settings?: TourSettings;
+    info?: EntityInfo;
+}
+
 export interface ReqActivateOrDeactivateUser {
     userId: number;
     shouldActivate: boolean;
@@ -192,6 +205,10 @@ export interface ReqCreateOrUpdateTenantIntegration {
 
 export interface ReqDeleteTenantIntegration {
     tenantIntegrationId: number;
+}
+
+export interface ReqDemoHubPropUpdate extends EntityUpdateBase {
+    rid: string;
 }
 
 export interface ReqDuplicateTour {
@@ -299,13 +316,8 @@ export interface ReqThumbnailCreation {
     screenRid: string;
 }
 
-export interface ReqTourPropUpdate {
+export interface ReqTourPropUpdate extends EntityUpdateBase {
     tourRid: string;
-    site?: { [index: string]: any };
-    inProgress?: boolean;
-    responsive?: boolean;
-    responsive2?: Responsiveness;
-    settings?: TourSettings;
 }
 
 export interface ReqTourRid {
@@ -316,6 +328,10 @@ export interface ReqTransferTour {
     email: string;
     orgId: number;
     rids: string[];
+}
+
+export interface ReqUpdateGlobalOpts {
+    editData: string;
 }
 
 export interface ReqUpdateOrg {
@@ -347,6 +363,8 @@ export interface RespCommonConfig extends ResponseBase {
     commonAssetPath: string;
     screenAssetPath: string;
     tourAssetPath: string;
+    demoHubAssetPath: string;
+    pubDemoHubAssetPath: string;
     pubTourAssetPath: string;
     dataFileName: string;
     loaderFileName: string;
@@ -362,6 +380,40 @@ export interface RespConversion {
 
 export interface RespCustomField {
     fieldName: string;
+}
+
+export interface RespDemoEntity extends ResponseBase {
+    id: number;
+    rid: string;
+    assetPrefixHash: string;
+    displayName: string;
+    description: string;
+    lastPublishedDate: Date;
+    onboarding: boolean;
+    inProgress: boolean;
+    createdBy: RespUser;
+    pubDataFileName: string;
+    pubLoaderFileName: string;
+    pubEditFileName: string;
+    pubTourEntityFileName: string;
+    site: { [index: string]: any };
+    responsive: boolean;
+    responsive2: Responsiveness;
+    deleted: TourDeleted;
+    entityType: TopLevelEntityType;
+    info: EntityInfo;
+    globalOpts?: any;
+    settings?: TourSettings;
+}
+
+export interface RespDemoEntityWithSubEntities extends RespDemoEntity {
+    screens: RespScreen[];
+    idxm?: { [index: string]: string };
+    cc: RespCommonConfig;
+}
+
+export interface RespGlobalOpts {
+    globalOpts: any;
 }
 
 export interface RespHealth extends ResponseBase {
@@ -461,27 +513,6 @@ export interface RespTenantIntegration extends ResponseBase {
     relay: number;
 }
 
-export interface RespTour extends ResponseBase {
-    id: number;
-    rid: string;
-    assetPrefixHash: string;
-    displayName: string;
-    description: string;
-    lastPublishedDate: Date;
-    onboarding: boolean;
-    inProgress: boolean;
-    createdBy: RespUser;
-    pubDataFileName: string;
-    pubLoaderFileName: string;
-    pubEditFileName: string;
-    pubTourEntityFileName: string;
-    site: { [index: string]: any };
-    responsive: boolean;
-    responsive2: Responsiveness;
-    deleted: TourDeleted;
-    settings?: TourSettings;
-}
-
 export interface RespTourAnnViews {
     tourId: number;
     tourAnnWithViews: TourAnnWithViews[];
@@ -501,12 +532,6 @@ export interface RespTourView {
     totalViews: number;
     uniqueViews: number;
     totalVisitorsByYmd: TotalVisitorsByYmd[];
-}
-
-export interface RespTourWithScreens extends RespTour {
-    screens: RespScreen[];
-    idxm?: { [index: string]: string };
-    cc: RespCommonConfig;
 }
 
 export interface RespUploadUrl {
@@ -630,6 +655,11 @@ export const enum ConfigEntityType {
     Org = "Org",
 }
 
+export const enum TopLevelEntityType {
+    TOUR = "TOUR",
+    DEMO_HUB = "DEMO_HUB",
+}
+
 export const enum UnauthorizedReason {
     OrgSuggestedButInvalidAssociation = "OrgSuggestedButInvalidAssociation",
 }
@@ -725,6 +755,12 @@ export const enum ForObjectType {
     LIFETIME_LICENSE_KEY = "LIFETIME_LICENSE_KEY",
 }
 
+export const enum Responsiveness {
+    NoChoice = "NoChoice",
+    NoResponsive = "NoResponsive",
+    Responsive = "Responsive",
+}
+
 export const enum LeadInfoKey {
     HUBSPOT_CONTACT_ID = "HUBSPOT_CONTACT_ID",
     SFDC_CONTACT_ID = "SFDC_CONTACT_ID",
@@ -763,12 +799,6 @@ export const enum Interval {
     MONTHLY = "MONTHLY",
     YEARLY = "YEARLY",
     LIFETIME = "LIFETIME",
-}
-
-export const enum Responsiveness {
-    NoChoice = "NoChoice",
-    NoResponsive = "NoResponsive",
-    Responsive = "Responsive",
 }
 
 export const enum Status {

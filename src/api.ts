@@ -1,5 +1,5 @@
 import { TourData } from 'types';
-import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespCommonConfig, RespFatTenantIntegration, RespHouseLeadInfo, RespTour } from './api-contract';
+import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespCommonConfig, RespFatTenantIntegration, RespHouseLeadInfo, RespDemoEntity } from './api-contract';
 import * as log from './log';
 
 export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
@@ -25,26 +25,26 @@ export async function getTenantIntegration(id: number): Promise<RespFatTenantInt
   return await req(`/fat/tenant_integration/${id}`) as RespFatTenantIntegration;
 }
 
-export async function getTourById(id: string): Promise<RespTour> {
-  return await req(`/tour/by/id/${id}`) as RespTour;
+export async function getTourById(id: string): Promise<RespDemoEntity> {
+  return await req(`/tour/by/id/${id}`) as RespDemoEntity;
 }
 
-export async function getTourByRid(rid: string): Promise<RespTour> {
-  return await req(`/tour?rid=${rid}`) as RespTour;
+export async function getTourByRid(rid: string): Promise<RespDemoEntity> {
+  return await req(`/tour?rid=${rid}`) as RespDemoEntity;
 }
 
 export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
-  liveTour: RespTour,
-  publishedTour: RespTour | undefined,
+  liveTour: RespDemoEntity,
+  publishedTour: RespDemoEntity | undefined,
   gifUrl: string | undefined
 }> {
   const cconfig = await req('/cconfig') as RespCommonConfig;
   const tourPath = `${cconfig.pubTourAssetPath}${rid}/0_d_data.json`;
 
   const liveTour = await getTourByRid(rid);
-  let publishedTourData: ApiResp<RespTour> | undefined;
+  let publishedTourData: ApiResp<RespDemoEntity> | undefined;
   if (liveTour.lastPublishedDate) {
-    publishedTourData = (await fetch(tourPath).then(resp => resp.json())) as ApiResp<RespTour>;
+    publishedTourData = (await fetch(tourPath).then(resp => resp.json())) as ApiResp<RespDemoEntity>;
   }
 
   return {
@@ -55,7 +55,7 @@ export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
 }
 
 
-type Resp = RespTour | RespHouseLeadInfo | string | RespFatTenantIntegration | RespCommonConfig;
+type Resp = RespDemoEntity | RespHouseLeadInfo | string | RespFatTenantIntegration | RespCommonConfig;
 export async function req (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',

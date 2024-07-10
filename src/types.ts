@@ -1,4 +1,4 @@
-import { JobProcessingStatus, RespScreen, RespTour, SchemaVersion, TourSettings } from './api-contract';
+import { JobProcessingStatus, RespScreen, RespDemoEntity, SchemaVersion, TourSettings } from './api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
@@ -343,7 +343,7 @@ export declare type CustomAnnDims = {
   width: number;
 };
 
-export interface P_RespTour extends RespTour {
+export interface P_RespTour extends RespDemoEntity {
   dataFileUri: URL;
   displayableUpdatedAt: string;
   isPlaceholder: boolean;
