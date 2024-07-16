@@ -6,7 +6,6 @@ import transcodeAudio from './processors/media/audio_transcoder';
 import * as log from './log';
 import {getConnection} from './db';
 import {JobProcessingStatus} from './api-contract';
-import {MysqlError} from 'mysql';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
 import { processEventsForDestination } from './processors/mics';
@@ -14,6 +13,8 @@ import { sendEventToCobalt } from './processors/cobalt';
 import RetryableErr from './retryable-err';
 import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
+import { MysqlError } from 'mysql';
+import { onReceiveMessageFromSqs } from './main_schedule_loop';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -106,6 +107,8 @@ export default function mainMsgLoop() {
         } else if (msg.Body === 'CBE') {
           await sendEventToCobalt(msgAttrs);
           await deleteMsg();
+        } else if (msg.Body === 'TRIGGER_JOB') {
+          await onReceiveMessageFromSqs(msgAttrs);
         } else {
           if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
 

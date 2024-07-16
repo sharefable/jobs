@@ -1,4 +1,4 @@
-import {ForObjectType, LogType, PlatformIntegrationType, ReqNewLog, RespTour} from 'api-contract';
+import {ForObjectType, LogType, PlatformIntegrationType, ReqNewLog, RespDemoEntity} from 'api-contract';
 import {addToApplicationLog, getTenantIntegration, getTourById} from '../api';
 import RetryableErr from '../retryable-err';
 import Handlebars from 'handlebars';

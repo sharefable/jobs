@@ -1,5 +1,5 @@
 import { MysqlError } from 'mysql';
-import { getConnection } from '../db';
+import { getConnection } from './db';
   
 export async function executeQuery<T>(query: string): Promise<T[]> {
   const conn = await getConnection();

@@ -1,16 +1,16 @@
 import {Express, Request, Response} from 'express';
 import {getLiveAndPublishedTourAssetsByRid } from '../api';
-import {RespTour} from '../api-contract';
+import {RespDemoEntity} from '../api-contract';
 import * as log from '../log';
 import * as Sentry from '@sentry/node';
-import { executeQuery } from '../jobs/mysql';
+import { executeQuery } from '../sql';
 
 function getMsgBlockFor(route: 'public' | 'private', data: {
   host: string,
   fullUrl: string,
   rid: string,
   gif?: string;
-}, tour: RespTour) {
+}, tour: RespDemoEntity) {
   const name = tour.site && tour.site.title || tour.displayName;
   const blocks = {
     'blocks': [

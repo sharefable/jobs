@@ -1,14 +1,15 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop, { mainHourlyJob } from './main_schedule_loop';
+// import mainScheduleLoop, { mainHourlyJob } from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {pool} from './db';
 import { sentryInitialize } from './sentry';
-import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
+// import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
 import { addContactToSmartLeads } from './processors/mics';
+import { onReceiveMessageFromSqs } from './main_schedule_loop';
 
 const PORT = 8081;
 
@@ -65,7 +66,6 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 } 
 
 mainMsgLoop();
-mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -77,27 +77,16 @@ app.get('/health', (req: Request, res: Response) => {
 
 addSlackHttpListeners(app);
 
-app.post('/triggerhourly', (req: Request, res: Response) => {
-  mainHourlyJob();
-  log.info('Triggered');
-  res.json({triggered: 'ok'});
-});
-
-app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
-  refreshHourlyLeadActivity();
-  log.info('Triggered');
-  res.json({triggered: 'ok'});
-});
-
 app.post('/leads', async (req: Request, res: Response) => {
-  const payload: Record<string, string> = {
-    payload_email: 'john@acme.com',
-    payload_firstName: 'John',
-    payload_lastName: '',
-    payload_subs: 'LIFETIME_TIER1',
-  };
+  onReceiveMessageFromSqs({ job: 'CALCULATE_ENTITY_SUB_ENTITY_METRICS'});
+  // const payload: Record<string, string> = {
+  //   payload_email: 'john@acme.com',
+  //   payload_firstName: 'John',
+  //   payload_lastName: '',
+  //   payload_subs: 'LIFETIME_TIER1',
+  // };
 
-  addContactToSmartLeads(payload);
+  // addContactToSmartLeads(payload);
   
   log.info('Triggered');
   res.json({triggered: 'ok'});

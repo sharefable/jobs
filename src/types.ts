@@ -1,8 +1,10 @@
-import { JobProcessingStatus, RespScreen, RespTour, SchemaVersion, TourSettings } from './api-contract';
+import { AnalyticsJobType, JobProcessingStatus, ProcessingStatus, RespScreen, RespDemoEntity, SchemaVersion, TourSettings } from './api-contract';
 
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
 export interface JobInfo {
+  highWaterMark?: string;
+  lowWaterMark?: string;
   jobRunTime: string;
   jobDataScanningTime: string;
   queryExecutionId?: string;
@@ -15,6 +17,15 @@ export interface Job {
   processing_status: JobProcessingStatus;
   info: string;
   failure_reason?: string | null;
+}
+
+export interface Job2 {
+  job_type: AnalyticsJobType;
+  job_key: string;
+  job_status: ProcessingStatus;
+  low_watermark: Date;
+  high_watermark: Date;
+  job_data: string;
 }
 
 export interface AnalyticMetricsEntity{
@@ -343,7 +354,7 @@ export declare type CustomAnnDims = {
   width: number;
 };
 
-export interface P_RespTour extends RespTour {
+export interface P_RespTour extends RespDemoEntity {
   dataFileUri: URL;
   displayableUpdatedAt: string;
   isPlaceholder: boolean;

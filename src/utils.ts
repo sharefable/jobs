@@ -548,3 +548,12 @@ export const isVideoAnn = (config: IAnnotationConfig): boolean => !isBlankString
 export function isBlankString(str: string): boolean {
   return str.trim() === '';
 }
+
+
+export function stringToDate(dateString: string): Date {
+  const year = parseInt(dateString.substring(0, 4), 10);
+  const month = parseInt(dateString.substring(4, 6), 10);
+  const day = parseInt(dateString.substring(6, 8), 10);
+
+  return new Date(year, month, day);
+}
