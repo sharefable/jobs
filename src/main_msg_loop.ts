@@ -14,7 +14,6 @@ import RetryableErr from './retryable-err';
 import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
-import { onReceiveMessageFromSqs } from './main_schedule_loop';
 import { routeAnalyticsJob } from 'analytics/event_router';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
