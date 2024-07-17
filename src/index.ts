@@ -9,14 +9,9 @@ import { sentryInitialize } from './sentry';
 // import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
 import { addContactToSmartLeads } from './processors/mics';
-import { onReceiveMessageFromSqs } from './main_schedule_loop';
+import { onReceiveMessageFromSqs } from './analytics/event_router';
 
 const PORT = 8081;
-
-const INFO = {
-  timeInSecSinceLastPoll: 0,
-};
-
 
 let envLoadingHasErr = false;
 const envLoadingStatus = [
@@ -32,13 +27,13 @@ const envLoadingStatus = [
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
   'AWS_S3_REGION',
-  'AWS_GLUE_REGION',
-  'AWS_GLUE_DB_NAME',
-  'AWS_GLUE_CRAWLER_NAME',
-  'AWS_GLUE_USER_ASSIGN_CRAWLER_NAME',
-  'AWS_S3_ATHENA_OUTPUT_BUCKET',
-  'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
-  'AWS_ATHENA_REGION',
+  // 'AWS_GLUE_REGION',
+  // 'AWS_GLUE_DB_NAME',
+  // 'AWS_GLUE_CRAWLER_NAME',
+  // 'AWS_GLUE_USER_ASSIGN_CRAWLER_NAME',
+  // 'AWS_S3_ATHENA_OUTPUT_BUCKET',
+  // 'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
+  // 'AWS_ATHENA_REGION',
   'API_SERVER_ENDPOINT',
   'COBALT_API_KEY',
   'SLACK_FABLE_BOT_BOT_USER_TOKEN',
@@ -90,10 +85,6 @@ app.post('/leads', async (req: Request, res: Response) => {
   
   log.info('Triggered');
   res.json({triggered: 'ok'});
-});
-
-app.get('/info', (req: Request, res: Response) => {
-  res.json({ ...INFO });
 });
 
 const server = app.listen(PORT, async () => {

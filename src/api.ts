@@ -1,5 +1,12 @@
-import { Job2, TourData } from 'types';
-import { AnalyticsJob, AnalyticsJobType, ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewAnalyticsJob, ReqNewLog, ReqUpdateAnalyticsJob, RespCommonConfig, RespFatTenantIntegration, RespHouseLeadInfo, RespDemoEntity } from './api-contract';
+import {
+  ApiResp,
+  ReqHouseLeadInfoWithInfo360,
+  ReqNewLog,
+  RespCommonConfig,
+  RespFatTenantIntegration,
+  RespHouseLeadInfo,
+  RespDemoEntity,
+} from './api-contract';
 import * as log from './log';
 
 export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
@@ -9,28 +16,28 @@ export async function getHouseLeadInfo (orgId: number, email: string): Promise<R
 }
 
 export async function getTourAssetPath (tourId: number): Promise<string> {
-  const data = await req(`/trasstpath?id=${tourId}`, 'GET') as string;
+  const data = await req<undefined, string>(`/trasstpath?id=${tourId}`, 'GET');
   return data;
 }
 
 export async function addOrUpdateLead360 (body: ReqHouseLeadInfoWithInfo360): Promise<void> {
-  await req('/poplead', 'POST', body);
+  await req<ReqHouseLeadInfoWithInfo360, undefined>('/poplead', 'POST', body);
 }
 
 export async function addToApplicationLog(logLine: ReqNewLog) {
-  await req('/new/log', 'POST', logLine);
+  await req<ReqNewLog, undefined>('/new/log', 'POST', logLine);
 }
 
 export async function getTenantIntegration(id: number): Promise<RespFatTenantIntegration> {
-  return await req(`/fat/tenant_integration/${id}`) as RespFatTenantIntegration;
+  return await req<undefined, RespFatTenantIntegration>(`/fat/tenant_integration/${id}`);
 }
 
 export async function getTourById(id: string): Promise<RespDemoEntity> {
-  return await req(`/tour/by/id/${id}`) as RespDemoEntity;
+  return await req<undefined, RespDemoEntity>(`/tour/by/id/${id}`);
 }
 
 export async function getTourByRid(rid: string): Promise<RespDemoEntity> {
-  return await req(`/tour?rid=${rid}`) as RespDemoEntity;
+  return await req<undefined, RespDemoEntity>(`/tour?rid=${rid}`);
 }
 
 export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
@@ -38,7 +45,7 @@ export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
   publishedTour: RespDemoEntity | undefined,
   gifUrl: string | undefined
 }> {
-  const cconfig = await req('/cconfig') as RespCommonConfig;
+  const cconfig = await req<undefined, RespCommonConfig>('/cconfig') ;
   const tourPath = `${cconfig.pubTourAssetPath}${rid}/0_d_data.json`;
 
   const liveTour = await getTourByRid(rid);
@@ -54,95 +61,35 @@ export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
   };
 }
 
-
-type Resp = RespDemoEntity | RespHouseLeadInfo | string | RespFatTenantIntegration | RespCommonConfig | AnalyticsJob;
-export async function req (
-  urlPath: string,
-  method: 'GET' | 'POST' = 'GET',
-  payload?: any,
-): Promise<Resp> {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-
-
-  const url = `${process.env.API_SERVER_ENDPOINT}/v1${urlPath}`;
-  let resp;
-  let data;
-  console.log('payload', payload);
-  console.log('url', url);
-  try {
-    resp = await fetch(url, {
-      method,
-      headers,
-      body: payload ? JSON.stringify(payload) : undefined,
-    });
-    console.log('data', resp);
-    data = (await resp.json()) as ApiResp<Resp>;
-
-  } catch (e) {
-    log.warn(e);
-    throw new Error( 'Can\'t make changes to entity');
-  }
-  if (!(resp.status >= 200 && resp.status < 300)) {
-    throw new Error('Couldn\'t make changes');
-  }
-  return data.data;
-}
-
-export async function getTourDataFile(url: string): Promise<TourData> {
-  const data =  await fetch(url, {
-    method: 'GET',
-  });
-  return await data.json() as TourData;
-}
-
+// TODO strong type body
 export async function uploadLeadactivityToS3(body: any): Promise<void> {
   await req('/updleadanalytics', 'POST', body);
 }
 
-type AnalyticsResp = AnalyticsJob | undefined;
-export async function analyticsReq (
+export async function req<T, K> (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',
-  payload?: any,
-): Promise<AnalyticsResp | null> {
+  payload?: T,
+): Promise<K> {
   const headers = {
     'Content-Type': 'application/json',
   };
-
   const url = `${process.env.API_SERVER_ENDPOINT}/v1${urlPath}`;
   let resp;
-  let data =  null;
   try {
     resp = await fetch(url, {
       method,
       headers,
       body: payload ? JSON.stringify(payload) : undefined,
     });
-    const contentType = resp.headers.get('Content-Type');;
 
-    if (contentType && contentType.includes('application/json')) {
-       data = await resp.json() as AnalyticsResp;
-    } 
+    if (!(resp.status >= 200 && resp.status < 300)) {
+      throw new Error(`Response status exception. Status: ${resp.status}`);
+    }
   } catch (e) {
-    log.warn(e);
-    throw new Error( 'Can\'t make changes to entity');
+    log.err((e as Error).stack);
+    throw new Error( `Error while making request to ${url}. Error: ${(e as Error).message}`);
   }
-  if (!(resp.status >= 200 && resp.status < 300)) {
-    throw new Error('Couldn\'t make changes');
-  }
-  return data;
-}
-
-export async function createJob(job: ReqNewAnalyticsJob): Promise<AnalyticsJob> {
-  return await analyticsReq('/fat/a/job', 'POST', job) as AnalyticsJob;
-}
-
-export async function updateJob(job: ReqUpdateAnalyticsJob, jobId: number): Promise<void> {
-  await analyticsReq(`/fat/a/job/${jobId}`, 'POST', job);
-}
-
-export async function getLastSuccessData(jobType: AnalyticsJobType): Promise<AnalyticsJob | null> {
-  return await analyticsReq(`/fat/a/job/last_success/${jobType}`, 'GET') as AnalyticsJob;
+  const data = (await resp.json()) as ApiResp<K>;
+  return data.data as K;
 }

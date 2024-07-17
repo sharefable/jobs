@@ -12,3 +12,5 @@ export const client = new Pool({
   port: cs.port,
   max: CONCURRENCY,
 });
+
+// TODO move this to db file as well

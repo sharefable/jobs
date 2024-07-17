@@ -5,7 +5,7 @@ import transcodeAudio from './processors/media/audio_transcoder';
 // import resizeImg from './processors/image_resizer';
 import * as log from './log';
 import {getConnection} from './db';
-import {JobProcessingStatus} from './api-contract';
+import {AnalyticsJobType, JobProcessingStatus} from './api-contract';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
 import { processEventsForDestination } from './processors/mics';
@@ -15,6 +15,7 @@ import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
 import { onReceiveMessageFromSqs } from './main_schedule_loop';
+import { routeAnalyticsJob } from 'analytics/event_router';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -70,6 +71,22 @@ export default function mainMsgLoop() {
         log.info(`Processing message ${msg.Body}`);
         const msgAttrs = getMsgAttrMaps(msg.MessageAttributes);
         const deleteMsg = deleteMsgPrep(url!, msg.ReceiptHandle);
+
+        /*
+         * This following routing is little bit trickey and contains hangover from old system.
+         * 
+         * Initially the sqs message body was sent as a simple string and message attr contained the 
+         * json object. Which obviously is counter intuitive.
+         * 
+         * Now the message body is always a json object and message attr to pass meta information.
+         * 
+         * The following function supports both the old and new message formats. The `if` blocks are
+         * responsible for old format where the message body is string. 
+         * 
+         * The `else if` block is responsible for new format where the message body is always a json
+         * object.
+         */
+
         if (msg.Body === 'NF') {
           try {
             await processEventsForDestination(msgAttrs);
@@ -108,10 +125,10 @@ export default function mainMsgLoop() {
           await sendEventToCobalt(msgAttrs);
           await deleteMsg();
         } else if (msg.Body === 'TRIGGER_JOB') {
+          // TODO there might be compatibility issue of how messages are sent to the queue
+          //      with event bridget we would try to send full json object unlike this
           await onReceiveMessageFromSqs(msgAttrs);
-        } else {
-          if (!msgAttrs.key) throwDeferredErr(new Error('key is required for job processing but not found'));
-
+        } else if (msgAttrs.key) { // legacy job processing
           const conn = await getConnection();
           let jobInfo: object = {};
 
@@ -186,6 +203,22 @@ export default function mainMsgLoop() {
             if (e instanceof NonRunnableErr) await deleteMsg();
           } finally {
             conn.release();
+          }
+        } else {
+          try {
+            const body = JSON.parse(msg.Body || '{}');
+
+            const tBody = body as {
+              type: 'TRIGGER_ANALYTICS_JOB';
+              data: {
+                job: AnalyticsJobType;
+              };
+            };
+            routeAnalyticsJob(tBody);
+          } catch (e) {
+            log.err((e as Error).stack);
+            log.err(`No handler found for message ${msg.Body}`);
+            Sentry.captureException(e);
           }
         }
       }));

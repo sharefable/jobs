@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-07-16 18:15:10.
+// Generated using typescript-generator version 2.35.1025 on 2024-07-16 20:37:34.
 
 export interface AnalyticsJob {
     id: number;
@@ -11,6 +11,7 @@ export interface AnalyticsJob {
     jobStatus: ProcessingStatus;
     lowWatermark: Date;
     highWatermark: Date;
+    failureReason: string;
     jobData: any;
 }
 
@@ -45,6 +46,7 @@ export interface ReqUpdateAnalyticsJob {
     jobStatus?: ProcessingStatus;
     lowWatermark?: Date;
     highWatermark?: Date;
+    failureReason?: string;
     jobData?: any;
 }
 
@@ -704,6 +706,14 @@ export interface EntityBase {
     id: number;
 }
 
+export const enum AnalyticsJobType {
+    REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW = "REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW",
+    CALCULATE_ENTITY_SUB_ENTITY_METRICS = "CALCULATE_ENTITY_SUB_ENTITY_METRICS",
+    UPDATE_HOUSE_LEAD = "UPDATE_HOUSE_LEAD",
+    CALCULATE_HOUSE_LEAD_METRICS = "CALCULATE_HOUSE_LEAD_METRICS",
+    ACTIVITY_DT_DATA_TRUNCATE = "ACTIVITY_DT_DATA_TRUNCATE",
+}
+
 export const enum ProcessingStatus {
     Waiting = "Waiting",
     InProgress = "InProgress",
@@ -793,14 +803,6 @@ export const enum MediaType {
     AUDIO_HLS = "AUDIO_HLS",
     AUDIO_WEBM = "AUDIO_WEBM",
     GIF = "GIF",
-}
-
-export const enum AnalyticsJobType {
-    REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW = "REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW",
-    CALCULATE_ENTITY_SUB_ENTITY_METRICS = "CALCULATE_ENTITY_SUB_ENTITY_METRICS",
-    UPDATE_HOUSE_LEAD = "UPDATE_HOUSE_LEAD",
-    CALCULATE_HOUSE_LEAD_METRICS = "CALCULATE_HOUSE_LEAD_METRICS",
-    ACTIVITY_DT_DATA_TRUNCATE = "ACTIVITY_DT_DATA_TRUNCATE",
 }
 
 export const enum LogForEntityCategory {
