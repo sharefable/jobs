@@ -214,6 +214,8 @@ export default function mainMsgLoop() {
             log.err((e as Error).stack);
             log.err(`No handler found for message ${msg.Body}`);
             Sentry.captureException(e);
+          } finally {
+            deleteMsg();
           }
         }
       }));
@@ -221,6 +223,7 @@ export default function mainMsgLoop() {
 
     clearTimeout(timer);
     timer = mainMsgLoop();
+    // INFO for prod increase it to 5min
   }, 15 * 1000 /* TODO implement something like exponential backoff to reduce msg polling to save cost */);
   return timer;
 }

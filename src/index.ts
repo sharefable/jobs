@@ -1,12 +1,10 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-// import mainScheduleLoop, { mainHourlyJob } from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {apiConnectionPool, clientAnalytics} from './db';
 import { sentryInitialize } from './sentry';
-// import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
 import { addContactToSmartLeads } from './processors/mics';
 

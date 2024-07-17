@@ -38,7 +38,7 @@ export async function refreshEntityMetricsMaterializedView(job: JobOps) {
 export async function calculateEntitySubEntityMetrics(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
-    SELECT update_entity_subentity_metrics(${currentJob.lowWatermark}, ${currentJob.highWatermark});
+    SELECT al.update_entity_subentity_metrics('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
   `;
   return runCommonJob(query, job);
 }
@@ -46,7 +46,7 @@ export async function calculateEntitySubEntityMetrics(job: JobOps) {
 export async function executeHouseLeadRefresh(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
-    SELECT update_house_lead(${currentJob.lowWatermark}, ${currentJob.highWatermark});
+    SELECT al.update_house_lead('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
   `;
   return runCommonJob(query, job);
 }
@@ -54,7 +54,7 @@ export async function executeHouseLeadRefresh(job: JobOps) {
 export async function executeHouseLeadMetricsRefresh(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
-    SELECT update_house_lead_metrics(${currentJob.lowWatermark}, ${currentJob.highWatermark})
+    SELECT al.update_house_lead_metrics('${currentJob.lowWatermark}', '${currentJob.highWatermark}')
   `;
   return runCommonJob(query, job);
 }
@@ -62,7 +62,7 @@ export async function executeHouseLeadMetricsRefresh(job: JobOps) {
 export async function truncateActivityDtData(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
-    SELECT remove_duplicates_activity_dt(${currentJob.lowWatermark}, ${currentJob.highWatermark})
+    SELECT al.remove_duplicates_activity_dt('${currentJob.lowWatermark}', '${currentJob.highWatermark}')
   `;
   return runCommonJob(query, job);
 }

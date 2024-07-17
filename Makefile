@@ -8,6 +8,11 @@ update-contract:
 run:
 	yarn build && yarn start
 
+test-run-job:
+	aws sqs send-message \
+		--queue-url https://sqs.ap-south-1.amazonaws.com/556055615522/tour_app_queue \
+		--message-body '{ "type": "TRIGGER_ANALYTICS_JOB", "data": { "job": "$(job)" } }'
+
 # --------------------------------------------------------------
 # Different env file is required for different tool. Like idea
 # needs env file in a different format which could be loaded via

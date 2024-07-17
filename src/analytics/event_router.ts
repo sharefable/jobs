@@ -17,8 +17,10 @@ interface AnalyticsJobSqsTriggerData {
   };
 }
 export async function routeAnalyticsJob(msg: AnalyticsJobSqsTriggerData) {
-  const jobOps = await JobOps.for(msg.data.job);
+  let jobOps;
   try {
+    log.info(`Starting analytics job ${JSON.stringify(msg.data, null, 2)}`);
+    jobOps = await JobOps.for(msg.data.job);
     switch(msg.data.job) {
       case AnalyticsJobType.REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW:
         await refreshEntityMetricsMaterializedView(jobOps);
@@ -36,13 +38,16 @@ export async function routeAnalyticsJob(msg: AnalyticsJobSqsTriggerData) {
         await truncateActivityDtData(jobOps);
         break;
     }
+    log.info(`Job finished with data ${JSON.stringify(jobOps.getJob().jobData || {})}`);
   } catch (err) {
     const e = err as Error;
-    log.err(`Error while executing a Analytics job. ${e.message}. ${msg}`);
+    log.err(`Error while executing a Analytics job. ${e.message}.`);
     Sentry.captureException(e);
-    jobOps.markJobAs(ProcessingStatus.Failed, e.message, {
-      stack: e.stack,
-      query: (e as any).query,
-    });
+    if (jobOps) {
+      jobOps.markJobAs(ProcessingStatus.Failed, e.message, {
+        stack: e.stack,
+        query: (e as any).query,
+      });
+    }
   }
 }

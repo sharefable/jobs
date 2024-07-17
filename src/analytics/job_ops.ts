@@ -7,7 +7,7 @@ import {
 } from '../api-contract';
 import { req } from '../api';
 import { v4 as uuidv4 } from 'uuid';
-import { withRetry } from 'utils';
+import { withRetry } from '../utils';
 
 function getISODate(d: Date): Date {
   return d.toISOString() as unknown as Date;
@@ -36,7 +36,7 @@ export default class JobOps {
   }
 
   public static async for(jobType: AnalyticsJobType) {
-    const lastSuccessfulJob = await req<undefined, AnalyticsJob | null>(`/new/analytics/job/last_successful?jobType=${jobType}`);
+    const lastSuccessfulJob = await req<undefined, AnalyticsJob | null>(`/fat/a/job/last_success/${jobType}`);
     if (lastSuccessfulJob) {
       const job = await req<ReqNewAnalyticsJob, AnalyticsJob>('/fat/a/job', 'POST', {
         jobType,
