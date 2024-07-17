@@ -4,7 +4,7 @@ import transcodeVideo from './processors/media/video_transcoder';
 import transcodeAudio from './processors/media/audio_transcoder';
 // import resizeImg from './processors/image_resizer';
 import * as log from './log';
-import {getConnection} from './db';
+import {getApiConnection} from './db';
 import {AnalyticsJobType, JobProcessingStatus} from './api-contract';
 import NonRunnableErr from './irrecoverable_err';
 import {CONCURRENCY} from './consts';
@@ -14,7 +14,7 @@ import RetryableErr from './retryable-err';
 import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
-import { routeAnalyticsJob } from 'analytics/event_router';
+import { routeAnalyticsJob } from './analytics/event_router';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -123,12 +123,8 @@ export default function mainMsgLoop() {
         } else if (msg.Body === 'CBE') {
           await sendEventToCobalt(msgAttrs);
           await deleteMsg();
-        } else if (msg.Body === 'TRIGGER_JOB') {
-          // TODO there might be compatibility issue of how messages are sent to the queue
-          //      with event bridget we would try to send full json object unlike this
-          await onReceiveMessageFromSqs(msgAttrs);
         } else if (msgAttrs.key) { // legacy job processing
-          const conn = await getConnection();
+          const conn = await getApiConnection();
           let jobInfo: object = {};
 
           // Marking in db that the process is starting

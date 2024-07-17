@@ -1,11 +1,11 @@
 import { ProcessingStatus } from 'api-contract';
-import { client } from '../pg-db';
+import { clientAnalytics } from '../db';
 import JobOps from './job_ops';
 
 async function runQuery(query: string): Promise<any> {
   let conn;
   try {
-    conn = await client.connect();
+    conn = await clientAnalytics.connect();
     try {
       const startTime = Date.now();
       const result = await conn.query(query);
