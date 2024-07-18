@@ -25,4 +25,9 @@ export const clientAnalytics = new Pool({
   password: process.env.ANALYTICS_DB_PWD,
   port: csAnalytics.port,
   max: CONCURRENCY,
+  // Ref: https://stackoverflow.com/a/64960461
+  // Ref: https://node-postgres.com/features/ssl#self-signed-cert
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
