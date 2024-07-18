@@ -1,12 +1,64 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-06-28 14:55:07.
+// Generated using typescript-generator version 2.35.1025 on 2024-07-16 20:37:34.
+
+export interface AnalyticsJob {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    jobType: AnalyticsJobType;
+    jobKey: string;
+    jobStatus: ProcessingStatus;
+    lowWatermark: Date;
+    highWatermark: Date;
+    failureReason: string;
+    jobData: any;
+}
+
+export interface InActivityLog {
+    event: string;
+    target?: string;
+    aid: string;
+    sid: string;
+    offset: number;
+    tz: string;
+    payload: any;
+    evtt: Date;
+    eni: number;
+    ent: TopLevelEntityType;
+    enc: LogForEntityCategory;
+}
+
+export interface ReqActivityLog {
+    logs: InActivityLog[];
+}
+
+export interface ReqNewAnalyticsJob {
+    jobType: AnalyticsJobType;
+    jobKey: string;
+    jobStatus: ProcessingStatus;
+    lowWatermark?: Date;
+    highWatermark?: Date;
+    jobData?: any;
+}
+
+export interface ReqUpdateAnalyticsJob {
+    jobStatus?: ProcessingStatus;
+    lowWatermark?: Date;
+    highWatermark?: Date;
+    failureReason?: string;
+    jobData?: any;
+}
 
 export interface ApiResp<T> {
     status: ResponseStatus;
     data: T;
     errStr: string;
     errCode: ErrorCode;
+}
+
+export interface EntityInfo {
+    thumbnail: string;
 }
 
 export interface AudioTranscodingJobInfo extends JobProcessingInfo {
@@ -144,6 +196,16 @@ export interface VideoTranscodingJobInfo extends JobProcessingInfo {
     meta: string;
 }
 
+export interface EntityUpdateBase {
+    site?: { [index: string]: any };
+    inProgress?: boolean;
+    responsive?: boolean;
+    responsive2?: Responsiveness;
+    settings?: TourSettings;
+    info?: EntityInfo;
+    lastInteractedAt?: Date;
+}
+
 export interface ReqActivateOrDeactivateUser {
     userId: number;
     shouldActivate: boolean;
@@ -192,6 +254,14 @@ export interface ReqCreateOrUpdateTenantIntegration {
 
 export interface ReqDeleteTenantIntegration {
     tenantIntegrationId: number;
+}
+
+export interface ReqDemoHubPropUpdate extends EntityUpdateBase {
+    rid: string;
+}
+
+export interface ReqDemoHubRid {
+    rid: string;
 }
 
 export interface ReqDuplicateTour {
@@ -299,13 +369,8 @@ export interface ReqThumbnailCreation {
     screenRid: string;
 }
 
-export interface ReqTourPropUpdate {
+export interface ReqTourPropUpdate extends EntityUpdateBase {
     tourRid: string;
-    site?: { [index: string]: any };
-    inProgress?: boolean;
-    responsive?: boolean;
-    responsive2?: Responsiveness;
-    settings?: TourSettings;
 }
 
 export interface ReqTourRid {
@@ -316,6 +381,10 @@ export interface ReqTransferTour {
     email: string;
     orgId: number;
     rids: string[];
+}
+
+export interface ReqUpdateGlobalOpts {
+    editData: string;
 }
 
 export interface ReqUpdateOrg {
@@ -347,6 +416,8 @@ export interface RespCommonConfig extends ResponseBase {
     commonAssetPath: string;
     screenAssetPath: string;
     tourAssetPath: string;
+    demoHubAssetPath: string;
+    pubDemoHubAssetPath: string;
     pubTourAssetPath: string;
     dataFileName: string;
     loaderFileName: string;
@@ -362,6 +433,42 @@ export interface RespConversion {
 
 export interface RespCustomField {
     fieldName: string;
+}
+
+export interface RespDemoEntity extends ResponseBase {
+    id: number;
+    rid: string;
+    assetPrefixHash: string;
+    displayName: string;
+    description: string;
+    lastPublishedDate: Date;
+    onboarding: boolean;
+    inProgress: boolean;
+    createdBy: RespUser;
+    pubDataFileName: string;
+    pubLoaderFileName: string;
+    pubEditFileName: string;
+    pubTourEntityFileName: string;
+    site: { [index: string]: any };
+    responsive: boolean;
+    logClass: ClientLogClass;
+    responsive2: Responsiveness;
+    deleted: TourDeleted;
+    entityType: TopLevelEntityType;
+    info: EntityInfo;
+    lastInteractedAt: Date;
+    globalOpts?: any;
+    settings?: TourSettings;
+}
+
+export interface RespDemoEntityWithSubEntities extends RespDemoEntity {
+    screens: RespScreen[];
+    idxm?: { [index: string]: string };
+    cc: RespCommonConfig;
+}
+
+export interface RespGlobalOpts {
+    globalOpts: any;
 }
 
 export interface RespHealth extends ResponseBase {
@@ -461,27 +568,6 @@ export interface RespTenantIntegration extends ResponseBase {
     relay: number;
 }
 
-export interface RespTour extends ResponseBase {
-    id: number;
-    rid: string;
-    assetPrefixHash: string;
-    displayName: string;
-    description: string;
-    lastPublishedDate: Date;
-    onboarding: boolean;
-    inProgress: boolean;
-    createdBy: RespUser;
-    pubDataFileName: string;
-    pubLoaderFileName: string;
-    pubEditFileName: string;
-    pubTourEntityFileName: string;
-    site: { [index: string]: any };
-    responsive: boolean;
-    responsive2: Responsiveness;
-    deleted: TourDeleted;
-    settings?: TourSettings;
-}
-
 export interface RespTourAnnViews {
     tourId: number;
     tourAnnWithViews: TourAnnWithViews[];
@@ -501,12 +587,6 @@ export interface RespTourView {
     totalViews: number;
     uniqueViews: number;
     totalVisitorsByYmd: TotalVisitorsByYmd[];
-}
-
-export interface RespTourWithScreens extends RespTour {
-    screens: RespScreen[];
-    idxm?: { [index: string]: string };
-    cc: RespCommonConfig;
 }
 
 export interface RespUploadUrl {
@@ -626,8 +706,28 @@ export interface EntityBase {
     id: number;
 }
 
+export const enum AnalyticsJobType {
+    REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW = "REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW",
+    CALCULATE_ENTITY_SUB_ENTITY_METRICS = "CALCULATE_ENTITY_SUB_ENTITY_METRICS",
+    UPDATE_HOUSE_LEAD = "UPDATE_HOUSE_LEAD",
+    CALCULATE_HOUSE_LEAD_METRICS = "CALCULATE_HOUSE_LEAD_METRICS",
+    ACTIVITY_DT_DATA_TRUNCATE = "ACTIVITY_DT_DATA_TRUNCATE",
+}
+
+export const enum ProcessingStatus {
+    Waiting = "Waiting",
+    InProgress = "InProgress",
+    Successful = "Successful",
+    Failed = "Failed",
+}
+
 export const enum ConfigEntityType {
     Org = "Org",
+}
+
+export const enum TopLevelEntityType {
+    TOUR = 0,
+    DEMO_HUB = 1,
 }
 
 export const enum UnauthorizedReason {
@@ -705,6 +805,11 @@ export const enum MediaType {
     GIF = "GIF",
 }
 
+export const enum LogForEntityCategory {
+    ac = "ac",
+    acdt = "acdt",
+}
+
 export const enum ResponseStatus {
     Success = "Success",
     Failure = "Failure",
@@ -723,6 +828,12 @@ export const enum LogType {
 export const enum ForObjectType {
     TENANT_INTEGRATION = "TENANT_INTEGRATION",
     LIFETIME_LICENSE_KEY = "LIFETIME_LICENSE_KEY",
+}
+
+export const enum Responsiveness {
+    NoChoice = "NoChoice",
+    NoResponsive = "NoResponsive",
+    Responsive = "Responsive",
 }
 
 export const enum LeadInfoKey {
@@ -765,10 +876,10 @@ export const enum Interval {
     LIFETIME = "LIFETIME",
 }
 
-export const enum Responsiveness {
-    NoChoice = "NoChoice",
-    NoResponsive = "NoResponsive",
-    Responsive = "Responsive",
+export const enum ClientLogClass {
+    na = "na",
+    Basic = "Basic",
+    Full = "Full",
 }
 
 export const enum Status {

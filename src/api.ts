@@ -1,5 +1,12 @@
-import { TourData } from 'types';
-import { ApiResp, ReqHouseLeadInfoWithInfo360, ReqNewLog, RespCommonConfig, RespFatTenantIntegration, RespHouseLeadInfo, RespTour } from './api-contract';
+import {
+  ApiResp,
+  ReqHouseLeadInfoWithInfo360,
+  ReqNewLog,
+  RespCommonConfig,
+  RespFatTenantIntegration,
+  RespHouseLeadInfo,
+  RespDemoEntity,
+} from './api-contract';
 import * as log from './log';
 
 export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
@@ -9,42 +16,42 @@ export async function getHouseLeadInfo (orgId: number, email: string): Promise<R
 }
 
 export async function getTourAssetPath (tourId: number): Promise<string> {
-  const data = await req(`/trasstpath?id=${tourId}`, 'GET') as string;
+  const data = await req<undefined, string>(`/trasstpath?id=${tourId}`, 'GET');
   return data;
 }
 
 export async function addOrUpdateLead360 (body: ReqHouseLeadInfoWithInfo360): Promise<void> {
-  await req('/poplead', 'POST', body);
+  await req<ReqHouseLeadInfoWithInfo360, undefined>('/poplead', 'POST', body);
 }
 
 export async function addToApplicationLog(logLine: ReqNewLog) {
-  await req('/new/log', 'POST', logLine);
+  await req<ReqNewLog, undefined>('/new/log', 'POST', logLine);
 }
 
 export async function getTenantIntegration(id: number): Promise<RespFatTenantIntegration> {
-  return await req(`/fat/tenant_integration/${id}`) as RespFatTenantIntegration;
+  return await req<undefined, RespFatTenantIntegration>(`/fat/tenant_integration/${id}`);
 }
 
-export async function getTourById(id: string): Promise<RespTour> {
-  return await req(`/tour/by/id/${id}`) as RespTour;
+export async function getTourById(id: string): Promise<RespDemoEntity> {
+  return await req<undefined, RespDemoEntity>(`/tour/by/id/${id}`);
 }
 
-export async function getTourByRid(rid: string): Promise<RespTour> {
-  return await req(`/tour?rid=${rid}`) as RespTour;
+export async function getTourByRid(rid: string): Promise<RespDemoEntity> {
+  return await req<undefined, RespDemoEntity>(`/tour?rid=${rid}`);
 }
 
 export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
-  liveTour: RespTour,
-  publishedTour: RespTour | undefined,
+  liveTour: RespDemoEntity,
+  publishedTour: RespDemoEntity | undefined,
   gifUrl: string | undefined
 }> {
-  const cconfig = await req('/cconfig') as RespCommonConfig;
+  const cconfig = await req<undefined, RespCommonConfig>('/cconfig') ;
   const tourPath = `${cconfig.pubTourAssetPath}${rid}/0_d_data.json`;
 
   const liveTour = await getTourByRid(rid);
-  let publishedTourData: ApiResp<RespTour> | undefined;
+  let publishedTourData: ApiResp<RespDemoEntity> | undefined;
   if (liveTour.lastPublishedDate) {
-    publishedTourData = (await fetch(tourPath).then(resp => resp.json())) as ApiResp<RespTour>;
+    publishedTourData = (await fetch(tourPath).then(resp => resp.json())) as ApiResp<RespDemoEntity>;
   }
 
   return {
@@ -54,45 +61,35 @@ export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
   };
 }
 
+// TODO strong type body
+export async function uploadLeadactivityToS3(body: any): Promise<void> {
+  await req('/updleadanalytics', 'POST', body);
+}
 
-type Resp = RespTour | RespHouseLeadInfo | string | RespFatTenantIntegration | RespCommonConfig;
-export async function req (
+export async function req<T, K> (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',
-  payload?: any,
-): Promise<Resp> {
+  payload?: T,
+): Promise<K> {
   const headers = {
     'Content-Type': 'application/json',
   };
-
-
   const url = `${process.env.API_SERVER_ENDPOINT}/v1${urlPath}`;
   let resp;
-  let data;
   try {
     resp = await fetch(url, {
       method,
       headers,
       body: payload ? JSON.stringify(payload) : undefined,
     });
-    data = (await resp.json()) as ApiResp<Resp>;
+
+    if (!(resp.status >= 200 && resp.status < 300)) {
+      throw new Error(`Response status exception. Status: ${resp.status}`);
+    }
   } catch (e) {
-    log.warn(e);
-    throw new Error( 'Can\'t make changes to entity');
+    log.err((e as Error).stack);
+    throw new Error( `Error while making request to ${url}. Error: ${(e as Error).message}`);
   }
-  if (!(resp.status >= 200 && resp.status < 300)) {
-    throw new Error('Couldn\'t make changes');
-  }
-  return data.data;
-}
-
-export async function getTourDataFile(url: string): Promise<TourData> {
-  const data =  await fetch(url, {
-    method: 'GET',
-  });
-  return await data.json() as TourData;
-}
-
-export async function uploadLeadactivityToS3(body: any): Promise<void> {
-  await req('/updleadanalytics', 'POST', body);
+  const data = (await resp.json()) as ApiResp<K>;
+  return data.data as K;
 }

@@ -1,21 +1,14 @@
 import express, {Express, Request, Response} from 'express';
 import bodyParser from 'body-parser';
 import mainMsgLoop from './main_msg_loop';
-import mainScheduleLoop, { mainHourlyJob } from './main_schedule_loop';
 import * as log from './log';
 import {promisify} from 'util';
-import {pool} from './db';
+import {apiConnectionPool, clientAnalytics} from './db';
 import { sentryInitialize } from './sentry';
-import { refreshHourlyLeadActivity } from './jobs/lead_activity/refresh_hourly';
 import addSlackHttpListeners from './http/slack';
 import { addContactToSmartLeads } from './processors/mics';
 
 const PORT = 8081;
-
-const INFO = {
-  timeInSecSinceLastPoll: 0,
-};
-
 
 let envLoadingHasErr = false;
 const envLoadingStatus = [
@@ -31,13 +24,10 @@ const envLoadingStatus = [
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
   'AWS_S3_REGION',
-  'AWS_GLUE_REGION',
-  'AWS_GLUE_DB_NAME',
-  'AWS_GLUE_CRAWLER_NAME',
-  'AWS_GLUE_USER_ASSIGN_CRAWLER_NAME',
-  'AWS_S3_ATHENA_OUTPUT_BUCKET',
-  'AWS_S3_ATHENA_OUTPUT_ROOT_DIR',
-  'AWS_ATHENA_REGION',
+  'ANALYTICS_DB_CONN_URL',
+  'ANALYTICS_DB_NAME',
+  'ANALYTICS_DB_USER',
+  'ANALYTICS_DB_PWD',
   'API_SERVER_ENDPOINT',
   'COBALT_API_KEY',
   'SLACK_FABLE_BOT_BOT_USER_TOKEN',
@@ -65,7 +55,6 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 } 
 
 mainMsgLoop();
-mainScheduleLoop();
 
 const app: Express = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -77,36 +66,6 @@ app.get('/health', (req: Request, res: Response) => {
 
 addSlackHttpListeners(app);
 
-app.post('/triggerhourly', (req: Request, res: Response) => {
-  mainHourlyJob();
-  log.info('Triggered');
-  res.json({triggered: 'ok'});
-});
-
-app.post('/triggerhourlyforleadactivity', (req: Request, res: Response) => {
-  refreshHourlyLeadActivity();
-  log.info('Triggered');
-  res.json({triggered: 'ok'});
-});
-
-app.post('/leads', async (req: Request, res: Response) => {
-  const payload: Record<string, string> = {
-    payload_email: 'john@acme.com',
-    payload_firstName: 'John',
-    payload_lastName: '',
-    payload_subs: 'LIFETIME_TIER1',
-  };
-
-  addContactToSmartLeads(payload);
-  
-  log.info('Triggered');
-  res.json({triggered: 'ok'});
-});
-
-app.get('/info', (req: Request, res: Response) => {
-  res.json({ ...INFO });
-});
-
 const server = app.listen(PORT, async () => {
   log.info(`Server is running at http://localhost:${PORT}`);
 });
@@ -114,7 +73,8 @@ const server = app.listen(PORT, async () => {
 async function shutDown() {
   log.warn('Gracefully shutting down');
   log.warn('Closing db connection pool...');
-  await promisify(pool.end).bind(pool)();
+  await promisify(apiConnectionPool.end).bind(apiConnectionPool)();
+  await clientAnalytics.end();
   log.warn('Closing server connection...');
   server.close(() => {
     process.exit(0);
