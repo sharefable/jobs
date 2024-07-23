@@ -35,11 +35,12 @@ export async function refreshEntityMetricsMaterializedView(job: JobOps) {
   return runCommonJob('REFRESH MATERIALIZED VIEW al.entity_metrics;', job);
 }
 
+export async function refreshDailyEntityMetrics(job: JobOps) {
+  return runCommonJob('REFRESH MATERIALIZED VIEW al.entity_metrics_daily;', job);
+}
+
 export async function calculateEntitySubEntityMetrics(job: JobOps) {
-  const currentJob = job.getJob();
-  const query = `
-    SELECT al.update_entity_subentity_metrics('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
-  `;
+  const query = 'REFRESH MATERIALIZED VIEW al.entity_subentity_distribution;';
   return runCommonJob(query, job);
 }
 

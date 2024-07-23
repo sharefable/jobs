@@ -1,6 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-07-16 20:37:34.
+// Generated using typescript-generator version 2.35.1025 on 2024-07-23 16:23:36.
+
+export interface Activity extends ActivityBase {
+}
 
 export interface AnalyticsJob {
     id: number;
@@ -13,6 +16,25 @@ export interface AnalyticsJob {
     highWatermark: Date;
     failureReason: string;
     jobData: any;
+}
+
+export interface MEntityMetricsDaily extends EntityBase {
+    entityId: number;
+    viewsAll: number;
+    conversion: number;
+    day: Date;
+}
+
+export interface MEntitySubEntityDistribution extends EntityBase {
+    entityId: number;
+    subEntityType: string;
+    subEntityId: string;
+    bucketNumber: number;
+    metric0: number;
+    bucketMin: number;
+    bucketMax: number;
+    bucketCount: number;
+    freq: number;
 }
 
 export interface InActivityLog {
@@ -48,6 +70,25 @@ export interface ReqUpdateAnalyticsJob {
     highWatermark?: Date;
     failureReason?: string;
     jobData?: any;
+}
+
+export interface RespEntityMetrics {
+    viewsUnique: number;
+    viewsAll: number;
+    conversion: number;
+}
+
+export interface RespHouseLead extends ResponseBase {
+    pkVal: string;
+    pkField: string;
+    aid: string;
+    sessionCreated: number;
+    timeSpentSec: number;
+    lastInteractedAt: Date;
+    ctaClickRate: number;
+    completionPercentage: number;
+    info: any;
+    richInfo: DeviceAndGeoInfo;
 }
 
 export interface ApiResp<T> {
@@ -654,6 +695,52 @@ export interface LinkedApps {
     reauth_required: boolean;
 }
 
+export interface ActivityBase {
+    createdAt: Date;
+    updatedAt: Date;
+    id: number;
+    eventTime: Date;
+    ingestionTime: Date;
+    encEntityId: number;
+    event: string;
+    aid: string;
+    target: string;
+    sid: string;
+    metric1: number;
+    tz: string;
+    payload: any;
+}
+
+export interface EntityBase {
+    createdAt: Date;
+    updatedAt: Date;
+    id: number;
+}
+
+export interface DeviceAndGeoInfo {
+    isMobile: boolean;
+    isTablet: boolean;
+    isSmartTv: boolean;
+    isDesktopViewer: boolean;
+    isIosViewer: boolean;
+    isAndroidViewer: boolean;
+    country: string;
+    countryName: string;
+    countryRegion: string;
+    countryRegionName: string;
+    city: string;
+    postalCode: string;
+    timeZone: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+}
+
+export interface ResponseBase {
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Serializable {
 }
 
@@ -678,11 +765,6 @@ export interface TenantIntegration extends EntityBase {
     tenantConfig: { [index: string]: any };
 }
 
-export interface ResponseBase {
-    createdAt: Date;
-    updatedAt: Date;
-}
-
 export interface Lead360 extends EntityBase {
     tourId: number;
     demoVisited: number;
@@ -700,18 +782,13 @@ export interface VanityDomainRecords {
     recordValue: string;
 }
 
-export interface EntityBase {
-    createdAt: Date;
-    updatedAt: Date;
-    id: number;
-}
-
 export const enum AnalyticsJobType {
     REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW = "REFRESH_ENTITY_METRICS_MATERIALIZED_VIEW",
     CALCULATE_ENTITY_SUB_ENTITY_METRICS = "CALCULATE_ENTITY_SUB_ENTITY_METRICS",
     UPDATE_HOUSE_LEAD = "UPDATE_HOUSE_LEAD",
     CALCULATE_HOUSE_LEAD_METRICS = "CALCULATE_HOUSE_LEAD_METRICS",
     ACTIVITY_DT_DATA_TRUNCATE = "ACTIVITY_DT_DATA_TRUNCATE",
+    REFRESH_DAILY_ENTITY_METRICS = "REFRESH_DAILY_ENTITY_METRICS",
 }
 
 export const enum ProcessingStatus {
