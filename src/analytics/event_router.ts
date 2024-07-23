@@ -6,6 +6,7 @@ import {
   executeHouseLeadMetricsRefresh,
   executeHouseLeadRefresh,
   truncateActivityDtData,
+  refreshDailyEntityMetrics,
 } from './analytics_jobs';
 import * as log  from '../log';
 import * as Sentry from '@sentry/node';
@@ -36,6 +37,9 @@ export async function routeAnalyticsJob(msg: AnalyticsJobSqsTriggerData) {
         break;
       case AnalyticsJobType.ACTIVITY_DT_DATA_TRUNCATE:
         await truncateActivityDtData(jobOps);
+        break;
+      case AnalyticsJobType.REFRESH_DAILY_ENTITY_METRICS:
+        await refreshDailyEntityMetrics(jobOps);
         break;
     }
     log.info(`Job finished with data ${JSON.stringify(jobOps.getJob().jobData || {})}`);
