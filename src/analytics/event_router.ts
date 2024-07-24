@@ -3,7 +3,6 @@ import JobOps from './job_ops';
 import {
   refreshEntityMetricsMaterializedView,
   calculateEntitySubEntityMetrics,
-  executeHouseLeadMetricsRefresh,
   executeHouseLeadRefresh,
   truncateActivityDtData,
   refreshDailyEntityMetrics,
@@ -31,9 +30,6 @@ export async function routeAnalyticsJob(msg: AnalyticsJobSqsTriggerData) {
         break;
       case AnalyticsJobType.UPDATE_HOUSE_LEAD:
         await executeHouseLeadRefresh(jobOps);
-        break;
-      case AnalyticsJobType.CALCULATE_HOUSE_LEAD_METRICS:
-        await executeHouseLeadMetricsRefresh(jobOps);
         break;
       case AnalyticsJobType.ACTIVITY_DT_DATA_TRUNCATE:
         await truncateActivityDtData(jobOps);
