@@ -22,11 +22,30 @@ async function runQuery(query: string): Promise<any> {
   }
 }
 
+function getResult(result: any) {
+  const rows: any[] = [];
+  try {
+    if (result instanceof Array) {
+      for (const item of result) {
+        // Only save the first result
+        if (item.rows instanceof Array && item.rows[0]) rows.push(item.rows[0]);
+      }
+    } else if (result.rows instanceof Array && result.rows[0]) {
+      rows.push(result.rows[0]);
+    } 
+  } catch (e) {
+    console.warn('Error while parsing result');
+    console.warn((e as Error)?.stack);
+  }
+  return rows;
+}
+
 async function runCommonJob(query: string, job: JobOps) {
+  query = query.trim();
   const queryResult = await runQuery(query);
   await job.markJobAs(ProcessingStatus.Successful, undefined, {
     executionTime: queryResult.executionTimeInSecond,
-    result: (queryResult.result.row || [])[0],
+    result: getResult(queryResult.result),
     query: query,
   });
 }
@@ -48,14 +67,7 @@ export async function executeHouseLeadRefresh(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
     SELECT al.update_house_lead('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
-  `;
-  return runCommonJob(query, job);
-}
-
-export async function executeHouseLeadMetricsRefresh(job: JobOps) {
-  const currentJob = job.getJob();
-  const query = `
-    SELECT al.update_house_lead_metrics('${currentJob.lowWatermark}', '${currentJob.highWatermark}')
+    SELECT al.update_house_lead_metrics('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
   `;
   return runCommonJob(query, job);
 }
@@ -63,7 +75,7 @@ export async function executeHouseLeadMetricsRefresh(job: JobOps) {
 export async function truncateActivityDtData(job: JobOps) {
   const currentJob = job.getJob();
   const query = `
-    SELECT al.remove_duplicates_activity_dt('${currentJob.lowWatermark}', '${currentJob.highWatermark}')
+    SELECT al.remove_duplicates_activity_dt('${currentJob.lowWatermark}', '${currentJob.highWatermark}');
   `;
   return runCommonJob(query, job);
 }
