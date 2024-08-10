@@ -1,0 +1,2 @@
+The ./out dir is auto genereated form ts files. Don't make any changes directly to the json files inside ./out dir.
+Instead, make changes to the ts file and run `make gen`. The json files inside ./out dir will be generated from ts files over here.

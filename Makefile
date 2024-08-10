@@ -5,6 +5,9 @@ include env.now
 update-contract:
 	cp -r ../api/gen/api-contract.d.ts ./src/api-contract.ts
 
+gen:
+	node scripts/gen-json-schema.js
+
 run:
 	yarn build && yarn start
 
