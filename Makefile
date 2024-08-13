@@ -16,6 +16,10 @@ test-run-job:
 		--queue-url https://sqs.ap-south-1.amazonaws.com/556055615522/tour_app_queue \
 		--message-body '{ "type": "TRIGGER_ANALYTICS_JOB", "data": { "job": "$(job)" } }'
 
+purge-queue:
+	aws sqs purge-queue \
+		--queue-url https://sqs.ap-south-1.amazonaws.com/556055615522/tour_app_queue
+
 # --------------------------------------------------------------
 # Different env file is required for different tool. Like idea
 # needs env file in a different format which could be loaded via

@@ -9,14 +9,9 @@ import {
 } from './analytics_jobs';
 import * as log  from '../log';
 import * as Sentry from '@sentry/node';
+import {TRIGGER_ANALYTICS_JOB} from 'types';
 
-interface AnalyticsJobSqsTriggerData {
-  type: 'TRIGGER_ANALYTICS_JOB';
-  data: {
-    job: AnalyticsJobType;
-  };
-}
-export async function routeAnalyticsJob(msg: AnalyticsJobSqsTriggerData) {
+export async function routeAnalyticsJob(msg: TRIGGER_ANALYTICS_JOB) {
   let jobOps;
   try {
     log.info(`Starting analytics job ${JSON.stringify(msg.data, null, 2)}`);

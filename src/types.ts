@@ -1,3 +1,5 @@
+import { AnalyticsJobType } from './api-contract';
+
 export type TMsgAttrs = Record<string, string | null | undefined>;
 
 export interface Campaign {
@@ -58,3 +60,20 @@ export interface LeadAccessInfoOfTour {
   demoName: string,
   orgId: number
 }
+
+export interface TRIGGER_ANALYTICS_JOB {
+  type: 'TRIGGER_ANALYTICS_JOB';
+  data: {
+    job: AnalyticsJobType;
+  };
+}
+
+export interface TRIGGER_LLM_JOB {
+  type: 'TRIGGER_LLM_JOBS';
+  data: {
+    job: {
+      id: number;
+    }
+  };
+}
+

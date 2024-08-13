@@ -1,5 +1,5 @@
 import {DeleteMessageCommandOutput, MessageAttributeValue, SQS} from '@aws-sdk/client-sqs';
-import {TMsgAttrs} from './types';
+import {TMsgAttrs, TRIGGER_LLM_JOB, TRIGGER_ANALYTICS_JOB } from './types';
 import transcodeVideo from './processors/media/video_transcoder';
 import transcodeAudio from './processors/media/audio_transcoder';
 // import resizeImg from './processors/image_resizer';
@@ -15,6 +15,7 @@ import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
 import { routeAnalyticsJob } from './analytics/event_router';
+import { routeLlmOps } from './llm-ops/router';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -203,13 +204,12 @@ export default function mainMsgLoop() {
           try {
             const body = JSON.parse(msg.Body || '{}');
 
-            const tBody = body as {
-              type: 'TRIGGER_ANALYTICS_JOB';
-              data: {
-                job: AnalyticsJobType;
-              };
-            };
-            routeAnalyticsJob(tBody);
+            const tBody = body as TRIGGER_LLM_JOB | TRIGGER_ANALYTICS_JOB;
+            if (tBody.type === 'TRIGGER_ANALYTICS_JOB') {
+              routeAnalyticsJob(tBody);
+            } else {
+              routeLlmOps(tBody);
+            }
           } catch (e) {
             log.err((e as Error).stack);
             log.err(`No handler found for message ${msg.Body}`);
