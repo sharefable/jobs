@@ -7,6 +7,7 @@ update-contract:
 
 gen:
 	node scripts/gen-json-schema.js
+	cp -r src/llm-ops/contracts ../app/workspace/packages/common/src/llm-contracts
 
 run:
 	yarn build && yarn start

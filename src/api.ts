@@ -4,16 +4,9 @@ import {
   ReqNewLog,
   RespCommonConfig,
   RespFatTenantIntegration,
-  RespHouseLeadInfo,
   RespDemoEntity,
 } from './api-contract';
 import * as log from './log';
-
-export async function getHouseLeadInfo (orgId: number, email: string): Promise<RespHouseLeadInfo | null> {
-  const data: RespHouseLeadInfo = await req(`/hldinf?org_id=${orgId}&email=${email}`, 'GET') as RespHouseLeadInfo;
-  if (data && Object.keys(data).length > 0) return data;
-  else return null;
-}
 
 export async function getTourAssetPath (tourId: number): Promise<string> {
   const data = await req<undefined, string>(`/trasstpath?id=${tourId}`, 'GET');

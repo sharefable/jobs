@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-08-08 19:01:49.
+// Generated using typescript-generator version 2.35.1025 on 2024-08-14 15:56:10.
 
 export interface Activity extends ActivityBase {
 }
@@ -89,6 +89,7 @@ export interface RespHouseLead extends ResponseBase {
     completionPercentage: number;
     info: any;
     richInfo: DeviceAndGeoInfo;
+    owner?: LeadOwnerEntity;
 }
 
 export interface ApiResp<T> {
@@ -100,6 +101,14 @@ export interface ApiResp<T> {
 
 export interface EntityInfo {
     thumbnail: string;
+}
+
+export interface Job extends EntityBase {
+    jobType: JobType;
+    jobKey: string;
+    processingStatus: JobProcessingStatus;
+    failureReason: string;
+    info: JobProcessingInfo;
 }
 
 export interface AudioTranscodingJobInfo extends JobProcessingInfo {
@@ -142,6 +151,15 @@ export interface JobProcessingInfo extends MapSerializable {
     type: string;
 }
 
+export interface LlmOpsJobInfo {
+    ip: any;
+    metaClient: any;
+    metaJob: any;
+    iexec: any;
+    op: any;
+    err: any;
+}
+
 export interface MediaTypeEntityHolding extends EntityHoldingInfoBase {
     fullFilePaths: string[];
     deletable: boolean;
@@ -169,6 +187,11 @@ export interface ReqNewLog {
     forObjectId: number;
     forObjectKey?: string;
     logLine: any;
+}
+
+export interface RespAggregateLeadAnalytics {
+    noOfDemos: number;
+    leads: RespHouseLead[];
 }
 
 export interface RespFatTenantIntegration {
@@ -337,6 +360,12 @@ export interface ReqLeadActivityDataPost {
     data: string;
 }
 
+export interface ReqLlmOps {
+    key: string;
+    ip: any;
+    metaClient: any;
+}
+
 export interface ReqMediaProcessing {
     path: string;
     assn: ReqEntityAssetAssn;
@@ -429,6 +458,13 @@ export interface ReqUpdateGlobalOpts {
     editData: string;
 }
 
+export interface ReqUpdateJob {
+    id: number;
+    status?: JobProcessingStatus;
+    failureReason?: string;
+    jobInfo?: any;
+}
+
 export interface ReqUpdateOrg {
     orgInfo: OrgInfo;
 }
@@ -466,11 +502,6 @@ export interface RespCommonConfig extends ResponseBase {
     editFileName: string;
     manifestFileName: string;
     latestSchemaVersion: SchemaVersion;
-}
-
-export interface RespConversion {
-    tourId: number;
-    buttonsWithTotalClicks: ButtonClicks[];
 }
 
 export interface RespCustomField {
@@ -517,10 +548,19 @@ export interface RespHealth extends ResponseBase {
     status: string;
 }
 
-export interface RespHouseLeadInfo extends ResponseBase {
-    orgId: number;
-    leadEmailId: string;
-    info360: Lead360[];
+export interface RespJob extends ResponseBase {
+    id: number;
+    jobType: JobType;
+    jobKey: string;
+    processingStatus: JobProcessingStatus;
+    info: RespJobInfo;
+}
+
+export interface RespJobInfo {
+    ip: any;
+    metaClient: any;
+    op: any;
+    err: any;
 }
 
 export interface RespLeadActivityUrl {
@@ -608,27 +648,6 @@ export interface RespTenantIntegration extends ResponseBase {
     event: string;
     tenantConfig: { [index: string]: any };
     relay: number;
-}
-
-export interface RespTourAnnViews {
-    tourId: number;
-    tourAnnWithViews: TourAnnWithViews[];
-}
-
-export interface RespTourAnnWithPercentile {
-    tourAnnInfo: TourAnnViewsWithPercentile[];
-}
-
-export interface RespTourLeads {
-    tourLeads: TourLeads[];
-    uniqueEmailCount: number;
-}
-
-export interface RespTourView {
-    tourId: number;
-    totalViews: number;
-    uniqueViews: number;
-    totalVisitorsByYmd: TotalVisitorsByYmd[];
 }
 
 export interface RespUploadUrl {
@@ -737,12 +756,27 @@ export interface DeviceAndGeoInfo {
     address: string;
 }
 
+export interface LeadOwnerEntity {
+    rid: string;
+    displayName: string;
+}
+
 export interface ResponseBase {
     createdAt: Date;
     updatedAt: Date;
 }
 
 export interface Serializable {
+}
+
+export interface LlmJobProcessingInfo extends JobProcessingInfo {
+    type: "LLM_OPS";
+    ip: any;
+    metaClient: any;
+    metaJob: any;
+    iexec: any;
+    op: any;
+    err: any;
 }
 
 export interface MapSerializable extends Serializable {
@@ -764,16 +798,6 @@ export interface TenantIntegration extends EntityBase {
     event: string;
     tourId: number;
     tenantConfig: { [index: string]: any };
-}
-
-export interface Lead360 extends EntityBase {
-    tourId: number;
-    demoVisited: number;
-    sessionsCreated: number;
-    timeSpentSec: number;
-    lastInteractedAt: Date;
-    completionPercentage: number;
-    ctaClickRate: number;
 }
 
 export interface VanityDomainRecords {
@@ -842,17 +866,12 @@ export const enum JobType {
     RESIZE_IMG = "RESIZE_IMG",
     CREATE_DEMO_GIF = "CREATE_DEMO_GIF",
     DELETE_ASSET = "DELETE_ASSET",
-    REFRESH_CRAWLER = "REFRESH_CRAWLER",
-    REFRESH_CRAWLER_FOR_ANN_USER_ASSIGN = "REFRESH_CRAWLER_FOR_ANN_USER_ASSIGN",
-    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
-    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
-    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
-    REFRESH_USER_AID_MAPPING = "REFRESH_USER_AID_MAPPING",
-    REFRESH_AID_SID_MAPPING = "REFRESH_AID_SID_MAPPING",
-    REFRESH_LEAD_ACTIVITY = "REFRESH_LEAD_ACTIVITY",
-    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
-    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
-    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
+    LLM_OPS = "LLM_OPS",
+}
+
+export const enum PvtAssetType {
+    TourInputData = "TourInputData",
+    MarkedImgs = "MarkedImgs",
 }
 
 export const enum SchemaVersion {
