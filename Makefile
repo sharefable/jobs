@@ -5,8 +5,18 @@ include env.now
 update-contract:
 	cp -r ../api/gen/api-contract.d.ts ./src/api-contract.ts
 
+gen:
+	node scripts/gen-json-schema.js
+	mkdir -p ../app/workspace/packages/common/src/llm-fn-shema/ && rm -f ../app/workspace/packages/common/src/llm-fn-shema/*
+	cp src/json-schema/*.ts ../app/workspace/packages/common/src/llm-fn-shema/
+	cp -r src/http/llm-ops/contract ../app/workspace/packages/common/src/llm-contract
+
 run:
-	yarn build && yarn start
+	yarn build && yarn start | npx pino-pretty
+
+purge-queue:
+	aws sqs purge-queue \
+		--queue-url https://sqs.ap-south-1.amazonaws.com/556055615522/tour_app_queue
 
 test-run-job:
 	aws sqs send-message \

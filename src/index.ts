@@ -1,11 +1,21 @@
-import express, {Express, Request, Response} from 'express';
+import express, {Express, NextFunction, Request, Response} from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 import mainMsgLoop from './main_msg_loop';
 import * as log from './log';
 import {promisify} from 'util';
 import {apiConnectionPool, clientAnalytics} from './db';
 import { sentryInitialize } from './sentry';
 import addSlackHttpListeners from './http/slack';
+import pino from 'pino-http';
+import resolveUserIfAny, {
+  verifyAuthToken,
+  normalizeTokenForAuthOrigin,
+  restoreRawToken,
+  resolveFableUser,
+} from './middlewares/resolve-principal';
+import addLlmOpsHttpListeners from './http/llm-ops';
+import globalErrorHandler from './middlewares/global-err-handler';
 import { addContactToSmartLeads } from './processors/mics';
 
 const PORT = 8081;
@@ -57,14 +67,29 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 mainMsgLoop();
 
 const app: Express = express();
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(pino({
+  redact: ['req.headers', 'res.headers'],
+  level: 'warn',
+}));
+app.use('/v1/f/*', [
+  verifyAuthToken,
+  normalizeTokenForAuthOrigin,
+  resolveUserIfAny,
+  restoreRawToken,
+  // resolveFableUser,
+]);
+app.use(globalErrorHandler);
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'up' });
 });
 
+addLlmOpsHttpListeners(app);
 addSlackHttpListeners(app);
+
 
 const server = app.listen(PORT, async () => {
   log.info(`Server is running at http://localhost:${PORT}`);
@@ -83,4 +108,20 @@ async function shutDown() {
     log.err('Couldn\'t close server in time. Force killing...');
     process.exit(1);
   }, 10000);
+}
+
+// Expand types
+declare global {
+  namespace Express {
+    interface Request {
+      house?: {
+        iam: {
+          id: string;
+        }
+      },
+      relay?: {
+        rawToken: string;
+      }
+    }
+  }
 }
