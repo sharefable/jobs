@@ -30,7 +30,7 @@ const PROMPTS: Record<string, PromptDetails> = {
     shouldAppendThreadMsgs: false,
     fns: [{
       name: 'create_guides_router',
-      description: 'Decide what kind of demo to create based on demo objective given by user',
+      description: createGuidesRouterJson.definitions.create_guides_router.description,
       input_schema: {
         type: 'object',
         properties: createGuidesRouterJson.definitions.create_guides_router.properties,
@@ -66,14 +66,19 @@ const PROMPTS: Record<string, PromptDetails> = {
     `),
     shouldAppendThreadMsgs: true,
     fns: [{
-      name: '',
-      description: 'Generate the text of guides along side many properties for marketing demo given the product details and demo objective',
+      name: 'create_guides_marketing',
+      description: createGuidesMarketing.definitions.create_guides_marketing.description,
       input_schema: {
         type: 'object',
         properties: createGuidesMarketing.definitions.create_guides_marketing.properties,
       },
     }, {
-
+      name: 'fallback',
+      description: fallback.definitions.fallback.description,
+      input_schema: {
+        type: 'object',
+        properties: fallback.definitions.fallback.properties,
+      },
     }],
   },
 };
