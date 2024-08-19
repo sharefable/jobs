@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-07-23 16:23:36.
+// Generated using typescript-generator version 2.35.1025 on 2024-08-16 18:56:24.
 
 export interface Activity extends ActivityBase {
 }
@@ -89,6 +89,7 @@ export interface RespHouseLead extends ResponseBase {
     completionPercentage: number;
     info: any;
     richInfo: DeviceAndGeoInfo;
+    owner?: LeadOwnerEntity;
 }
 
 export interface ApiResp<T> {
@@ -100,6 +101,15 @@ export interface ApiResp<T> {
 
 export interface EntityInfo {
     thumbnail: string;
+}
+
+export interface LLMOps extends EntityBase {
+    orgId: number;
+    entityId: number;
+    threadId: string;
+    status: LLMOpsStatus;
+    data: any;
+    meta: any;
 }
 
 export interface AudioTranscodingJobInfo extends JobProcessingInfo {
@@ -169,6 +179,11 @@ export interface ReqNewLog {
     forObjectId: number;
     forObjectKey?: string;
     logLine: any;
+}
+
+export interface RespAggregateLeadAnalytics {
+    noOfDemos: number;
+    leads: RespHouseLead[];
 }
 
 export interface RespFatTenantIntegration {
@@ -348,6 +363,13 @@ export interface ReqNewInvite {
     expireAfter?: number;
 }
 
+export interface ReqNewLLMRun {
+    threadId: string;
+    entityId?: number;
+    data: any;
+    meta: any;
+}
+
 export interface ReqNewLinkedAccount {
     orgId: number;
 }
@@ -371,6 +393,7 @@ export interface ReqNewTour {
     name: string;
     description?: string;
     settings?: TourSettings;
+    info?: EntityInfo;
 }
 
 export interface ReqNfHook {
@@ -428,6 +451,13 @@ export interface ReqUpdateGlobalOpts {
     editData: string;
 }
 
+export interface ReqUpdateLLMRun {
+    id: number;
+    status?: LLMOpsStatus;
+    data?: any;
+    meta?: any;
+}
+
 export interface ReqUpdateOrg {
     orgInfo: OrgInfo;
 }
@@ -465,11 +495,6 @@ export interface RespCommonConfig extends ResponseBase {
     editFileName: string;
     manifestFileName: string;
     latestSchemaVersion: SchemaVersion;
-}
-
-export interface RespConversion {
-    tourId: number;
-    buttonsWithTotalClicks: ButtonClicks[];
 }
 
 export interface RespCustomField {
@@ -514,12 +539,6 @@ export interface RespGlobalOpts {
 
 export interface RespHealth extends ResponseBase {
     status: string;
-}
-
-export interface RespHouseLeadInfo extends ResponseBase {
-    orgId: number;
-    leadEmailId: string;
-    info360: Lead360[];
 }
 
 export interface RespLeadActivityUrl {
@@ -607,27 +626,6 @@ export interface RespTenantIntegration extends ResponseBase {
     event: string;
     tenantConfig: { [index: string]: any };
     relay: number;
-}
-
-export interface RespTourAnnViews {
-    tourId: number;
-    tourAnnWithViews: TourAnnWithViews[];
-}
-
-export interface RespTourAnnWithPercentile {
-    tourAnnInfo: TourAnnViewsWithPercentile[];
-}
-
-export interface RespTourLeads {
-    tourLeads: TourLeads[];
-    uniqueEmailCount: number;
-}
-
-export interface RespTourView {
-    tourId: number;
-    totalViews: number;
-    uniqueViews: number;
-    totalVisitorsByYmd: TotalVisitorsByYmd[];
 }
 
 export interface RespUploadUrl {
@@ -736,6 +734,11 @@ export interface DeviceAndGeoInfo {
     address: string;
 }
 
+export interface LeadOwnerEntity {
+    rid: string;
+    displayName: string;
+}
+
 export interface ResponseBase {
     createdAt: Date;
     updatedAt: Date;
@@ -763,16 +766,6 @@ export interface TenantIntegration extends EntityBase {
     event: string;
     tourId: number;
     tenantConfig: { [index: string]: any };
-}
-
-export interface Lead360 extends EntityBase {
-    tourId: number;
-    demoVisited: number;
-    sessionsCreated: number;
-    timeSpentSec: number;
-    lastInteractedAt: Date;
-    completionPercentage: number;
-    ctaClickRate: number;
 }
 
 export interface VanityDomainRecords {
@@ -809,6 +802,7 @@ export const enum TopLevelEntityType {
 
 export const enum UnauthorizedReason {
     OrgSuggestedButInvalidAssociation = "OrgSuggestedButInvalidAssociation",
+    EmailIdExistsButLoginMethodDoesNotMatch = "EmailIdExistsButLoginMethodDoesNotMatch",
 }
 
 export const enum AudioProcessingSub {
@@ -841,16 +835,11 @@ export const enum JobType {
     CREATE_DEMO_GIF = "CREATE_DEMO_GIF",
     DELETE_ASSET = "DELETE_ASSET",
     REFRESH_CRAWLER = "REFRESH_CRAWLER",
-    REFRESH_CRAWLER_FOR_ANN_USER_ASSIGN = "REFRESH_CRAWLER_FOR_ANN_USER_ASSIGN",
-    REFRESH_TOUR_ANN_CLICK = "REFRESH_TOUR_ANN_CLICK",
-    REFRESH_TOUR_CONVERSION = "REFRESH_TOUR_CONVERSION",
-    REFRESH_TOUR_METRICS = "REFRESH_TOUR_METRICS",
-    REFRESH_USER_AID_MAPPING = "REFRESH_USER_AID_MAPPING",
-    REFRESH_AID_SID_MAPPING = "REFRESH_AID_SID_MAPPING",
-    REFRESH_LEAD_ACTIVITY = "REFRESH_LEAD_ACTIVITY",
-    ROLLUP_METRICS_CURRENT_TO_DAILY = "ROLLUP_METRICS_CURRENT_TO_DAILY",
-    ROLLUP_CONVERSION_CURRENT_TO_DAILY = "ROLLUP_CONVERSION_CURRENT_TO_DAILY",
-    ROLLUP_ANN_CLICK_CURRENT_TO_DAILY = "ROLLUP_ANN_CLICK_CURRENT_TO_DAILY",
+}
+
+export const enum PvtAssetType {
+    TourInputData = "TourInputData",
+    MarkedImgs = "MarkedImgs",
 }
 
 export const enum SchemaVersion {
@@ -895,6 +884,12 @@ export const enum ResponseStatus {
 export const enum ErrorCode {
     IllegalArgs = 100,
     NotFound = 101,
+}
+
+export const enum LLMOpsStatus {
+    InProgress = "InProgress",
+    Successful = "Successful",
+    Failure = "Failure",
 }
 
 export const enum LogType {

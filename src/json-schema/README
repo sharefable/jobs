@@ -1,0 +1,7 @@
+The ./out dir is auto genereated form ts files. Don't make any changes directly to the json files inside ./out dir.
+Instead, make changes to the ts file and run `make gen`. The json files inside ./out dir will be generated from ts files over here.
+
+We force LLMs to use function tools. Generated out/*.json is used to attach the function during llm call.
+The ts files are pushed to app repo, so that app knows what to do when response is received.
+
+Run `make gen` to generate these files
