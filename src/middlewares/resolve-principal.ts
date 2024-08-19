@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import { auth } from 'express-oauth2-jwt-bearer';
 
-// TODO[secret]
 export default auth({
-  audience: 'backend',
-  issuerBaseURL: 'https://dev-vsfoa2y1lhzvmfic.us.auth0.com/',
+  audience:  process.env.AUTH0_AUDIENCES,
+  issuerBaseURL: process.env.AUTH0_ISSUER_URL,
 });
 
 export function verifyAuthToken(req: Request, res: Response, next: NextFunction) {

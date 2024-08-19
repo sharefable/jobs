@@ -1,11 +1,17 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation } from './contract';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1 } from './contract';
 import { anthropic } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus } from 'api-contract';
-import {MessageParam, Usage} from '@anthropic-ai/sdk/resources';
-import PROMPTS, {PromptDetails} from './prompts';
+import {ImageBlockParam, MessageParam, TextBlockParam, Usage} from '@anthropic-ai/sdk/resources';
+import PROMPTS, {PromptDetails, normalizeWhitespace} from './prompts';
 import {APIError} from '@anthropic-ai/sdk';
+import {GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
+import {Readable} from 'stream';
+import { captureException } from '@sentry/node';
+
+export const s3 = new S3Client({ region: 'ap-south-1' });
+const S3_BUCKET = 'pvt-mics';
 
 interface LLMOpsData {
   ip: LLMOpsBase;
@@ -16,8 +22,71 @@ interface LLMOpsData {
   opMeta: any;
 }
 
+async function getImageBase64DataFromUrl(req: Request, url: string): Promise<string | null> {
+  if (url.startsWith('/')) url = url.substring(1);
+  try {
+    const params = {
+      Bucket: S3_BUCKET,
+      Key: url,
+    };
+    const {Body: body0} = await s3.send(new GetObjectCommand(params));
+
+    const chunks = [];
+    const nBody = body0 as Readable;
+    for await (const bodyChunk of nBody) {
+      chunks.push(Buffer.from(bodyChunk));
+    }
+    const base64Data = Buffer.concat(chunks).toString('base64');
+    return base64Data;
+  } catch (error) {
+    req.log.fatal(`Error while getting base64 data from s3 url ${url}: ${(error as Error).stack}`);
+    return null;
+  }
+}
+
+async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
+  const msgs: MessageParam['content'] = (await Promise.all(refsForMMV.map(
+    async img => getImageBase64DataFromUrl(req, img.url).then(base64Data => ({
+      ...img,
+      data:base64Data,
+    })),
+  ))).flatMap(img => [{
+    type: 'text',
+    text: `Image Id: ${img.id}${img.moreInfo ? `\n\n${img.moreInfo}` : ''}`,
+  }, {
+    type: 'image',
+    source: {
+      type: 'base64',
+      media_type: 'image/png',
+      data: img.data,
+    },
+  }]) as (TextBlockParam | ImageBlockParam)[];
+
+  const msgsReducted: any = refsForMMV.flatMap(img => [{
+    type: 'text',
+    text: `Image Id: ${img.id}`,
+  }, {
+    type: 'image',
+    __type: 'image-reducted',
+    source: {
+      type: 'base64',
+      media_type: 'image/png',
+      data: ['reducted'],
+      __source: `s3://${S3_BUCKET}${img.url}`,
+    },
+  }]);
+
+  return {
+    msgs,
+    msgsReducted,
+  };
+}
+
+// TODO before appending existing msgs -- check for prompt caching
 async function callLLM(req: Request, prompt: PromptDetails, options: {
-  userMsgRaw: string
+  // This is saved in db, when base64 data is sent to llm, we don't store that in db, we store the file location instead
+  userMsgRawReducted?: any
+  userMsgRaw: MessageParam['content']
 }): Promise<LLMResp> {
   const body = req.body as LLMOpsBase;
 
@@ -53,7 +122,10 @@ async function callLLM(req: Request, prompt: PromptDetails, options: {
     role: 'user',
     content: options.userMsgRaw,
   };
-  msgLog.push(userMessage);
+  msgLog.push({
+    role: 'user',
+    content: options.userMsgRawReducted || options.userMsgRaw,
+  });
 
   const llmResp: LLMResp = {
     err: null,
@@ -125,7 +197,106 @@ async function createDemoRouter(req: Request) {
     req,
     PROMPTS.RouterNewDemo,
     {
-      userMsgRaw: `<demo-objective>${body.user_payload.demo_objective}</demo-objective>`,
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <demo-objective>
+          ${body.user_payload.demo_objective}
+        </demo-objective>
+      `,
+    },
+  );
+}
+
+async function createDemoPerUsecase(req: Request) {
+  const body = req.body as CreateNewDemoV1;
+  let prompt: PromptDetails;
+  if (body.user_payload.usecase === 'marketing') prompt = PROMPTS.CreateDemoMarketing;
+  if (body.user_payload.usecase === 'step-by-step-guide')  prompt = PROMPTS.CreateDemoStepByStep;
+  if (body.user_payload.usecase === 'product')  prompt = PROMPTS.CreateDemoStepByStep;
+  else prompt = PROMPTS.CreateDemoMarketing;
+
+  const { msgs, msgsReducted } = await getImgsForPrompt(req, body.user_payload.refsForMMV);
+
+  msgs.push({
+    type: 'text',
+    text: normalizeWhitespace(`
+      <product-details>
+        ${body.user_payload.product_details}
+      </product-details>
+
+      <demo-objective>
+        ${body.user_payload.demo_objective}
+      </demo-objective>
+
+      ${body.user_payload.demoState && (`
+        <demo-state>
+          ${body.user_payload.demoState}
+        </demo-state>
+      `)}
+    `),
+  });
+
+  return callLLM(
+    req,
+    prompt,
+    {
+      userMsgRawReducted: msgsReducted,
+      userMsgRaw: msgs,
+    },
+  );
+}
+
+async function suggestTheme(req: Request)  {
+  const body = req.body as ThemeForGuideV1;
+  const prompt: PromptDetails = PROMPTS.SuggestGuideTheme;
+
+  const { msgs, msgsReducted } = await getImgsForPrompt(req, body.user_payload.refsForMMV);
+
+  msgs.push({
+    type: 'text',
+    text: normalizeWhitespace(`
+      <theme-objective>
+        ${body.user_payload.theme_objective}
+      </theme-objective>
+    `),
+  });
+
+  return callLLM(
+    req,
+    prompt,
+    {
+      userMsgRawReducted: msgsReducted,
+      userMsgRaw: msgs,
+    },
+  );
+}
+
+async function postProcess(req: Request) {
+  const body = req.body as PostProcessDemoV1;
+  return callLLM(
+    req,
+    PROMPTS.RouterNewDemo,
+    {
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <demo-objective>
+          ${body.user_payload.demo_objective}
+        </demo-objective>
+
+        <module-recommendations>
+          ${body.user_payload.module_recommendations}
+        </module-recommendations>
+
+        <demo-state>
+          ${body.user_payload.demo_state}
+        </demo-state>
+      `,
     },
   );
 }
@@ -137,7 +308,9 @@ export default function addLlmOpsHttpListeners(app: Express) {
     let llmResp: LLMResp;
     try {
       if (body.type === 'create_demo_router') llmResp = await createDemoRouter(req);
-      // if (body.type === 'create_demo') createNewDemo(req);
+      else if (body.type === 'create_demo_per_usecase') llmResp = await createDemoPerUsecase(req);
+      else if (body.type === 'theme_suggestion_for_guides') llmResp = await suggestTheme(req);
+      else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,
@@ -147,6 +320,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
         } as ApiResp<null>);
     } catch (e) {
       req.log.fatal(`Error while calling llm handler. ${(e as Error).stack}`);
+      captureException(e);
       return res.status(500).json({
         status: ResponseStatus.Failure,
         data: null,
@@ -155,6 +329,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
     }
 
     if (llmResp.err) {
+      captureException(new Error(`LLM response failed. ${JSON.stringify(llmResp.err)}`));
       return res.status(llmResp.err.status!).json({
         status: ResponseStatus.Failure,
         data: llmResp,

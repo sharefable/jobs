@@ -19,7 +19,7 @@ export interface create_guides_marketing {
       */
     element: 'black' | 'red' | 'blue' | 'cyan';
     /**
-      * Id of screen on which the annotation should be displayed
+      * Id of screen on which the annotation should be displayed. User would pass this value along side input image.
       */
     screenId: number;
     /**

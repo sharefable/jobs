@@ -12,6 +12,18 @@ export interface create_guides_router {
     */
   categoryOfDemo: 'marketing' | 'product' | 'step-by-step' | 'na';
   /**
+    * Figure out functional requirement from user given objective. This data is forwarded to future tool calls to create a demo. Generate this requiment in such a way so that the chained tool calls can use this data. Functional requirement includes but not limited to tone of the demo, language to use in the demo, if the demo should be verbose or to the point etc.
+    */
+  functionalRequirement: string;
+  /**
+    * Figure out look and feel requirement for the demo (guides) from given user objective. if the requirement is not clear from user's demo objective, then suggest a contrasting, clean, beautiful & modern look and feel requirement for the demo.
+    */
+  lookAndFeelRequirement: string;
+  /**
+    * Figure out demo module requirement from the user objective and product details. If the requirement is not clear then do not populate this key
+    */
+  moduleRequirement?: string;
+  /**
     * If the type is 'na', then suggest a category of demo
     */
   suggestedCategoryOfDemo?: string;

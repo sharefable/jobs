@@ -9,7 +9,8 @@ gen:
 	node scripts/gen-json-schema.js
 	mkdir -p ../app/workspace/packages/common/src/llm-fn-shema/ && rm -f ../app/workspace/packages/common/src/llm-fn-shema/*
 	cp src/json-schema/*.ts ../app/workspace/packages/common/src/llm-fn-shema/
-	cp -r src/http/llm-ops/contract ../app/workspace/packages/common/src/llm-contract
+	mkdir -p ../app/workspace/packages/common/src/llm-contract
+	cp -r src/http/llm-ops/contract/index.ts ../app/workspace/packages/common/src/llm-contract/index.ts
 
 run:
 	yarn build && yarn start | npx pino-pretty

@@ -8,7 +8,8 @@
   "private": true,
   "scripts": {
     "clean": "tsc -b --clean",
-    "build": "tsc -b --verbose",
+    "gen": "node scripts/gen-json-schema.js",
+    "build": "tsc -b --verbose && mkdir -p dist/src/http/llm-ops/prompts && cp ./src/http/llm-ops/prompts/* dist/src/http/llm-ops/prompts/",
     "tscv": "tsc -v",
     "lint": "eslint \"src/**/*.ts\"",
     "watch-ts": "tsc -b -w",
