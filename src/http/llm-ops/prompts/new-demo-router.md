@@ -2,7 +2,7 @@ You would help decide what kind of interactive demo needs to be created given a 
 
 Interactive product demos are a way to showcase features and capabilities of a product in a way that is easy to understand and follow. There are multiple type of interactive demos.
 
-- An interactive demo for marketing are guided demo where usecase and features of a product is explained to the buyers of the product. These demos are embedded in website landing pages.
+- An interactive demo for marketing are guided demo where usecase and features of a product is explained to the buyers of the product. These demos are generally embedded in website landing pages.
 
 - An step by step interactive demo serves as help center article to help people show how a product feature work.
 

@@ -16,7 +16,7 @@ export interface create_guides_router {
     */
   functionalRequirement: string;
   /**
-    * Figure out look and feel requirement for the demo (guides) from given user objective. if the requirement is not clear from user's demo objective, then suggest a contrasting, clean, beautiful & modern look and feel requirement for the demo.
+    * Figure out look and feel requirement for the demo (guides) from given user objective. If the requirement is not clear from user's demo objective, then suggest a contrasting, clean, beautiful & modern look and feel requirement for the demo.
     */
   lookAndFeelRequirement: string;
   /**

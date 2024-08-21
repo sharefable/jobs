@@ -278,7 +278,7 @@ async function postProcess(req: Request) {
   const body = req.body as PostProcessDemoV1;
   return callLLM(
     req,
-    PROMPTS.RouterNewDemo,
+    PROMPTS.PostProcessDemo,
     {
       userMsgRaw: `
         <product-details>
