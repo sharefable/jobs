@@ -5,6 +5,7 @@ import * as createGuidesRouterJson from '../../json-schema/out/create_guides_rou
 import * as createGuidesMarketing from '../../json-schema/out/create_guides_marketing.json';
 import * as createGuidesStepbystep from '../../json-schema/out/create_guides_step_by_step.json';
 import * as suggestGuideTheme from '../../json-schema/out/suggest_guide_theme.json';
+import * as postProcessDemo from '../../json-schema/out/post_process_demo.json';
 import * as fallback from '../../json-schema/out/fallback.json';
 
 export function normalizeWhitespace(str: string): string {
@@ -47,7 +48,7 @@ const PROMPTS: Record<string, PromptDetails> = {
     system: readFileSync(join(__dirname, './prompts/new-demo-marketing.md'), 'utf8'),
     shouldAppendThreadMsgs: false,
     fns: [{
-      name: 'create_guides_marketing',
+      name: 'create_guides_sbs',
       description: createGuidesStepbystep.definitions.create_guides_step_by_step.description,
       input_schema: {
         type: 'object',
@@ -59,11 +60,23 @@ const PROMPTS: Record<string, PromptDetails> = {
     system: readFileSync(join(__dirname, './prompts/guide-theme.md'), 'utf8'),
     shouldAppendThreadMsgs: false,
     fns: [{
-      name: 'create_guides_marketing',
+      name: 'suggest_guide_theme',
       description: suggestGuideTheme.definitions.suggest_guide_theme.description,
       input_schema: {
         type: 'object',
         properties: suggestGuideTheme.definitions.suggest_guide_theme.properties,
+      },
+    }],
+  },
+  PostProcessDemo: {
+    system: readFileSync(join(__dirname, './prompts/new-demo-post-process.md'), 'utf8'),
+    shouldAppendThreadMsgs: false,
+    fns: [{
+      name: 'post-process-demo',
+      description: postProcessDemo.definitions.post_process_demo.description,
+      input_schema: {
+        type: 'object',
+        properties: postProcessDemo.definitions.post_process_demo.properties,
       },
     }],
   },
