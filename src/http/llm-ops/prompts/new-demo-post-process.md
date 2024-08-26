@@ -51,7 +51,8 @@ You have to thoroughly look at \<demo-state> before coming up with kind of postp
         1. If no module is present, the demo would show the introductory guide at the very beginning, followed by current \<demo-state> and finally the concluding guide. If modules are present, the demo would show the introductory guide at the very beginning, followed by module introductory guide (if any), followed by guides that belongs to the module (from \<demo-state>) and finally the \<demo-state>. Use this mental model to adjust current \<demo-state>.
         2. Read the content from start to end and make necessary changes so that the final demo content feels engaging.
         3. You may update nextButtonText to announce next module or what comes next in general.
-        4. Create rich text guide message based. Only a strict subset of rich text is available. Read that following section for the avialable rich text spec.
+        4. Make guide text short, crisp and accurate. Try to use less than 30 words to come up with the demo text.
+        5. Create rich text guide message based. Only a strict subset of rich text is available. Read that following section for the avialable rich text spec.
 
 **Rich text**
 

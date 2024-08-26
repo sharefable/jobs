@@ -17,7 +17,7 @@ Each screen in an interactive demo has guides that contains messages that align 
 
 1. **Understand the Context**: Review the product details and demo objective provided.
 2. **Select Candidate Element**: From the candidates (black, red, blue, cyan), choose one element per screen that is most appropriate and contextual based on the demo objective and product details. Only one candidate element should be selected per screen. You have to choose either of these 4 colors (black, red, blue, cyan) mentioned above.
-3. **Create Demo Text**: Examine the entire image and use any additional information provided to draft the guide message (demo text). The demo text should focus on the selected candidate element while considering the screen’s context.
+3. **Create Demo Text**: Examine the entire image and use any additional information provided to draft the guide message (demo text). The demo text should focus on the selected candidate element while considering the screen’s context. Demo text must be crisp, short and precise. Try to use less than 24 words to come up with the demo text.
 4. **Review Previous Steps**: For batch processing, check the previous demo steps provided in the \<demo-state> XML tag to ensure the demo remains contextual and engaging. Skip screens if the content or element does not add value to the demo.
 5. **Avoid Redundancy**: Check for similarities in selected candidates across consecutive screens to avoid redundant features. Skip steps if the demo text covers repetitive content.
 6. **Rich text formtting**: Once you generate the text for the guide, apply rich text formatting to the text. Only a strict subset of rich text is available. Read that following section for the avialable rich text spec.

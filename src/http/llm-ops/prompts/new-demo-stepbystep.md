@@ -20,7 +20,7 @@ Each screen in an interactive demo has guides that contains messages that align 
 2. **Select Candidate Element**: Choose one candidate element (black, red, blue, or cyan) per screen that is most relevant based on the demo objective and product details. Only one candidate element should be selected per screen. Since this is a step by step guide choose a candidate element that looks clickable.
 3. **Skip Redundancies**: Avoid repeated or redundant steps. Skip screens if consecutive screens show the same selected element or if the click area covers the entire screen.
 4. **Guide Format**:
-    - Since this is step by step demo, you would talk about what user action needs to be performed and what goal would it achieve when performed.
+    - Since this is step by step demo, you would talk about what user action needs to be performed and what goal would it achieve when performed. Demo text must be crisp, short and precise. Try to use less than 24 words to come up with the demo text.
     - After coming up with the guide message, if you think it is redundant then you can pass empty string to the guide text. In this case guide will be hidden but the click marker around the selected candidate on the screen should be visible to help users understand the feature.
 5. **Review Previous Steps**: For batch processing, check previous demo steps in the \<demo-state> XML tag to maintain context and engagement. Skip screens if they do not add value.
 6. **Rich text formtting**: Once you generate the text for the guide, apply rich text formatting to the text. Only a strict subset of rich text is available. Read that following section for the avialable rich text spec.
