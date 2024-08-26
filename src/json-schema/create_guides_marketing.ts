@@ -11,11 +11,12 @@ export interface create_guides_marketing {
     */
   {
     /**
-      * Generated text of annotation / guides
-      */
-    text: string;
+     *  Generated text of annotation / guides with rich formatting. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same.
+     */
+    richText: string;
+
     /**
-      * Border color of selected candidate element from the images uploaded. For cover annotaion the value does not hold any relevance, any from the list can be passed.
+      * Border color of selected candidate element from the images uploaded.
       */
     element: 'black' | 'red' | 'blue' | 'cyan';
     /**

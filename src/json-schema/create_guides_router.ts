@@ -20,7 +20,7 @@ export interface create_guides_router {
     */
   lookAndFeelRequirement: string;
   /**
-    * Figure out demo module requirement from the user objective and product details. If the requirement is not clear then do not populate this key
+    * For demos with many steps, content can be divided into modules or sections, similar to chapters of a book, to improve navigation and consumption. The end users can navigate to a module of their choice and switch between modules at any point in time. Figure out demo module requirement from the user objective and product details. If the requirement is not clear then do not populate this key.
     */
   moduleRequirement?: string;
   /**

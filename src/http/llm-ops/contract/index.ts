@@ -24,6 +24,7 @@ export interface RefForMMV {
   id: number;
   moreInfo?: string;
   url: string;
+  type?: 'image/png' | 'image/jpeg' | undefined;
   // TODO write is as part of moreInfo itself
   // isFromPreviousBatch?: boolean;
   data?: string;
