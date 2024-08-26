@@ -11,28 +11,22 @@ export interface create_guides_step_by_step {
     */
   {
     /**
-      * Generated text of annotation / guides. Key text can be an empty string or undefined if the guide is required to be hidden. This happens when the demo only shows clickable element but not the guide. Key text must be present, if typeOfGuide is cover.
-      */
-    text?: string;
+     *  Generated text of annotation / guides with rich formatting. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same. If key is present, richText must be present. This key can be an empty string or undefined if the guide is required to be hidden. This happens when the demo only shows clickable element but not the guide.
+     */
+    richText?: string;
+
     /**
       * Id of screen on which the annotation should be displayed. User would pass this value along side input image.
       */
     screenId: number;
     /**
-      * Border color of selected candidate element from the images uploaded. For cover annotaion the value does not hold any relevance, any from the list can be passed.
+      * Border color of selected candidate element from the images uploaded.
       */
     element: 'black' | 'red' | 'blue' | 'cyan';
     /**
-      * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. If the guide is hidden by making text value nullish, then this value is discarded.
+      * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. Choose a custom text for the CTA to make the demo engaging. If the guide is hidden by making text value nullish, then this value is discarded.
       */
     nextButtonText?: string;
-    /**
-      * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. That's how user progresses through the demo. The text of this next CTA by defualt is Next. Configure the next button text to make the demo more engaging.
-      */
-    /**
-      * Type of the annotation. Can either be cover or element. Cover annotation are shown as modal and are not attached to an element. If typeOfGuide is modal then any value of element key can be choosen as for cover annotation element value is discarded. Element annotation are shown as tooltip. If typeOfGuide is element then a proper value of element must be choosen.
-      */
-    typeOfGuide: 'cover' | 'element';
     /**
       * true if a screen should be skipped as it does not add any additional value to the demo. If skip is true then text, element and typeofGuide keys can have any valid values. Value of these keys are not used and will be discarded.
       */

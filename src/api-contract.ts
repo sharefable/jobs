@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-08-16 18:56:24.
+// Generated using typescript-generator version 2.35.1025 on 2024-08-22 18:19:51.
 
 export interface Activity extends ActivityBase {
 }

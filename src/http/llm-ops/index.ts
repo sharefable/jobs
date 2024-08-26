@@ -57,7 +57,7 @@ async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
     type: 'image',
     source: {
       type: 'base64',
-      media_type: 'image/png',
+      media_type: img.type ?? 'image/png',
       data: img.data,
     },
   }]) as (TextBlockParam | ImageBlockParam)[];
@@ -72,7 +72,7 @@ async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
       type: 'base64',
       media_type: 'image/png',
       data: ['reducted'],
-      __source: `s3://${S3_BUCKET}${img.url}`,
+      __source: `s3://${S3_BUCKET}/${img.url}`,
     },
   }]);
 
@@ -238,6 +238,7 @@ async function createDemoPerUsecase(req: Request) {
       `)}
     `),
   });
+  msgsReducted.push(msgs.at(-1));
 
   return callLLM(
     req,

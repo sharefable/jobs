@@ -3,26 +3,34 @@
   */
 export interface post_process_demo {
   /**
-    * Intro guide for the whole demo
+    * Short title of demo preferrably less than 36 char
+    */
+  title: string;
+  /**
+    * A description of the demo less than 250 char. This description should be talk about what the demo is showing based on user objective.
+    */
+  description: string;
+  /**
+    * Introductory guide for the whole demo. This is a key guide that improves engagement. 
     */
   demo_intro_guide: {
-  /**
-    * Text of the intro guide, this text should be summarize the whole demo based on product & demo objective.
-    */
-    text: string;
+    /**
+     * Rich Text of the intro guide. This is in plain text without html tags. Generate the text in such a way so that the viwewers of this demo understands the value of the demo. You might refer to \<product-information> and \<demo-objective> to get a sense of the content of the demo. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same.
+     */
+    richText: string;
     /**
       * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. That's how user progresses through the demo. The text of this next CTA by defualt is Next. Configure the next button text to make the demo more engaging.
       */
     nextButtonText: string;
   },
   /**
-    * Outro guide for the whole demo
+    * Concluding guide to end the demo. This is a key guide that improves conversion.
     */
   demo_outro_guide: {
-  /**
-    * Text of the outro guide, this text should discuss about the next step.
-    */
-    text: string;
+    /**
+     *  Generate this guide such a way so that the viewers of the demo know what their next step is. You might refer to \<product-information> and \<demo-objective> to get a sense of the content of the demo. Text of the intro guide. This is in rich text format. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same.
+     */
+    richText: string;
     /**
       * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. For the outro guide this CTA could be an external CTA where the demo viweres would go once they finish the demo.
       */
@@ -41,32 +49,19 @@ export interface post_process_demo {
       */
     description: string;
     /**
-      * id of guide from the current demo state (mentioned in \</demo-state>) from where the module starts. Two modules can't have same moduleStartIndex.
+      * id of guide from the current demo state (mentioned in \</demo-state>) from where the module starts. Two modules can't have same moduleStartIndex. The first module should start with 0.
       */
     moduleStartIndex: number;
     /**
-      * Optional intro guide for the current module.
+      * Optional introductory guide for the current module. Only populate this if the module has more than 6 steps. Do not populate this for the first module.
       */
     module_intro_guide?: {
       /**
-    * Text of the intro guide, this text should be summarize the whole module.
-    */
-      text: string;
+       * This introductory guide talks about what the module the contains. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same.
+       */
+      richText: string;
       /**
       * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. That's how user progresses through the demo. The text of this next CTA by defualt is Next. Configure the next button text to make the demo more engaging.
-      */
-      nextButtonText: string;
-    },
-    /**
-    * Optional outro guide for the current module
-    */
-    module_outro_guide?: {
-      /**
-    * Text of the outro guide, this text should discuss about what's shown what to expect next.
-    */
-      text: string;
-      /**
-      * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. For the outro guide this CTA could be an external CTA where the demo viweres would go once they finish the demo.
       */
       nextButtonText: string;
     },
@@ -76,13 +71,13 @@ export interface post_process_demo {
     */
   updateCurrentDemoStateContent: Array<{
     /**
-      * id of the guide that's is getting updated. If an entry is made here, either text or nextButtonText (or both) must be present
+      * id of the guide that's is getting updated from \<demo-state>
       */
     id: number;
     /**
-      * Update guide text from demo state referenced by id. If no text change is required then omit this key.
+      * Update guide text from demo state referenced by id. If no text change is required then omit this key. The rich text formatting abides by the constraints of rich text formatting mentioned in the system prompt. The text content of text and richText is exactly the same. If text is present, richText must be present.
       */
-    text?: string;
+    richText?: string;
     /**
       * Update guide CTA text from demo state referenced by id. If no text change is required then omit this key.
       */

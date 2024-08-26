@@ -41,11 +41,12 @@ const PROMPTS: Record<string, PromptDetails> = {
       input_schema: {
         type: 'object',
         properties: createGuidesMarketing.definitions.create_guides_marketing.properties,
+        required: createGuidesMarketing.definitions.create_guides_marketing.required,
       },
     }],
   },
   CreateDemoStepByStep: {
-    system: readFileSync(join(__dirname, './prompts/new-demo-marketing.md'), 'utf8'),
+    system: readFileSync(join(__dirname, './prompts/new-demo-stepbystep.md'), 'utf8'),
     shouldAppendThreadMsgs: false,
     fns: [{
       name: 'create_guides_sbs',
@@ -53,6 +54,8 @@ const PROMPTS: Record<string, PromptDetails> = {
       input_schema: {
         type: 'object',
         properties: createGuidesStepbystep.definitions.create_guides_step_by_step.properties,
+        required: createGuidesStepbystep.definitions.create_guides_step_by_step.required,
+
       },
     }],
   },
@@ -65,6 +68,7 @@ const PROMPTS: Record<string, PromptDetails> = {
       input_schema: {
         type: 'object',
         properties: suggestGuideTheme.definitions.suggest_guide_theme.properties,
+        required: suggestGuideTheme.definitions.suggest_guide_theme.required,
       },
     }],
   },
@@ -77,6 +81,7 @@ const PROMPTS: Record<string, PromptDetails> = {
       input_schema: {
         type: 'object',
         properties: postProcessDemo.definitions.post_process_demo.properties,
+        required: postProcessDemo.definitions.post_process_demo.required,
       },
     }],
   },

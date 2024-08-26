@@ -16,11 +16,11 @@ export interface suggest_guide_theme {
     */
   backgroundColor: string;
   /**
-    * Border radius of the guide container. This border radius also gets applied to CTAs. This value is always in px.
+    * Border radius of the guide container. This border radius also gets applied to CTAs. This value must be a number, it's applyed in px. Exmaple if borderRadius is 8,the 8px border radius is applied.
     */
   borderRadius: number;
   /**
-    * Border color of the guide container. This color is applied with 1px stroke.
+    * Border color of the guide container. This color is applied with 1px stroke. Border color format must be in hex. Example: #ffffff.
     */
-  borderColor: number;
+  borderColor: string;
 }
