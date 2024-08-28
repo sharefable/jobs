@@ -71,7 +71,7 @@ export interface post_process_demo {
     */
   updateCurrentDemoStateContent: Array<{
     /**
-      * id of the guide that's is getting updated from \<demo-state>
+      * id of the guide that's is getting updated from \<demo-state>. This id must be present in \<demo-state>
       */
     id: number;
     /**

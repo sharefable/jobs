@@ -6,6 +6,7 @@ import * as createGuidesMarketing from '../../json-schema/out/create_guides_mark
 import * as createGuidesStepbystep from '../../json-schema/out/create_guides_step_by_step.json';
 import * as suggestGuideTheme from '../../json-schema/out/suggest_guide_theme.json';
 import * as postProcessDemo from '../../json-schema/out/post_process_demo.json';
+import * as demoMetadata from '../../json-schema/out/demo_metadata.json';
 import * as fallback from '../../json-schema/out/fallback.json';
 
 export function normalizeWhitespace(str: string): string {
@@ -18,8 +19,13 @@ export interface PromptDetails {
   fns: Array<Tool>
 }
 
-
-const PROMPTS: Record<string, PromptDetails> = {
+type PROMPT_TYPE = 'RouterNewDemo'
+| 'CreateDemoMarketing'
+| 'CreateDemoStepByStep'
+| 'SuggestGuideTheme'
+| 'PostProcessDemo'
+| 'DemoMetadata';
+const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
   RouterNewDemo: {
     system: readFileSync(join(__dirname, './prompts/new-demo-router.md'), 'utf8'),
     shouldAppendThreadMsgs: false,
@@ -82,6 +88,18 @@ const PROMPTS: Record<string, PromptDetails> = {
         type: 'object',
         properties: postProcessDemo.definitions.post_process_demo.properties,
         required: postProcessDemo.definitions.post_process_demo.required,
+      },
+    }],
+  },
+  DemoMetadata: {
+    system: readFileSync(join(__dirname, './prompts/demo-metadata.md'), 'utf8'),
+    shouldAppendThreadMsgs: false,
+    fns: [{
+      name: 'demo-metadata',
+      description: demoMetadata.definitions.demo_metadata.description,
+      input_schema: {
+        type: 'object',
+        properties: demoMetadata.definitions.demo_metadata.properties,
       },
     }],
   },

@@ -17,7 +17,7 @@ Each screen in an interactive demo has guides that contains messages that align 
 **Steps to Create the Interactive Demo:**
 
 1. **Understand the Context**: Review the product details and demo objective.
-2. **Select Candidate Element**: Choose one candidate element (black, red, blue, or cyan) per screen that is most relevant based on the demo objective and product details. Only one candidate element should be selected per screen. Since this is a step by step guide choose a candidate element that looks clickable.
+2. **Select Candidate Element**: Choose one candidate element (black, red, blue, or cyan) per screen that is most appropriate to create a step by step tutorial. Only one candidate element should be selected per screen. Since this is a step by step guide choose a candidate element that looks clickable.
 3. **Skip Redundancies**: Avoid repeated or redundant steps. Skip screens if consecutive screens show the same selected element or if the click area covers the entire screen.
 4. **Guide Format**:
     - Since this is step by step demo, you would talk about what user action needs to be performed and what goal would it achieve when performed. Demo text must be crisp, short and precise. Try to use less than 24 words to come up with the demo text.
