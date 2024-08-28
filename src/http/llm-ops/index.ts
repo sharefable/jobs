@@ -1,5 +1,6 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1 } from './contract';
+import * as fs from 'fs';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata } from './contract';
 import { anthropic } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus } from 'api-contract';
@@ -52,7 +53,7 @@ async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
     })),
   ))).flatMap(img => [{
     type: 'text',
-    text: `Image Id: ${img.id}${img.moreInfo ? `\n\n${img.moreInfo}` : ''}`,
+    text: `screenId: ${img.id}${img.moreInfo ? `\n\n${img.moreInfo}` : ''}`,
   }, {
     type: 'image',
     source: {
@@ -62,9 +63,12 @@ async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
     },
   }]) as (TextBlockParam | ImageBlockParam)[];
 
+
+  // fs.writeFileSync('op.json', JSON.stringify(msgs, null, 2), 'utf8');
+
   const msgsReducted: any = refsForMMV.flatMap(img => [{
     type: 'text',
-    text: `Image Id: ${img.id}`,
+    text: `screenId: ${img.id}`,
   }, {
     type: 'image',
     __type: 'image-reducted',
@@ -138,11 +142,12 @@ async function callLLM(req: Request, prompt: PromptDetails, options: {
   };
   try {
     const t1 = +new Date();
-    const msg = await anthropic.messages.create({
+    const msg = await anthropic.beta.promptCaching.messages.create({
       model: 'claude-3-5-sonnet-20240620',
       max_tokens: 4096,
       tools: prompt.fns,
-      system: prompt.system,
+      system: [{ text: prompt.system, type: 'text', cache_control: { type: 'ephemeral' } }],
+      stream: false,
       temperature: 0.5,
       tool_choice: {
         type: 'any',
@@ -213,9 +218,16 @@ async function createDemoRouter(req: Request) {
 async function createDemoPerUsecase(req: Request) {
   const body = req.body as CreateNewDemoV1;
   let prompt: PromptDetails;
-  if (body.user_payload.usecase === 'marketing') prompt = PROMPTS.CreateDemoMarketing;
-  if (body.user_payload.usecase === 'step-by-step-guide')  prompt = PROMPTS.CreateDemoStepByStep;
-  if (body.user_payload.usecase === 'product')  prompt = PROMPTS.CreateDemoStepByStep;
+  let reqTag: 'product-enablement' | 'user-intent' = 'product-enablement';
+  if (body.user_payload.usecase === 'marketing') {
+    prompt = PROMPTS.CreateDemoMarketing;
+  } else if (body.user_payload.usecase === 'step-by-step-guide')  {
+    prompt = PROMPTS.CreateDemoStepByStep;
+    reqTag = 'user-intent';
+  } else if (body.user_payload.usecase === 'product')  {
+    prompt = PROMPTS.CreateDemoStepByStep;
+    reqTag = 'user-intent';
+  }
   else prompt = PROMPTS.CreateDemoMarketing;
 
   const { msgs, msgsReducted } = await getImgsForPrompt(req, body.user_payload.refsForMMV);
@@ -230,6 +242,10 @@ async function createDemoPerUsecase(req: Request) {
       <demo-objective>
         ${body.user_payload.demo_objective}
       </demo-objective>
+
+      <${reqTag}>
+        ${body.user_payload.req}
+      </${reqTag}
 
       ${body.user_payload.demoState && (`
         <demo-state>
@@ -264,10 +280,49 @@ async function suggestTheme(req: Request)  {
       </theme-objective>
     `),
   });
+  msgsReducted.push(msgs.at(-1));
 
   return callLLM(
     req,
     prompt,
+    {
+      userMsgRawReducted: msgsReducted,
+      userMsgRaw: msgs,
+    },
+  );
+}
+
+async function demoMetadata(req: Request) {
+  const body = req.body as DemoMetadata;
+  const { msgs, msgsReducted } = await getImgsForPrompt(req, body.user_payload.refsForMMV);
+
+  let requirement = '';
+  if (body.user_payload.metReq === 'user_intent') {
+    requirement = 'Figure out the user intent from the screens';
+  } else {
+    requirement = 'Figure out the user intent from the screens';
+  }
+  msgs.push({
+    type: 'text',
+    text: normalizeWhitespace(`
+      <product-details>
+        ${body.user_payload.product_details}
+      </product-details>
+
+      <demo-objective>
+        ${body.user_payload.demo_objective}
+      </demo-objective>
+
+      <info-retrieval>
+        ${requirement}
+      </info-retrieval>
+    `),
+  });
+  msgsReducted.push(msgs.at(-1));
+
+  return callLLM(
+    req,
+    PROMPTS.DemoMetadata,
     {
       userMsgRawReducted: msgsReducted,
       userMsgRaw: msgs,
@@ -312,6 +367,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
       else if (body.type === 'create_demo_per_usecase') llmResp = await createDemoPerUsecase(req);
       else if (body.type === 'theme_suggestion_for_guides') llmResp = await suggestTheme(req);
       else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
+      else if (body.type === 'demo_metadata') llmResp = await demoMetadata(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,

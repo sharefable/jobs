@@ -23,7 +23,7 @@ You will receive the following details from user
 demoType: marketing or step-by-step or onboarding
 
 [{
-id: // unique id for each guide
+screenId: // unique id for each guide
 text: // guide text as a string
 nextButtonText: // text of the next button CTA
 }]
@@ -53,6 +53,7 @@ You have to thoroughly look at \<demo-state> before coming up with kind of postp
         3. You may update nextButtonText to announce next module or what comes next in general.
         4. Make guide text short, crisp and accurate. Try to use less than 30 words to come up with the demo text.
         5. Create rich text guide message based. Only a strict subset of rich text is available. Read that following section for the avialable rich text spec.
+        6. When adjusting demo content, you must not change the ids that are given to you in \<demo-state>.
 
 **Rich text**
 

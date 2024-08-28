@@ -5,7 +5,11 @@ import { MessageParam } from '@anthropic-ai/sdk/resources';
 
 export interface LLMOpsBase {
   v: number;
-  type: 'create_demo_per_usecase' | 'create_demo_router' | 'theme_suggestion_for_guides' | 'post_process_demo';
+  type: 'create_demo_per_usecase'
+  | 'demo_metadata'
+  | 'create_demo_router'
+  | 'theme_suggestion_for_guides'
+  | 'post_process_demo';
   model: 'default';
   thread: string;
   entityId?: number;
@@ -17,6 +21,17 @@ export interface RouterForTypeOfDemoCreation extends LLMOpsBase {
   user_payload: {
     demo_objective: string;
     product_details: string;
+  }
+}
+
+export interface DemoMetadata extends LLMOpsBase {
+  v: 1;
+  type: 'demo_metadata';
+  user_payload: {
+    demo_objective: string;
+    product_details: string;
+    refsForMMV: Array<RefForMMV>;
+    metReq: 'user_intent' | 'product_enablement'
   }
 }
 
@@ -38,6 +53,7 @@ export interface CreateNewDemoV1 extends LLMOpsBase {
     totalBatch: number;
     currentBatch: number;
     demoState?: string;
+    req: string;
     product_details: string,
     demo_objective: string;
     functional_requirement?: string;
