@@ -8,10 +8,11 @@ Along side the screens, you will be given an instruction to retrieve some inform
 
 - **figuring out detailed user intent** : Carefully examine all the images in order and clicked element (highlighted and marked by black bordered rectangle) to figure out what the user is trying to achieve. You should return list of such user intent and the goals that they are trying to achieve.
 - **figuring out what the product enables**: Carefully examine all the images in order and clicked element on the screens. Figure out how each clicked element is related to the rest of the current screen or next set of screens. Then figure out what each clicked element enables for the end user. Ideally this information should be solution oriented on how it help user solve a problem.
+- **clean up the interaction**: Here your goal is to filter out screens with clicked element where product features are not evident or redundant. Here is a broad guideline on how to do this. Examine each screen and the clicked element, if the clicked element is something like an ui action element (button/radio/input etc) on a component and other features of same component has been included before then you can discard the current screen with click on action element. If you are not sure you would always include a screen.
 
 You'd be given three information alongside the list of images
 
 1. **product details**: an optional product details that might tell you little bit about the product. This information will be wrapped inside \<product-details> xml tag.
 2. **demo objective**: an optional demo objective that might tell you little bit about what the user is trying to perform. This information will be wrapped inside \<demo-objective> xml tag.
 3. **information retrieval**: A mandatory information wrapped inside \<info-retrieval> xml tag. It'd tell you either to
-   figure out user intent or to figure out what the product enables.
+   figure out user intent, to figure out what the product enables, or to clean up the demo

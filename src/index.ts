@@ -82,7 +82,7 @@ app.use('/v1/f/*', [
   normalizeTokenForAuthOrigin,
   resolveUserIfAny,
   restoreRawToken,
-  // resolveFableUser,
+  resolveFableUser,
 ]);
 app.use(globalErrorHandler);
 
@@ -117,13 +117,15 @@ async function shutDown() {
 declare global {
   namespace Express {
     interface Request {
-      house?: {
+      house: {
         iam: {
           id: string;
+          orgId: number;
         }
       },
-      relay?: {
+      relay: {
         rawToken: string;
+        orgId: number;
       }
     }
   }

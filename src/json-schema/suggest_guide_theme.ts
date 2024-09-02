@@ -23,4 +23,8 @@ export interface suggest_guide_theme {
     * Border color of the guide container. This color is applied with 1px stroke. Border color format must be in hex. Example: #ffffff.
     */
   borderColor: string;
+  /**
+    * Progressbar color. Color format must be in hex. Example: #ffffff.
+    */
+  progressBarColor?: string;
 }
