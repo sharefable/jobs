@@ -1,6 +1,6 @@
 {
   "name": "sqs_jobs",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "main": "index.js",
   "repository": "git@github.com:sharefable/sqs_jobs.git",
   "author": "akash@sharefable.com",
@@ -25,6 +25,7 @@
     "@cobaltio/cobalt": "^1.0.2",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@sentry/node": "^7.64.0",
+    "@types/string-hash": "^1.1.3",
     "body-parser": "^1.20.2",
     "connection-string": "^4.3.6",
     "cors": "^2.8.5",
@@ -38,6 +39,7 @@
     "node-fetch": "^2.6.1",
     "pg": "^8.12.0",
     "pino-http": "^10.2.0",
+    "string-hash": "^1.1.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

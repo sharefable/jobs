@@ -16,11 +16,12 @@ export function verifyAuthToken(req: Request, res: Response, next: NextFunction)
 // We need to detach the org id from the token and add it to the request
 export function normalizeTokenForAuthOrigin(req: Request, res: Response, next: NextFunction) {
   const [, mixedToken] = req.headers.authorization!.split(/\s+/);
-  const [, token] = mixedToken.split(':');
+  const [orgId, token] = mixedToken.split(':');
 
   if (!token) return res.status(401).json({ message: 'Invalid authorization token' });
 
   req.relay = {
+    orgId: Number.isFinite(+orgId) ? +orgId : 0,
     rawToken: req.headers.authorization!,
   };
   req.headers.authorization = `Bearer ${token}`;
@@ -41,14 +42,16 @@ export function resolveFableUser(req: Request, res: Response, next: NextFunction
     req.house = {
       iam: {
         id: req.headers.authorization || 'nil',
+        orgId: (req.relay || {}).orgId || 0,
       },
     };
   } else {
     req.house = {
       iam: {
         id: 'na',
+        orgId: (req.relay || {}).orgId || 0,
       },
     };
   }
-  next();
+  return next();
 }

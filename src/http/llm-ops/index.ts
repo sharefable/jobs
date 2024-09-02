@@ -1,15 +1,17 @@
 import {Express, Request, Response} from 'express';
-import * as fs from 'fs';
 import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata } from './contract';
-import { anthropic } from './anthropic';
+import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
-import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus } from 'api-contract';
+import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqDeductCredit, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus, SubscriptionCreditType } from 'api-contract';
 import {ImageBlockParam, MessageParam, TextBlockParam, Usage} from '@anthropic-ai/sdk/resources';
 import PROMPTS, {PromptDetails, normalizeWhitespace} from './prompts';
 import {APIError} from '@anthropic-ai/sdk';
 import {GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import {Readable} from 'stream';
 import { captureException } from '@sentry/node';
+import hash from 'string-hash';
+import { LogFn } from 'pino';
+import {PromptCachingBetaTextBlockParam} from '@anthropic-ai/sdk/resources/beta/prompt-caching/messages';
 
 export const s3 = new S3Client({ region: 'ap-south-1' });
 const S3_BUCKET = 'pvt-mics';
@@ -22,6 +24,7 @@ interface LLMOpsData {
   err?: any;
   opMeta: any;
 }
+
 
 async function getImageBase64DataFromUrl(req: Request, url: string): Promise<string | null> {
   if (url.startsWith('/')) url = url.substring(1);
@@ -86,10 +89,63 @@ async function getImgsForPrompt(req: Request, refsForMMV: RefForMMV[]) {
   };
 }
 
-// TODO before appending existing msgs -- check for prompt caching
-async function callLLM(req: Request, prompt: PromptDetails, options: {
+async function callWithRetry(
+  prompt: PromptDetails,
+  threadId: string,
+  messages: MessageParam[],
+  options: {
+    shouldCacheSystemPrompt?: boolean
+  },
+  errFn: LogFn, 
+  execStack: any[] = [],
+  retryCount = 0) {
+  const hashNo = hash(threadId);
+  // When retry happens check the next client immediately
+  const clientId = (hashNo + retryCount) % clients.length;
+  console.log({
+    hashNo,
+    retryCount,
+    len: clients.length,
+    clientId,
+  });
+  const client = clients[clientId];
+  execStack.push({
+    clientId,
+    account: accounts[clientId],
+  });
+
+  const systemPrompt: PromptCachingBetaTextBlockParam = {text: prompt.system, type: 'text'};
+  if (options.shouldCacheSystemPrompt) systemPrompt.cache_control = { type: 'ephemeral' };
+  try {
+    const msg = await client.beta.promptCaching.messages.create({
+      model: 'claude-3-5-sonnet-20240620',
+      max_tokens: 4096,
+      tools: prompt.fns,
+      system:  [systemPrompt],
+      stream: false,
+      temperature: 0.5,
+      tool_choice: {
+        type: 'any',
+      },
+      messages,
+    });
+    return { msg, meta: execStack };
+  } catch (e) {
+    errFn(`Error while making call to anthoripic. Account used: ${accounts[clientId]}. ${retryCount ? 'Stopping...' : 'Retrying...'}. ${(e as Error).stack}`);
+    execStack.at(-1).err = (e as Error).stack;
+    if (retryCount) {
+      (e as any).execStack = execStack;
+      throw e;
+    }
+    return callWithRetry(prompt, threadId, messages, options, errFn, execStack, retryCount + 1);
+  }
+}
+
+async function callLLM(req: Request, threadId: string, prompt: PromptDetails, options: {
+  shouldCacheSystemPrompt?: boolean,
   // This is saved in db, when base64 data is sent to llm, we don't store that in db, we store the file location instead
-  userMsgRawReducted?: any
+  userMsgRawReducted?: any;
+  creditUsed: number;
   userMsgRaw: MessageParam['content']
 }): Promise<LLMResp> {
   const body = req.body as LLMOpsBase;
@@ -139,24 +195,23 @@ async function callLLM(req: Request, prompt: PromptDetails, options: {
     usage: Usage;
     stopReason: string | null;
     dtInSec: number;
+    exec: any;
   };
+
   try {
     const t1 = +new Date();
-    const msg = await anthropic.beta.promptCaching.messages.create({
-      model: 'claude-3-5-sonnet-20240620',
-      max_tokens: 4096,
-      tools: prompt.fns,
-      system: [{ text: prompt.system, type: 'text', cache_control: { type: 'ephemeral' } }],
-      stream: false,
-      temperature: 0.5,
-      tool_choice: {
-        type: 'any',
-      },
-      messages: [
+    const { msg, meta } = await callWithRetry(
+      prompt,
+      threadId,
+      [
         ...existingThreadMsgs,
         userMessage,
       ],
-    });
+      {
+        shouldCacheSystemPrompt: options.shouldCacheSystemPrompt,
+      },
+      req.log.error.bind(req.log),
+    );
 
     llmResp.data = {
       role: msg.role,
@@ -165,13 +220,14 @@ async function callLLM(req: Request, prompt: PromptDetails, options: {
     msgLog.push(llmResp.data);
     outputMeta.usage = msg.usage;
     outputMeta.stopReason = msg.stop_reason;
+    outputMeta.exec = meta;
     outputMeta.dtInSec = Math.ceil((+new Date() - t1) / 1000);
   } catch (e) {
     llmResp.err = {
       stack: (e as Error).stack,
     };
     req.log.fatal(`LLM origin failed. ${llmResp.err.stack}`);
-
+    outputMeta.exec = (e as any).execStack;
     if (e instanceof APIError) {
       req.log.fatal(`Anthropic error. [${e.status}] ${e.name} : ${JSON.stringify(e.headers || {}, null, 2)}`);
       llmResp.err.status = e.status;
@@ -188,10 +244,18 @@ async function callLLM(req: Request, prompt: PromptDetails, options: {
       noOfPrevMsgsAddedInThread,
       messages: msgLog,
       err: llmResp.err,
-      opMeta: outputMeta,
     },
+    meta: outputMeta,
   },
   req.headers.authorization as string);
+
+  if (options.creditUsed > 0) {
+    await api<ReqDeductCredit, null>('/f/deductcredit', 'POST', {
+      deductBy: options.creditUsed,
+      creditType: SubscriptionCreditType.AI_CREDIT,
+    },
+    req.headers.authorization as string);
+  }
 
   return llmResp;
 }
@@ -200,8 +264,10 @@ async function createDemoRouter(req: Request) {
   const body = req.body as RouterForTypeOfDemoCreation;
   return callLLM(
     req,
+    body.thread,
     PROMPTS.RouterNewDemo,
     {
+      creditUsed: 1,
       userMsgRaw: `
         <product-details>
           ${body.user_payload.product_details}
@@ -258,10 +324,13 @@ async function createDemoPerUsecase(req: Request) {
 
   return callLLM(
     req,
+    body.thread,
     prompt,
     {
+      shouldCacheSystemPrompt: body.user_payload.totalBatch > 1,
       userMsgRawReducted: msgsReducted,
       userMsgRaw: msgs,
+      creditUsed: body.user_payload.refsForMMV.length,
     },
   );
 }
@@ -284,10 +353,12 @@ async function suggestTheme(req: Request)  {
 
   return callLLM(
     req,
+    body.thread,
     prompt,
     {
       userMsgRawReducted: msgsReducted,
       userMsgRaw: msgs,
+      creditUsed: 1,
     },
   );
 }
@@ -298,9 +369,9 @@ async function demoMetadata(req: Request) {
 
   let requirement = '';
   if (body.user_payload.metReq === 'user_intent') {
-    requirement = 'Figure out the user intent from the screens';
+    requirement = 'Figure out the user intent from the screens. Do not clean up the screens';
   } else {
-    requirement = 'Figure out the user intent from the screens';
+    requirement = 'Figure out what the product enables. Clean up the screens if possible.';
   }
   msgs.push({
     type: 'text',
@@ -322,10 +393,12 @@ async function demoMetadata(req: Request) {
 
   return callLLM(
     req,
+    body.thread,
     PROMPTS.DemoMetadata,
     {
       userMsgRawReducted: msgsReducted,
       userMsgRaw: msgs,
+      creditUsed: Math.ceil(body.user_payload.refsForMMV.length * 0.2),
     },
   );
 }
@@ -334,8 +407,10 @@ async function postProcess(req: Request) {
   const body = req.body as PostProcessDemoV1;
   return callLLM(
     req,
+    body.thread,
     PROMPTS.PostProcessDemo,
     {
+      creditUsed: 1,
       userMsgRaw: `
         <product-details>
           ${body.user_payload.product_details}
@@ -387,7 +462,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
 
     if (llmResp.err) {
       captureException(new Error(`LLM response failed. ${JSON.stringify(llmResp.err)}`));
-      return res.status(llmResp.err.status!).json({
+      return res.status(llmResp.err.status || 500).json({
         status: ResponseStatus.Failure,
         data: llmResp,
         errStr: llmResp.err.name,

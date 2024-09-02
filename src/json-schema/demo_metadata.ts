@@ -10,4 +10,8 @@ export interface demo_metadata {
     * User intent based on the screens that are uploaded. This text should be details of what user is trying to achieve based on the uploaded screens.
     */
   user_intent?: string;
+  /**
+    * Array of screens identified by screenIds where product features are not evident or redundant. Refer to "clean up the interaction" section of the prompt. If this key is being populated it would have array of screenIds from the input.
+    */
+  screen_cleanup?: number[];
 }

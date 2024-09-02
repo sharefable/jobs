@@ -14,6 +14,7 @@ The following are the theme properties for you to adjust along with a brief desc
 - **fontColor**: The color of the guide text.
 - **borderRadius**: The border-radius of the guide container and the CTA buttons.
 - **borderColor**: The border color of the guide container, applied with a 1px stroke.
+- **progressBarColor**: Color of progresses bar that shows demo progress. This progressbar is shown at the top of the product screen with 4px height and width proportional to the percentage of the progress. Progress bar is shown just above the header hence it's color needs should have clear contrast with header.
 
 Here are the steps for you to generate the theme:
 
