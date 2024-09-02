@@ -1,5 +1,4 @@
 import {Express, Request, Response} from 'express';
-import * as fs from 'fs';
 import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata } from './contract';
 import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
@@ -209,8 +208,8 @@ async function callLLM(req: Request, threadId: string, prompt: PromptDetails, op
         userMessage,
       ],
       {
-        shouldCacheSystemPrompt: options.shouldCacheSystemPrompt
-      }
+        shouldCacheSystemPrompt: options.shouldCacheSystemPrompt,
+      },
       req.log.error.bind(req.log),
     );
 
@@ -253,9 +252,9 @@ async function callLLM(req: Request, threadId: string, prompt: PromptDetails, op
   if (options.creditUsed > 0) {
     await api<ReqDeductCredit, null>('/f/deductcredit', 'POST', {
       deductBy: options.creditUsed,
-      creditType: SubscriptionCreditType.AI_CREDIT
+      creditType: SubscriptionCreditType.AI_CREDIT,
     },
-    req.headers.authorization as string)
+    req.headers.authorization as string);
   }
 
   return llmResp;
@@ -331,7 +330,7 @@ async function createDemoPerUsecase(req: Request) {
       shouldCacheSystemPrompt: body.user_payload.totalBatch > 1,
       userMsgRawReducted: msgsReducted,
       userMsgRaw: msgs,
-      creditUsed: body.user_payload.refsForMMV.length
+      creditUsed: body.user_payload.refsForMMV.length,
     },
   );
 }
