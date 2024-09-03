@@ -18,7 +18,7 @@ export interface create_guides_marketing {
     /**
       * Border color of selected candidate element from the images uploaded.
       */
-    element: 'black' | 'red' | 'blue' | 'cyan';
+    element: 'cyan' | 'red' | 'blue' | 'yellow';
     /**
       * Id of screen on which the annotation should be displayed. User would pass this value along side input image.
       */
