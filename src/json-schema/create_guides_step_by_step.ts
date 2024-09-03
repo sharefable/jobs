@@ -22,7 +22,7 @@ export interface create_guides_step_by_step {
     /**
       * Border color of selected candidate element from the images uploaded.
       */
-    element: 'black' | 'red' | 'blue' | 'cyan';
+    element: 'cyan' | 'red' | 'blue' | 'yellow';
     /**
       * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. Choose a custom text for the CTA to make the demo engaging. If the guide is hidden by making text value nullish, then this value is discarded.
       */
