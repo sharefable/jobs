@@ -9,7 +9,8 @@ export interface LLMOpsBase {
   | 'demo_metadata'
   | 'create_demo_router'
   | 'theme_suggestion_for_guides'
-  | 'post_process_demo';
+  | 'post_process_demo'
+  | 'update_demo_content';
   model: 'default';
   thread: string;
   entityId?: number;
@@ -78,6 +79,16 @@ export interface PostProcessDemoV1 extends LLMOpsBase {
     module_recommendations: string;
     product_details: string,
     demo_objective: string;
+  }
+}
+
+export interface UpdateDemoContentV1 extends LLMOpsBase {
+  v: 1;
+  type: 'update_demo_content';
+  user_payload: {
+    product_details: string,
+    demo_objective: string;
+    demo_state: string;
   }
 }
 

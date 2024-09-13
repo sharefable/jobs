@@ -1,5 +1,5 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata } from './contract';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1 } from './contract';
 import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqDeductCredit, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus, SubscriptionCreditType } from 'api-contract';
@@ -432,6 +432,32 @@ async function postProcess(req: Request) {
   );
 }
 
+async function updateDemoContent(req: Request) {
+  const body = req.body as UpdateDemoContentV1;
+
+  return callLLM(
+    req,
+    body.thread,
+    PROMPTS.UpdateDemoContent,
+    {
+      creditUsed: 1,
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <demo-objective>
+          ${body.user_payload.demo_objective}
+        </demo-objective>
+
+        <demo-state>
+         ${body.user_payload.demo_state}
+        </demo-state>
+      `,
+    },
+  );
+}
+
 export default function addLlmOpsHttpListeners(app: Express) {
   app.post('/v1/f/llmops', async (req: Request, res: Response) => {
     const body = req.body as LLMOpsBase;
@@ -443,6 +469,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
       else if (body.type === 'theme_suggestion_for_guides') llmResp = await suggestTheme(req);
       else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
       else if (body.type === 'demo_metadata') llmResp = await demoMetadata(req);
+      else if(body.type === 'update_demo_content') llmResp = await updateDemoContent(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,
