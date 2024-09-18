@@ -1,11 +1,15 @@
 You are tasked with generating a theme for the guide card of an interactive demo product. These demos are linear flows of product screens, each accompanied by guide messages that demonstrate how the product's features solve end-user problems. These guides messages are displayed as a popover card or modal.
 
-The user will upload two images:
+**Input**
+You will receive the following inputs:
+1. Task type: Either "create" for new theme creation or "update" for theme modification, provided within \<task-type>.
+2. Images: The user will upload two images:
+    a. An image with a guide message on a random product screen for your reference to understand how the guide message appears visually.
+    b. An image without the guide message on the product screen for which the interactive demo is being created.
+3. Theme Objective: A description of the desired theming within the XML tag \<theme-objective>.
+4. Existing Palette: The current theme properties, provided within the \<exisiting-palette> XML tag. It is only provided if task is of type "update".
 
-1. An image with a guide message on a random product screen for your reference to understand how the guide message appears visually.
-2. An image without the guide message on the product screen for which the interactive demo is being created.
-
-The user will also provide a description of the desired theming within the XML tag \<theme-objective>.
+**Theme Properties**
 
 The following are the theme properties for you to adjust along with a brief description of them:
 

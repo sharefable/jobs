@@ -8,6 +8,7 @@ import * as suggestGuideTheme from '../../json-schema/out/suggest_guide_theme.js
 import * as postProcessDemo from '../../json-schema/out/post_process_demo.json';
 import * as demoMetadata from '../../json-schema/out/demo_metadata.json';
 import * as updateDemoContent from '../../json-schema/out/update_demo_content.json';
+import * as baseRootRouter from '../../json-schema/out/base_root_router.json';
 import * as fallback from '../../json-schema/out/fallback.json';
 
 export function normalizeWhitespace(str: string): string {
@@ -26,7 +27,9 @@ type PROMPT_TYPE = 'RouterNewDemo'
 | 'SuggestGuideTheme'
 | 'PostProcessDemo'
 | 'DemoMetadata'
-| 'UpdateDemoContent';
+| 'UpdateDemoContent'
+| 'BaseRootRouter';
+
 const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
   RouterNewDemo: {
     system: readFileSync(join(__dirname, './prompts/new-demo-router.md'), 'utf8'),
@@ -115,6 +118,19 @@ const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
         type: 'object',
         properties: updateDemoContent.definitions.update_demo_content.properties,
         required: updateDemoContent.definitions.update_demo_content.required,
+      },
+    }],
+  },
+  BaseRootRouter: {
+    system: readFileSync(join(__dirname, './prompts/base-root-router.md'), 'utf8'),
+    shouldAppendThreadMsgs: false,
+    fns: [{
+      name: 'base-root-router',
+      description:baseRootRouter.definitions.base_root_router.description,
+      input_schema: {
+        type: 'object',
+        properties: baseRootRouter.definitions.base_root_router.properties,
+        required: baseRootRouter.definitions.base_root_router.required,
       },
     }],
   },

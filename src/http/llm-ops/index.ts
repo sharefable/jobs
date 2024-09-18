@@ -1,5 +1,5 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1 } from './contract';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1, BaseRootRouter } from './contract';
 import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqDeductCredit, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus, SubscriptionCreditType } from 'api-contract';
@@ -349,6 +349,27 @@ async function suggestTheme(req: Request)  {
       </theme-objective>
     `),
   });
+
+  msgs.push({
+    type: 'text',
+    text: normalizeWhitespace(`
+      <task-type>
+        ${body.user_payload.task_type}
+      </task-type>
+    `),
+  });
+
+  if(body.user_payload.exisiting_palette){
+    msgs.push({
+      type: 'text',
+      text: normalizeWhitespace(`
+        <exisiting-palette>
+          ${body.user_payload.exisiting_palette}
+        </exisiting-palette>
+      `),
+    });
+  }
+  
   msgsReducted.push(msgs.at(-1));
 
   return callLLM(
@@ -446,13 +467,35 @@ async function updateDemoContent(req: Request) {
           ${body.user_payload.product_details}
         </product_details>
 
-        <demo-objective>
-          ${body.user_payload.demo_objective}
-        </demo-objective>
+        <change-requested>
+          ${body.user_payload.change_requested}
+        </change-requested>
 
         <demo-state>
          ${body.user_payload.demo_state}
         </demo-state>
+      `,
+    },
+  );
+}
+
+async function baseRootRouter(req: Request) {
+  const body = req.body as BaseRootRouter;
+
+  return callLLM(
+    req,
+    body.thread,
+    PROMPTS.BaseRootRouter,
+    {
+      creditUsed: 1,
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <change-requested>
+          ${body.user_payload.change_requested}
+        </change-requested>
       `,
     },
   );
@@ -470,6 +513,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
       else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
       else if (body.type === 'demo_metadata') llmResp = await demoMetadata(req);
       else if(body.type === 'update_demo_content') llmResp = await updateDemoContent(req);
+      else if(body.type === 'base_root_router') llmResp = await baseRootRouter(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,
