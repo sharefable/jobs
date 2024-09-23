@@ -347,29 +347,15 @@ async function suggestTheme(req: Request)  {
       <theme-objective>
         ${body.user_payload.theme_objective}
       </theme-objective>
-    `),
-  });
 
-  msgs.push({
-    type: 'text',
-    text: normalizeWhitespace(`
-      <task-type>
-        ${body.user_payload.task_type}
-      </task-type>
-    `),
-  });
-
-  if(body.user_payload.exisiting_palette){
-    msgs.push({
-      type: 'text',
-      text: normalizeWhitespace(`
+      ${body.user_payload.exisiting_palette && normalizeWhitespace(`
         <exisiting-palette>
           ${body.user_payload.exisiting_palette}
         </exisiting-palette>
-      `),
-    });
-  }
-  
+      `)}
+    `),
+  });
+
   msgsReducted.push(msgs.at(-1));
 
   return callLLM(
