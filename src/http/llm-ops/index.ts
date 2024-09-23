@@ -1,5 +1,5 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1, BaseRootRouter } from './contract';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1, RootRouterReq } from './contract';
 import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqDeductCredit, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus, SubscriptionCreditType } from 'api-contract';
@@ -355,7 +355,6 @@ async function suggestTheme(req: Request)  {
       `)}
     `),
   });
-
   msgsReducted.push(msgs.at(-1));
 
   return callLLM(
@@ -465,13 +464,13 @@ async function updateDemoContent(req: Request) {
   );
 }
 
-async function baseRootRouter(req: Request) {
-  const body = req.body as BaseRootRouter;
+async function rootRouter(req: Request) {
+  const body = req.body as RootRouterReq;
 
   return callLLM(
     req,
     body.thread,
-    PROMPTS.BaseRootRouter,
+    PROMPTS.RootRouter,
     {
       creditUsed: 1,
       userMsgRaw: `
@@ -499,7 +498,7 @@ export default function addLlmOpsHttpListeners(app: Express) {
       else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
       else if (body.type === 'demo_metadata') llmResp = await demoMetadata(req);
       else if(body.type === 'update_demo_content') llmResp = await updateDemoContent(req);
-      else if(body.type === 'base_root_router') llmResp = await baseRootRouter(req);
+      else if(body.type === 'root_router_req') llmResp = await rootRouter(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,

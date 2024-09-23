@@ -1,26 +1,25 @@
 /**
-  * List of all possible capabilities for demo creation / edit given a user message.
+  * List of all possible capabilities / skills that are available to you. This is only used for determining if user's intent could be performed by any of the skills that are mentioned below (hence it act's like a router). User might ask something that is not possible yet, in that case the skill must have 'na' value.
   */
 export interface root_router {
   /**
-    * `action` key contains list of capabilities that are supported at this point in time. Here is a description of each and every action in details
+    * `skill` key contains list of capabilities that are supported at this point in time. Here is a description of each and every skill in details
     *
-    * create_new_demo: Create a new of demo from scratch or switch type of demos. Interactive demos could be of type marketing or product or step-by-step guide. This action enables creating a particular type of demo or switching from one demo type to another by creating a new demo type from scratch.
+    * update_annotation_content: Select this skill if user wants to change properties of single annotation / guide in the demo. For example, user might indicate changing a single annotation by mentioning they want to change the current guide / first guide / last guide of the demo. 
     *
-    * categorize_demo_into_modules: Once a demo is created, if it's a large demo then it can be broken down to smaller sections called demo modules. User can use these modules to navigate from one to another. Think demo modules as an youtube capter in a large module.
+    * update_demo_content: Select this skill if user wants to change all or some guides in the demo. Ideally you would choose this skill if the user's request might span more than one guide in the demo. For example, if user wants to change the language of the demo / tone of the demo / ask you to personalize demo then you'd know that the whole demo might be changed.
     *
-    * cud_demo_guides: Create or delete demo guides or update demo guide properties. Once the demo is created based on user query it might be required to add additional information in the demo or shorten the demo based or even update existing demo guide properties.
+    * update_theme: Select this skill when user wants to change the visual property (theme / scheme) of guides in the demo.
     *
-    * change_demo_guide_ui: Change the look and feel of demo guide by adjusting visual properties.
+    * 'na': Select this skill in case you are not sure what user wants or if you don't find an relevant skill for user's intent.
     */
-  action: 'na'
-  | 'create_new_demo'
-  | 'categorize_demo_into_modules'
-  | 'cud_demo_guides'
-  | 'change_demo_guide_ui';
+  skill: 'na'
+  | 'update_demo_content'
+  | 'update_annotation_content'
+  | 'update_theme';
 
   /**
-    * If user has requested an action that is not supported by `action` key above, then assign 'na' for `action` key. In that case `notSupportedMsg` would contain a user centric message of what's possible. This message is shown tot he user
+    * If user has requested an action that is not supported by `skill` key above, then assign 'na' for `skill` key. In that case `notSupportedMsg` would contain a user centric message of what's possible. This message is displayed to the user.
     */
   notSupportedMsg?: string;
 }

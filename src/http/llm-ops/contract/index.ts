@@ -11,7 +11,7 @@ export interface LLMOpsBase {
   | 'theme_suggestion_for_guides'
   | 'post_process_demo'
   | 'update_demo_content'
-  | 'base_root_router';
+  | 'root_router_req';
   model: 'default';
   thread: string;
   entityId?: number;
@@ -103,9 +103,9 @@ export interface UpdateDemoContentV1 extends LLMOpsBase {
   }
 }
 
-export interface BaseRootRouter extends LLMOpsBase {
+export interface RootRouterReq extends LLMOpsBase {
   v: 1;
-  type: 'base_root_router';
+  type: 'root_router_req';
   user_payload: {
     product_details: string,
     change_requested: string;

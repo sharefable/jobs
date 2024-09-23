@@ -8,7 +8,7 @@ import * as suggestGuideTheme from '../../json-schema/out/suggest_guide_theme.js
 import * as postProcessDemo from '../../json-schema/out/post_process_demo.json';
 import * as demoMetadata from '../../json-schema/out/demo_metadata.json';
 import * as updateDemoContent from '../../json-schema/out/update_demo_content.json';
-import * as baseRootRouter from '../../json-schema/out/base_root_router.json';
+import * as rootRouter from '../../json-schema/out/root_router.json';
 import * as fallback from '../../json-schema/out/fallback.json';
 
 export function normalizeWhitespace(str: string): string {
@@ -28,7 +28,7 @@ type PROMPT_TYPE = 'RouterNewDemo'
 | 'PostProcessDemo'
 | 'DemoMetadata'
 | 'UpdateDemoContent'
-| 'BaseRootRouter';
+| 'RootRouter';
 
 const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
   RouterNewDemo: {
@@ -121,16 +121,16 @@ const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
       },
     }],
   },
-  BaseRootRouter: {
-    system: readFileSync(join(__dirname, './prompts/base-root-router.md'), 'utf8'),
+  RootRouter: {
+    system: readFileSync(join(__dirname, './prompts/root-router.md'), 'utf8'),
     shouldAppendThreadMsgs: false,
     fns: [{
-      name: 'base-root-router',
-      description:baseRootRouter.definitions.base_root_router.description,
+      name: 'root-router',
+      description:rootRouter.definitions.root_router.description,
       input_schema: {
         type: 'object',
-        properties: baseRootRouter.definitions.base_root_router.properties,
-        required: baseRootRouter.definitions.base_root_router.required,
+        properties: rootRouter.definitions.root_router.properties,
+        required: rootRouter.definitions.root_router.required,
       },
     }],
   },
