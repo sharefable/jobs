@@ -440,13 +440,14 @@ async function postProcess(req: Request) {
 
 async function updateDemoContent(req: Request) {
   const body = req.body as UpdateDemoContentV1;
-
+  const creditUsed = body.user_payload.change_type === 'single-annotation' ? 
+    1 : Math.ceil(JSON.parse(body.user_payload.demo_state).length/2);
   return callLLM(
     req,
     body.thread,
     PROMPTS.UpdateDemoContent,
     {
-      creditUsed: 1,
+      creditUsed,
       userMsgRaw: `
         <product-details>
           ${body.user_payload.product_details}

@@ -75,7 +75,6 @@ export interface ThemeForGuideV1 extends LLMOpsBase {
   v: 1;
   type: 'theme_suggestion_for_guides';
   user_payload: {
-    task_type: 'create' | 'update';
     exisiting_palette?: guide_theme;
     theme_objective: string;
     refsForMMV: Array<RefForMMV>;
@@ -100,6 +99,7 @@ export interface UpdateDemoContentV1 extends LLMOpsBase {
     product_details: string,
     change_requested: string;
     demo_state: string;
+    change_type: 'single-annotation' | 'demo' 
   }
 }
 
