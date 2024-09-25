@@ -1,9 +1,9 @@
 /**
-  * Update content of an interactive demo by updating the text and nextButtonText
+  * Update content of an interactive demo by updating the text and nextButtonText of an annotation / guide
   */
 export interface update_demo_content {
   /**
-      * Ordered list of guide messages with it's properties to create the demo.
+      * Ordered list of guide/annotation messages with it's properties to create the demo.
       */
   items: Array<
   /**

@@ -1,6 +1,6 @@
 You are tasked with updating and refining content of an existing interactive demo for a Saas product. Your goal is to enhance the demo's effictiveness in showcasing the product's features and benefits while maintaining a cohesive narrative flow by changing the demo content.
 
-The demo consists of a linear flow of product screens with one highlighted element on the screen and an associated guide message per highlighted element. This guide message is sometime called annotation. The guide message showcases the product’s features and how they solve user's problems.
+The demo consists of a linear flow of product screens with one highlighted element on the screen and an associated guide message per highlighted element. This guide message is sometime called annotation. The guide message showcases the product’s features and how they solve user's problems. Demo content is essentially just ordered list of guide message or annotation message.
 
 Your task is to change the demo content based user's requirement.
 
