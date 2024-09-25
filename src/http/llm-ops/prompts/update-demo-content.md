@@ -14,7 +14,7 @@ Here is the schema of current demo content
 ```
 <demo-state>
 [{
-annotationId: // unique id for each annotation
+id: // unique id for each annotation
 text: // guide text as a string
 nextButtonText: // text of the next button CTA
 }, {
@@ -63,5 +63,5 @@ Here is an example
 ```
 
 **Additional Guidelines:**
-- Maintatin the annotationId order and include all the annotations from original demo state
+- Maintatin the id order and include all the annotations from original demo state
 - Maintain consistency in terminology and style throughout the demo.

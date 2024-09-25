@@ -18,7 +18,7 @@ export interface update_demo_content {
     /**
         * Id of annotation for which text should be updated. User would pass this value along side input image.
         */
-    annotationId: number;
+    id: number;
     /**
         * In each guide there is a `next` Call To Action (CTA) button that user clicks to go to the next guide. Choose a custom text for the CTA to make the demo engaging. If the guide is hidden by making text value nullish, then this value is discarded.
         */
