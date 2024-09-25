@@ -1,5 +1,5 @@
 import {Express, Request, Response} from 'express';
-import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata } from './contract';
+import { LLMResp, LLMOpsBase, RouterForTypeOfDemoCreation, CreateNewDemoV1, ThemeForGuideV1, RefForMMV, PostProcessDemoV1, DemoMetadata, UpdateDemoContentV1, RootRouterReq } from './contract';
 import { clients, accounts } from './anthropic';
 import { req as api } from '../../api';
 import { ApiResp, ErrorCode, LLMOps, LLMOpsStatus, ReqDeductCredit, ReqNewLLMRun, ReqUpdateLLMRun, ResponseStatus, SubscriptionCreditType } from 'api-contract';
@@ -347,6 +347,12 @@ async function suggestTheme(req: Request)  {
       <theme-objective>
         ${body.user_payload.theme_objective}
       </theme-objective>
+
+      ${body.user_payload.exisiting_palette && normalizeWhitespace(`
+        <exisiting-palette>
+          ${body.user_payload.exisiting_palette}
+        </exisiting-palette>
+      `)}
     `),
   });
   msgsReducted.push(msgs.at(-1));
@@ -432,6 +438,55 @@ async function postProcess(req: Request) {
   );
 }
 
+async function updateDemoContent(req: Request) {
+  const body = req.body as UpdateDemoContentV1;
+  const creditUsed = body.user_payload.change_type === 'single-annotation' ? 
+    1 : Math.ceil(JSON.parse(body.user_payload.demo_state).length/2);
+  return callLLM(
+    req,
+    body.thread,
+    PROMPTS.UpdateDemoContent,
+    {
+      creditUsed,
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <change-requested>
+          ${body.user_payload.change_requested}
+        </change-requested>
+
+        <demo-state>
+         ${body.user_payload.demo_state}
+        </demo-state>
+      `,
+    },
+  );
+}
+
+async function rootRouter(req: Request) {
+  const body = req.body as RootRouterReq;
+
+  return callLLM(
+    req,
+    body.thread,
+    PROMPTS.RootRouter,
+    {
+      creditUsed: 1,
+      userMsgRaw: `
+        <product-details>
+          ${body.user_payload.product_details}
+        </product_details>
+
+        <change-requested>
+          ${body.user_payload.change_requested}
+        </change-requested>
+      `,
+    },
+  );
+}
+
 export default function addLlmOpsHttpListeners(app: Express) {
   app.post('/v1/f/llmops', async (req: Request, res: Response) => {
     const body = req.body as LLMOpsBase;
@@ -443,6 +498,8 @@ export default function addLlmOpsHttpListeners(app: Express) {
       else if (body.type === 'theme_suggestion_for_guides') llmResp = await suggestTheme(req);
       else if (body.type === 'post_process_demo') llmResp = await postProcess(req);
       else if (body.type === 'demo_metadata') llmResp = await demoMetadata(req);
+      else if(body.type === 'update_demo_content') llmResp = await updateDemoContent(req);
+      else if(body.type === 'root_router_req') llmResp = await rootRouter(req);
       else
         return res.status(404).json({
           status: ResponseStatus.Failure,

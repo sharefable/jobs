@@ -7,6 +7,8 @@ import * as createGuidesStepbystep from '../../json-schema/out/create_guides_ste
 import * as suggestGuideTheme from '../../json-schema/out/suggest_guide_theme.json';
 import * as postProcessDemo from '../../json-schema/out/post_process_demo.json';
 import * as demoMetadata from '../../json-schema/out/demo_metadata.json';
+import * as updateDemoContent from '../../json-schema/out/update_demo_content.json';
+import * as rootRouter from '../../json-schema/out/root_router.json';
 import * as fallback from '../../json-schema/out/fallback.json';
 
 export function normalizeWhitespace(str: string): string {
@@ -24,7 +26,10 @@ type PROMPT_TYPE = 'RouterNewDemo'
 | 'CreateDemoStepByStep'
 | 'SuggestGuideTheme'
 | 'PostProcessDemo'
-| 'DemoMetadata';
+| 'DemoMetadata'
+| 'UpdateDemoContent'
+| 'RootRouter';
+
 const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
   RouterNewDemo: {
     system: readFileSync(join(__dirname, './prompts/new-demo-router.md'), 'utf8'),
@@ -100,6 +105,32 @@ const PROMPTS: Record<PROMPT_TYPE, PromptDetails> = {
       input_schema: {
         type: 'object',
         properties: demoMetadata.definitions.demo_metadata.properties,
+      },
+    }],
+  },
+  UpdateDemoContent: {
+    system: readFileSync(join(__dirname, './prompts/update-demo-content.md'), 'utf8'),
+    shouldAppendThreadMsgs: false,
+    fns: [{
+      name: 'update-demo-content',
+      description:updateDemoContent.definitions.update_demo_content.description,
+      input_schema: {
+        type: 'object',
+        properties: updateDemoContent.definitions.update_demo_content.properties,
+        required: updateDemoContent.definitions.update_demo_content.required,
+      },
+    }],
+  },
+  RootRouter: {
+    system: readFileSync(join(__dirname, './prompts/root-router.md'), 'utf8'),
+    shouldAppendThreadMsgs: false,
+    fns: [{
+      name: 'root-router',
+      description:rootRouter.definitions.root_router.description,
+      input_schema: {
+        type: 'object',
+        properties: rootRouter.definitions.root_router.properties,
+        required: rootRouter.definitions.root_router.required,
       },
     }],
   },

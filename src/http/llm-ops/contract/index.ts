@@ -9,7 +9,9 @@ export interface LLMOpsBase {
   | 'demo_metadata'
   | 'create_demo_router'
   | 'theme_suggestion_for_guides'
-  | 'post_process_demo';
+  | 'post_process_demo'
+  | 'update_demo_content'
+  | 'root_router_req';
   model: 'default';
   thread: string;
   entityId?: number;
@@ -61,10 +63,19 @@ export interface CreateNewDemoV1 extends LLMOpsBase {
   }
 }
 
+export interface guide_theme {
+  primaryColor: string;
+  fontColor: string;
+  backgroundColor: string;
+  borderRadius: number;
+  borderColor: string;
+}
+
 export interface ThemeForGuideV1 extends LLMOpsBase {
   v: 1;
   type: 'theme_suggestion_for_guides';
   user_payload: {
+    exisiting_palette?: guide_theme;
     theme_objective: string;
     refsForMMV: Array<RefForMMV>;
   }
@@ -78,6 +89,26 @@ export interface PostProcessDemoV1 extends LLMOpsBase {
     module_recommendations: string;
     product_details: string,
     demo_objective: string;
+  }
+}
+
+export interface UpdateDemoContentV1 extends LLMOpsBase {
+  v: 1;
+  type: 'update_demo_content';
+  user_payload: {
+    product_details: string,
+    change_requested: string;
+    demo_state: string;
+    change_type: 'single-annotation' | 'demo' 
+  }
+}
+
+export interface RootRouterReq extends LLMOpsBase {
+  v: 1;
+  type: 'root_router_req';
+  user_payload: {
+    product_details: string,
+    change_requested: string;
   }
 }
 
