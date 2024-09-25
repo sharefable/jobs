@@ -14,6 +14,7 @@ Key components of an interactive demo are:
     - **Cover Guides**: Modal-like guides that are not attached to any element, typically used for summaries, introductions, or conclusions.
 - **Interactive Elements**: The elements to which guides are attached are highlighted, typically with a selection rectangle around the element's visual boundary or the selected element is marked with a small solid pulsating circle beside it. Sometimes, an optional overlay is applied around the element (but not on top of it). Additionally, a guide can be hidden while keeping the selected element highlighted. In such cases, when the demo viewers click on the highlighted element, the demo progresses to the next step, making the experience truly interactive.
 - **Modules**: For demos with many steps, content can be divided into modules or sections, similar to chapters of a book, to improve navigation and consumption. The end users can navigate to a module of their choice and switch between modules at any point in time.
+- **Personalization of demo** - A demo could be personalized for a lead / buyers by personalizing the content of the demo. In this case the demo is created only once and demo content would have personalization placeholder inside double curly braces, like {{ first_name }}. Later on when the demo is opened by different buyers a query parameter replaces the value of first_name respective to the buyers.
 
 # Task details
 
