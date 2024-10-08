@@ -24,6 +24,7 @@
     "@aws-sdk/client-sqs": "^3.354.0",
     "@cobaltio/cobalt": "^1.0.2",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
+    "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
     "@sentry/node": "^7.64.0",
     "@types/string-hash": "^1.1.3",
     "body-parser": "^1.20.2",
@@ -40,7 +41,8 @@
     "pg": "^8.12.0",
     "pino-http": "^10.2.0",
     "string-hash": "^1.1.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@sentry/types": "^7.64.0",
@@ -56,6 +58,7 @@
     "@types/node-fetch": "^2.6.4",
     "@types/pg": "^8.11.6",
     "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
     "eslint": "^8.43.0",
