@@ -2,12 +2,12 @@
   "compilerOptions": {
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo",
-    "target": "es2016",
+    "target": "es2018",
     "lib": [
-      "es5",
-      "es6"
+      "es2018"
     ],
     "module": "commonjs",
+    "moduleResolution": "node",
     "rootDir": "./",
     "esModuleInterop": true,
     "baseUrl": "src/",

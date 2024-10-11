@@ -24,7 +24,7 @@
     "@aws-sdk/client-sqs": "^3.354.0",
     "@cobaltio/cobalt": "^1.0.2",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
-    "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
+    "@openai/realtime-api-beta": "github:sharefable/openai-realtime-api-beta#hotfix/dont-call-tools-in-relay-server",
     "@sentry/node": "^7.64.0",
     "@types/string-hash": "^1.1.3",
     "body-parser": "^1.20.2",

@@ -1,6 +1,6 @@
 import WS, { WebSocketServer } from 'ws';
 import http from 'http';
-import { RealtimeClient } from '@openai/realtime-api-beta';
+// import { RealtimeClient } from '@openai/realtime-api-beta';
 import {IncomingMessage} from 'http';
 
 export default class RealtimeRelay {
@@ -39,9 +39,14 @@ export default class RealtimeRelay {
 
     const apiKey = process.env.OPENAI_KEY as string;
     this.log(`Connecting with key "${apiKey!.slice(0, 3)}..."`);
-    // const { RealtimeClient } = await import('@openai/realtime-api-beta');
-
-    return;
+    /**
+     *  This clusterfuck is created for this poc.
+     *  Ref: https://stackoverflow.com/a/67849293
+     *  Our lovely package is written in commonjs. @openai/realtime-api-beta is written in ESM.
+     *  If we try to convert our package to ESM cobalt and anthropic packages are not found.
+     *  Hence this is a common ground for now, for the lack of time.
+     */
+    const { RealtimeClient } = await eval('import(\'@openai/realtime-api-beta\')');
 
     const client = new RealtimeClient({ apiKey }); // TODO save the client may be for reconnection
 
