@@ -16,7 +16,10 @@ import resolveUserIfAny, {
 } from './middlewares/resolve-principal';
 import addLlmOpsHttpListeners from './http/llm-ops';
 import globalErrorHandler from './middlewares/global-err-handler';
+// import RealtimeRelay from './rt-relay';
 import { addContactToSmartLeads } from './processors/mics';
+
+// const RealtimeRelay = require('./rt-relay.js');
 
 const PORT = 8081;
 
@@ -45,6 +48,7 @@ const envLoadingStatus = [
   'AUTH0_AUDIENCES',
   'AUTH0_ISSUER_URL',
   'ANTHORIPC_KEY',
+  'OPENAI_KEY',
 ].reduce(( status, name ) => {
   if (process.env[name]) status[name] = 'ok';
   else {
@@ -97,13 +101,19 @@ addSlackHttpListeners(app);
 const server = app.listen(PORT, async () => {
   log.info(`Server is running at http://localhost:${PORT}`);
 });
+let rtRelay: any;
+(async () => {
+  const RealtimeRelay = await import('./rt-relay');
+  rtRelay = new (RealtimeRelay.default as any)(server);
+})();
 
 async function shutDown() {
   log.warn('Gracefully shutting down');
   log.warn('Closing db connection pool...');
   await promisify(apiConnectionPool.end).bind(apiConnectionPool)();
   await clientAnalytics.end();
-  log.warn('Closing server connection...');
+  log.warn('Cloing server connection...');
+  rtRelay && rtRelay.close();
   server.close(() => {
     process.exit(0);
   });

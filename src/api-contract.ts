@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-09-01 05:28:58.
+// Generated using typescript-generator version 2.35.1025 on 2024-10-14 06:27:26.
 
 export interface Activity extends ActivityBase {
 }
@@ -105,6 +105,13 @@ export interface CreditInfo {
     updatedAt: Date;
 }
 
+export interface Dataset {
+    name: string;
+    lastPublishedVersion: number;
+    lastPublishedDate: Date;
+    description?: string;
+}
+
 export interface EntityInfo {
     thumbnail: string;
     frameSettings: FrameSettings;
@@ -113,6 +120,14 @@ export interface EntityInfo {
     productDetails?: string;
     demoObjective?: string;
     demoRouter?: any;
+}
+
+export interface EntityConfigKV extends EntityBase {
+    entityId: number;
+    entityType: ConfigEntityType;
+    configType: EntityConfigConfigType;
+    configKey: string;
+    configVal: any;
 }
 
 export interface LLMOps extends EntityBase {
@@ -186,6 +201,11 @@ export interface OrgInfo {
 }
 
 export interface PaymentTerms {
+}
+
+export interface ReqExperimentConfig {
+    key: string;
+    value: any;
 }
 
 export interface ReqNewLog {
@@ -378,6 +398,11 @@ export interface ReqMediaProcessing {
     assn: ReqEntityAssetAssn;
 }
 
+export interface ReqNewDataset {
+    name: string;
+    description?: string;
+}
+
 export interface ReqNewInvite {
     invitedEmail: string;
     expiryTimeUnit?: ExpiryTimeUnit;
@@ -511,15 +536,23 @@ export interface RespCommonConfig extends ResponseBase {
     demoHubAssetPath: string;
     pubDemoHubAssetPath: string;
     pubTourAssetPath: string;
+    datasetAssetPath: string;
     dataFileName: string;
     loaderFileName: string;
     editFileName: string;
     manifestFileName: string;
+    datasetFileName: string;
     latestSchemaVersion: SchemaVersion;
 }
 
 export interface RespCustomField {
     fieldName: string;
+}
+
+export interface RespDataset {
+    dataset: Dataset;
+    owner: number;
+    presignedUrl?: RespUploadUrl;
 }
 
 export interface RespDemoEntity extends ResponseBase {
@@ -546,6 +579,8 @@ export interface RespDemoEntity extends ResponseBase {
     lastInteractedAt: Date;
     globalOpts?: any;
     settings?: TourSettings;
+    datasets?: Dataset[];
+    owner: number;
 }
 
 export interface RespDemoEntityWithSubEntities extends RespDemoEntity {
@@ -912,6 +947,15 @@ export const enum FrameSettings {
     NOFRAME = "NOFRAME",
     LIGHT = "LIGHT",
     DARK = "DARK",
+}
+
+export const enum EntityConfigConfigType {
+    VANITY_DOMAIN = "VANITY_DOMAIN",
+    CUSTOM_FORM_FIELDS = "CUSTOM_FORM_FIELDS",
+    GLOBAL_OPTS = "GLOBAL_OPTS",
+    AI_CREDIT = "AI_CREDIT",
+    DATASET = "DATASET",
+    _EXP_ = "_EXP_",
 }
 
 export const enum LLMOpsStatus {
