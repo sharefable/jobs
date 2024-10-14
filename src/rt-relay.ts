@@ -1,7 +1,9 @@
 import WS, { WebSocketServer } from 'ws';
 import http from 'http';
+import { readFileSync } from 'fs';
 // import { RealtimeClient } from '@openai/realtime-api-beta';
 import {IncomingMessage} from 'http';
+import {sleep} from './utils';
 
 export default class RealtimeRelay {
   wss: WS.Server;
@@ -36,6 +38,25 @@ export default class RealtimeRelay {
       ws.close();
       return;
     }
+
+    // INFO uncomment following lines to replay from har file and not make a call to openai 
+    // ws.on('message', async (dataBuffer) => {
+    //   const data = JSON.parse(dataBuffer.toString());
+    //   console.log('>>> [data.type]', data.type);
+
+    //   if (data.type === 'session.update') {
+    //     // play from harfile
+    //     const harStr = readFileSync('/Users/akashgoswami/Downloads/ws2.har', 'utf8');
+    //     const har = JSON.parse(harStr);
+    //     const socketMsgs = har.log.entries[0]._webSocketMessages.filter((msg: any) => msg.type === 'receive');
+    //     for (const msg of socketMsgs) {
+    //       console.log('>>> sending message ', msg.time);
+    //       (ws as any).send(msg.data);
+    //       await sleep(80);
+    //     }
+    //   }
+    // });
+    // return;
 
     const apiKey = process.env.OPENAI_KEY as string;
     this.log(`Connecting with key "${apiKey!.slice(0, 3)}..."`);

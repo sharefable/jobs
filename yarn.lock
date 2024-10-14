@@ -939,9 +939,9 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@openai/realtime-api-beta@github:sharefable/openai-realtime-api-beta#hotfix/dont-call-tools-in-relay-server":
+"@openai/realtime-api-beta@github:sharefable/openai-realtime-api-beta#96b4121dc697fd2d7b78088d592ed511abf1d445":
   version "0.0.0"
-  resolved "https://codeload.github.com/sharefable/openai-realtime-api-beta/tar.gz/97bb720361a4bc36af5a7c6173106271d258ff4e"
+  resolved "https://codeload.github.com/sharefable/openai-realtime-api-beta/tar.gz/96b4121dc697fd2d7b78088d592ed511abf1d445"
   dependencies:
     ws "^8.18.0"
 
