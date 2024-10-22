@@ -15,7 +15,9 @@ import resolveUserIfAny, {
   resolveFableUser,
 } from './middlewares/resolve-principal';
 import addLlmOpsHttpListeners from './http/llm-ops';
+import addAudioOpsHttpListeners from './http/audio-ops';
 import globalErrorHandler from './middlewares/global-err-handler';
+import OpenAI from 'openai';
 // import RealtimeRelay from './rt-relay';
 import { addContactToSmartLeads } from './processors/mics';
 
@@ -36,7 +38,8 @@ const envLoadingStatus = [
   'DB_DB',
   'ETS_REGION',
   'TRANSCODER_PIPELINE_ID',
-  'AWS_S3_REGION',
+  'AWS_ASSET_FILE_S3_BUCKET',
+  'AWS_ASSET_FILE_S3_BUCKET_REGION',
   'ANALYTICS_DB_CONN_URL',
   'ANALYTICS_DB_NAME',
   'ANALYTICS_DB_USER',
@@ -73,6 +76,11 @@ if (process.env.APP_ENV === 'prod' || process.env.APP_ENV === 'staging') {
 
 mainMsgLoop();
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_KEY as string,
+});
+
+
 const app: Express = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -94,8 +102,36 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'up' });
 });
 
+app.get('/stream-audio', async (req, res) => {
+  try {
+    // Fetch streaming TTS audio from OpenAI
+    const ttsStream = await openai.audio.speech.create({
+      model: 'tts-1',
+      voice: 'alloy',
+      input: `
+Second thing I noticed is that there's no throttling of the read stream when the callback invokes res.write. When the client connected, 50MB of data was near instantly pushed into the write stream. You can hack in a console.log statement to print out chunk.length on each data callback to see what I mean.
+
+I suppose the browser pulled it all down quickly since I was on localhost. But if the client has limited buffer and is streaming at pace with the music, won't that put a lot of back pressure of bytes onto the node process? Consider hooking the drain event on the response object and write into the response stream at the pace it wants. I could be mistaken, but there's no free lunch for buffering if the client isn't doing much buffering itself.
+
+Final thing. I don't know the files you are working with, but if any of the ID3 headers contain some sort of length hint, that might be confusing the browser client's player. Hence, the Content-Length header inserted above should fix that. (Disclaimer: I don't think ID3 headers actually contain a length hint. I could be mistaken).
+      `.trim(),
+    });
+
+    // Set appropriate headers for streaming audio (e.g., for MP3)
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    // Pipe the audio stream from OpenAI to the client response
+    (ttsStream.body as any).pipe(res);
+  } catch (error) {
+    console.error('Error streaming TTS:', error);
+    res.status(500).send('Error streaming audio');
+  }
+});
+
 addLlmOpsHttpListeners(app);
 addSlackHttpListeners(app);
+addAudioOpsHttpListeners(app);
 
 
 const server = app.listen(PORT, async () => {

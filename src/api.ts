@@ -54,11 +54,6 @@ export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
   };
 }
 
-// TODO strong type body
-export async function uploadLeadactivityToS3(body: any): Promise<void> {
-  await req('/updleadanalytics', 'POST', body);
-}
-
 export async function req<T, K> (
   urlPath: string,
   method: 'GET' | 'POST' = 'GET',
