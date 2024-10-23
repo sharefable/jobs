@@ -35,7 +35,7 @@ async function getImageBase64DataFromUrl(req: Request, url: string): Promise<str
     };
     const {Body: body0} = await s3.send(new GetObjectCommand(params));
 
-    const chunks = [];
+    const chunks: Buffer[] = [];
     const nBody = body0 as Readable;
     for await (const bodyChunk of nBody) {
       chunks.push(Buffer.from(bodyChunk));

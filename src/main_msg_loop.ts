@@ -11,7 +11,6 @@ import {CONCURRENCY} from './consts';
 import { processEventsForDestination } from './processors/mics';
 import { sendEventToCobalt } from './processors/cobalt';
 import RetryableErr from './retryable-err';
-import createDemoGif from './processors/demo_gif';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
 import { routeAnalyticsJob } from './analytics/event_router';
@@ -152,10 +151,10 @@ export default function mainMsgLoop() {
               //   break;
               // }
 
-              case 'CREATE_DEMO_GIF': {
-                jobInfo = await createDemoGif(msgAttrs);
-                break;
-              }
+              // case 'CREATE_DEMO_GIF': {
+              //   jobInfo = await createDemoGif(msgAttrs);
+              //   break;
+              // }
 
               case  'TRANSCODE_AUDIO': {
                 jobInfo = await transcodeAudio(msgAttrs);

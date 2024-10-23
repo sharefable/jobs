@@ -6,6 +6,7 @@ update-contract:
 	cp -r ../api/gen/api-contract.d.ts ./src/api-contract.ts
 
 gen:
+	cp -r src/http/contract.ts ../app/workspace/packages/common/src/jobs-contract.ts
 	node scripts/gen-json-schema.js
 	mkdir -p ../app/workspace/packages/common/src/llm-fn-schema/ && rm -f ../app/workspace/packages/common/src/llm-fn-schema/*
 	cp src/json-schema/*.ts ../app/workspace/packages/common/src/llm-fn-schema/
