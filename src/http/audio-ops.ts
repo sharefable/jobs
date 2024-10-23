@@ -50,7 +50,7 @@ export default function addHttpListeners(app: Express) {
   app.post('/v1/f/aud/gen', async (req: Request, res: Response) => {
     const body = req.body as ReqGenerateAudio;
     try {
-      const anns = await cache.get(body.indexUri, req.log.info);
+      const anns = await cache.get(body.indexUri, body.invalid_key, req.log.info);
       const ann = anns.data[body.entityUri];
       if (!ann) throw new Error('Incorrect entity');
       if (!ann.displayText) throw new Error('Display text is not present');

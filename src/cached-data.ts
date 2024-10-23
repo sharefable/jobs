@@ -8,6 +8,7 @@ export default class CachedData<T> {
   private evictRanAt = 0;
   private cache: Record<string, {
     _key: string,
+    invalidation_key: string;
     data: T,
     insertTimeUTS: number;
     lastAccessedUTS: number,
@@ -31,7 +32,7 @@ export default class CachedData<T> {
 
   // Get the file if it's present in cache
   // Else get it from source and cahce it. The caching evicion happens async
-  async get(fileKey: string, log: Function): Promise<{
+  async get(fileKey: string, invalidation_key: string, log: Function): Promise<{
     data: T,
     _stat: {
       cacheHit: boolean;
@@ -39,7 +40,7 @@ export default class CachedData<T> {
       insertTimeUTS: number;
     }
   }> {
-    if (fileKey in this.cache) {
+    if (fileKey in this.cache && this.cache[fileKey].invalidation_key === invalidation_key) {
       const entity = this.cache[fileKey];
       entity.lastAccessedUTS = +new Date();
       return {
@@ -57,11 +58,12 @@ export default class CachedData<T> {
     const d = +new Date();
     this.cache[fileKey] =  {
       _key: fileKey,
+      invalidation_key,
       data: fileJson,
       lastAccessedUTS: d,
       insertTimeUTS: d,
     };
-    this.currentNoOfRecordInCache++;
+    this.currentNoOfRecordInCache = Object.keys(this.cache).length;
     this.evict(log);
     return {
       data: fileJson as T,
