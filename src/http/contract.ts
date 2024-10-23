@@ -5,6 +5,7 @@ export interface ReqGenerateAudio {
   entityUri: string;
   entityType: 'q_ann';
   vars: Record<string, any>;
+  invalid_key: string;
 }
 
 export interface RespGenerateAudio {
