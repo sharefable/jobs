@@ -9,5 +9,6 @@ export interface ReqGenerateAudio {
 
 export interface RespGenerateAudio {
   url: string;
+  mediaType: 'audio/mpeg'
 }
 

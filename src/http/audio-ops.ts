@@ -87,6 +87,7 @@ export default function addHttpListeners(app: Express) {
         status: ResponseStatus.Success,
         data: {
           url: uploadedMediaSrc,
+          mediaType: 'audio/mpeg',
         },
       } as ApiResp<RespGenerateAudio>);
     } catch(e) {
