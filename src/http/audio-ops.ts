@@ -4,7 +4,7 @@ import CachedData from '../cached-data';
 import {GetObjectCommand, S3Client} from '@aws-sdk/client-s3';
 import {Readable} from 'stream';
 import {captureException} from '@sentry/node';
-import {ApiResp, RespUploadUrl, ResponseStatus} from '../api-contract';
+import {ApiResp, ReqDeductCredit, RespUploadUrl, ResponseStatus, SubscriptionCreditType} from '../api-contract';
 import Handlebars from 'handlebars';
 import OpenAI from 'openai';
 import { req as api } from '../api';
@@ -45,7 +45,7 @@ const cache = new CachedData<AnnotationMap>(async (fileKey: string) => {
   return formattedData;
 });
 
-// TODO quilly credit update
+// TODO don't perform if quilly credit is not enough
 export default function addHttpListeners(app: Express) {
   app.post('/v1/f/aud/gen', async (req: Request, res: Response) => {
     const body = req.body as ReqGenerateAudio;
@@ -82,6 +82,15 @@ export default function addHttpListeners(app: Express) {
         body: mediaBuffer,
         headers: { 'Content-Type': contentType },
       });
+
+      const charLen = displayText.length;
+      const per1kChar = Math.ceil(charLen / 1000);
+      api<ReqDeductCredit, null>('/f/deductcredit', 'POST', {
+        // https://sharefable.slack.com/archives/C04998WM23F/p1729171341630929?thread_ts=1729170927.545179&cid=C04998WM23F
+        deductBy: Math.ceil(per1kChar * 0.5),
+        creditType: SubscriptionCreditType.AI_CREDIT,
+      },
+      req.headers.authorization as string);
 
       return res.status(200).send({
         status: ResponseStatus.Success,
