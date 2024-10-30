@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-10-14 06:27:26.
+// Generated using typescript-generator version 2.35.1025 on 2024-10-30 06:16:55.
 
 export interface Activity extends ActivityBase {
 }
@@ -395,6 +395,7 @@ export interface ReqLeadActivityDataPost {
 
 export interface ReqMediaProcessing {
     path: string;
+    cdnPath: string;
     assn: ReqEntityAssetAssn;
 }
 
@@ -615,6 +616,7 @@ export interface RespMediaProcessingInfo extends ResponseBase {
     originalFilePath: string;
     mediaType: MediaType;
     processedFilePath: string;
+    processedCdnPath: string;
     processingState: JobProcessingStatus;
     failureReason: string;
 }
@@ -689,6 +691,7 @@ export interface RespUploadUrl {
     url: string;
     expiry: string;
     filename: string;
+    cdnPath: string;
 }
 
 export interface RespUser extends ResponseBase {
