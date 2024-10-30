@@ -76,7 +76,7 @@ export default function addHttpListeners(app: Express) {
         req.headers.authorization as string,
       );
 
-      const uploadedMediaSrc = presigned.url.split('?')[0];
+      const uploadedMediaSrc = presigned.cdnPath;
       await fetch(presigned.url, {
         method: 'PUT',
         body: mediaBuffer,
