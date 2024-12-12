@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 2.35.1025 on 2024-10-30 06:16:55.
+// Generated using typescript-generator version 2.35.1025 on 2024-12-12 05:17:02.
 
 export interface Activity extends ActivityBase {
 }
@@ -115,11 +115,16 @@ export interface Dataset {
 export interface EntityInfo {
     thumbnail: string;
     frameSettings: FrameSettings;
+    locked?: boolean;
     annDemoId?: string;
     threadId?: string;
     productDetails?: string;
     demoObjective?: string;
     demoRouter?: any;
+}
+
+export interface SubscriptionInfo {
+    soloPlanDowngradeIntentReceived?: boolean;
 }
 
 export interface EntityConfigKV extends EntityBase {
@@ -154,10 +159,6 @@ export interface ButtonClicks {
 export interface CreateGifJobInfo extends JobProcessingInfo {
     manifestFilePath: string;
     gifFilePath: string;
-}
-
-export interface Credit {
-    value: number;
 }
 
 export interface EntityHoldingInfoBase extends Serializable {
@@ -393,6 +394,11 @@ export interface ReqLeadActivityDataPost {
     data: string;
 }
 
+export interface ReqLockUnlockDemo {
+    orgId: number;
+    shouldLock: boolean;
+}
+
 export interface ReqMediaProcessing {
     path: string;
     cdnPath: string;
@@ -513,6 +519,10 @@ export interface ReqUpdateScreenProperty {
     rid: string;
     propName: string;
     propValue: any;
+}
+
+export interface ReqUpdateSubInfo {
+    soloPlanDowngradeIntentReceived?: boolean;
 }
 
 export interface ReqUpdateUser {
@@ -677,6 +687,7 @@ export interface RespSubscription extends ResponseBase {
     trialStartedOn: Date;
     trialEndsOn: Date;
     availableCredits: number;
+    info?: SubscriptionInfo;
 }
 
 export interface RespTenantIntegration extends ResponseBase {

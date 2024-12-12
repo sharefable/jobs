@@ -14,6 +14,7 @@ import RetryableErr from './retryable-err';
 import * as Sentry from '@sentry/node';
 import { MysqlError } from 'mysql';
 import { routeAnalyticsJob } from './analytics/event_router';
+import { upgradeDowngradeSideEffect } from './processors/upgrade-downgrade-sideffect';
 
 export const sqsClient = new SQS({ region: process.env.SQS_Q_REGION });
 export const qUrlResp = sqsClient.getQueueUrl({ QueueName: process.env.SQS_Q_NAME });
@@ -121,6 +122,9 @@ export default function mainMsgLoop() {
           }
         } else if (msg.Body === 'CBE') {
           await sendEventToCobalt(msgAttrs);
+          await deleteMsg();
+        }  else if (msg.Body === 'SUBS_UPGRADE_DOWNGRADE_SIDE_EFFECT') {
+          await upgradeDowngradeSideEffect(msgAttrs);
           await deleteMsg();
         } else if (msgAttrs.key) { // legacy job processing
           const conn = await getApiConnection();

@@ -5,6 +5,7 @@ import {
   RespCommonConfig,
   RespFatTenantIntegration,
   RespDemoEntity,
+  ReqLockUnlockDemo,
 } from './api-contract';
 import * as log from './log';
 
@@ -31,6 +32,17 @@ export async function getTourById(id: string): Promise<RespDemoEntity> {
 
 export async function getTourByRid(rid: string): Promise<RespDemoEntity> {
   return await req<undefined, RespDemoEntity>(`/tour?rid=${rid}`);
+}
+
+export async function republishDemo(rid: string): Promise<void> {
+  await req<undefined, RespDemoEntity>(`/repub/entity/rid/${rid}`);
+}
+
+export async function lockUnlockAllDemosForOrg(orgId: number, shouldLock: boolean): Promise<string[]> {
+  return await req<ReqLockUnlockDemo, string[]>('/lock', 'POST', {
+    orgId: orgId,
+    shouldLock,
+  });
 }
 
 export async function getLiveAndPublishedTourAssetsByRid(rid: string): Promise<{
