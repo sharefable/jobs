@@ -1,7 +1,43 @@
 %%{init: {'theme':'dark', 'themeVariables': { 'primaryColor':'#1168bd'}}}%%
 C4Component
-    title Component Diagram - jobs Components
+    title Component Diagram - Cloud Functions API Layer
 
-    Container(main_component, "Main Application", "Core functionality")
+    Container(pwa, "PWA Client", "React/TypeScript", "User interface layer")
+    
+    Container_Boundary(api_boundary, "Cloud Functions API") {
+        Component(payroll_ctrl, "Payroll Controller", "TypeScript", "Salary calculations, pay period management, payment processing")
+        Component(form1099_ctrl, "1099-NEC Controller", "TypeScript", "Form generation, IRS e-filing, validation, PDF creation")
+        Component(compliance_ctrl, "Compliance Controller", "TypeScript", "Tax compliance validation, risk assessment, regulatory checks")
+        Component(waiver_ctrl, "Waiver Controller", "TypeScript", "Digital waiver management, employee classifications")
+        Component(audit_ctrl, "Audit Logger", "TypeScript", "Comprehensive audit trail for all system changes and access")
+        Component(tenant_mgr, "Multi-Tenant Manager", "TypeScript", "Tenant isolation, data segregation, tenant-specific configs")
+        Component(rls_enforcer, "RLS Security Enforcer", "TypeScript", "Row-level security policy enforcement")
+        Component(integration_hub, "Integration Hub", "TypeScript", "External API management (Waitwhile, Stripe, IRS)")
+        Component(notification_svc, "Notification Service", "TypeScript", "Email/SMS notifications for compliance alerts")
+    }
+
+    ContainerDb(firestore, "Firestore", "NoSQL", "Persistent data storage")
+    System_Ext(ai_service, "AI Compliance Checker", "Claude API", "Automated compliance validation")
+    System_Ext(external_systems, "External Systems", "Third-party services")
+
+    Rel(pwa, payroll_ctrl, "Calculate payroll, generate reports", "HTTPS/JSON")
+    Rel(pwa, form1099_ctrl, "Generate 1099-NEC forms", "HTTPS/JSON")
+    Rel(pwa, compliance_ctrl, "Validate compliance status", "HTTPS/JSON")
+    Rel(pwa, waiver_ctrl, "Manage employee waivers", "HTTPS/JSON")
+    
+    Rel(payroll_ctrl, audit_ctrl, "Logs payroll changes", "Internal")
+    Rel(form1099_ctrl, audit_ctrl, "Logs form generation", "Internal")
+    Rel(waiver_ctrl, audit_ctrl, "Logs waiver actions", "Internal")
+    
+    Rel(compliance_ctrl, ai_service, "Validates tax rules", "REST API")
+    Rel(compliance_ctrl, notification_svc, "Sends alerts", "Internal")
+    
+    Rel(payroll_ctrl, tenant_mgr, "Gets tenant context", "Internal")
+    Rel(form1099_ctrl, tenant_mgr, "Gets tenant context", "Internal")
+    Rel(tenant_mgr, rls_enforcer, "Applies security policies", "Internal")
+    Rel(rls_enforcer, firestore, "Executes filtered queries", "Firebase Admin SDK")
+    
+    Rel(integration_hub, external_systems, "Syncs external data", "REST/HTTPS")
+    Rel(payroll_ctrl, integration_hub, "Fetches booking data", "Internal")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")

@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   generate-diagrams:
     runs-on: ubuntu-latest
@@ -13,6 +17,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,35 +29,54 @@ jobs:
       - name: Install Mermaid CLI
         run: npm install -g @mermaid-js/mermaid-cli
         
-      - name: Generate C4 diagrams
+      - name: Create diagrams directory
+        run: mkdir -p docs/diagrams
+        
+      - name: Generate Context diagram
+        if: hashFiles('docs/arch-context.mmd') != ''
         run: |
-          mkdir -p docs/diagrams
+          echo "Generating context diagram..."
+          mmdc -i docs/arch-context.mmd \
+               -o docs/diagrams/context.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
           
-          # Generate Context diagram
-          if [ -f "docs/arch-context.mmd" ]; then
-            mmdc -i docs/arch-context.mmd -o docs/diagrams/context.svg -t dark -b transparent
-          fi
+      - name: Generate Container diagram
+        if: hashFiles('docs/arch-container.mmd') != ''
+        run: |
+          echo "Generating container diagram..."
+          mmdc -i docs/arch-container.mmd \
+               -o docs/diagrams/container.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
           
-          # Generate Container diagram
-          if [ -f "docs/arch-container.mmd" ]; then
-            mmdc -i docs/arch-container.mmd -o docs/diagrams/container.svg -t dark -b transparent
-          fi
+      - name: Generate Component diagram
+        if: hashFiles('docs/arch-component.mmd') != ''
+        run: |
+          echo "Generating component diagram..."
+          mmdc -i docs/arch-component.mmd \
+               -o docs/diagrams/component.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
           
-          # Generate Component diagram
-          if [ -f "docs/arch-component.mmd" ]; then
-            mmdc -i docs/arch-component.mmd -o docs/diagrams/component.svg -t dark -b transparent
-          fi
+      - name: List generated files
+        run: |
+          echo "Generated diagrams:"
+          ls -lh docs/diagrams/
           
       - name: Commit generated diagrams
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add docs/diagrams/*.svg || true
-          git diff --staged --quiet || git commit -m "🔄 Auto-generate architecture diagrams"
-          
-      - name: Push changes
-        if: github.event_name == 'push'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+          git add docs/diagrams/*.svg
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🔄 Auto-generate architecture diagrams [skip ci]"
+            git push
+            echo "✅ Diagrams committed"
+          fi
+# Trigger workflow
