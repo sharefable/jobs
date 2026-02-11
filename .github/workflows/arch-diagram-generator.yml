@@ -1,0 +1,56 @@
+name: Generate Architecture Diagrams
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+        
+      - name: Generate C4 diagrams
+        run: |
+          mkdir -p docs/diagrams
+          
+          # Generate Context diagram
+          if [ -f "docs/arch-context.mmd" ]; then
+            mmdc -i docs/arch-context.mmd -o docs/diagrams/context.svg -t dark -b transparent
+          fi
+          
+          # Generate Container diagram
+          if [ -f "docs/arch-container.mmd" ]; then
+            mmdc -i docs/arch-container.mmd -o docs/diagrams/container.svg -t dark -b transparent
+          fi
+          
+          # Generate Component diagram
+          if [ -f "docs/arch-component.mmd" ]; then
+            mmdc -i docs/arch-component.mmd -o docs/diagrams/component.svg -t dark -b transparent
+          fi
+          
+      - name: Commit generated diagrams
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/diagrams/*.svg || true
+          git diff --staged --quiet || git commit -m "🔄 Auto-generate architecture diagrams"
+          
+      - name: Push changes
+        if: github.event_name == 'push'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
