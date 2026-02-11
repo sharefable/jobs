@@ -1,0 +1,30 @@
+%%{init: {'theme':'dark', 'themeVariables': { 'primaryColor':'#1168bd'}}}%%
+C4Container
+    title Container Diagram - FNS Payroll System Architecture
+
+    Person(user, "System User", "Salon owner, employee, or administrator")
+
+    Container_Boundary(payroll_boundary, "FNS Payroll System") {
+        Container(pwa, "Progressive Web App", "React 18/TypeScript/Vite", "Responsive UI for payroll management, booking, and compliance")
+        Container(api, "Cloud Functions API", "Node.js 20/TypeScript", "RESTful endpoints for business logic, payroll calculations, integrations")
+        Container(auth, "Authentication Service", "Firebase Auth", "Multi-tenant user authentication and role-based access control")
+        Container(scheduler, "Background Jobs", "Firebase Scheduled Functions", "Automated payroll processing, report generation, compliance checks")
+        ContainerDb(firestore, "Firestore Database", "NoSQL Multi-Tenant", "Payroll data, user profiles, audit logs, waivers with RLS")
+        ContainerDb(storage, "Cloud Storage", "Firebase Storage", "PDF documents, 1099 forms, receipts, backups")
+        Container(cache, "Cache Layer", "In-Memory/Firestore", "Session data, frequently accessed configuration")
+    }
+
+    System_Ext(external_apis, "External Services", "Stripe, IRS, AI, Waitwhile")
+
+    Rel(user, pwa, "Interacts with system", "HTTPS/TLS 1.3")
+    Rel(pwa, auth, "Authenticates", "Firebase SDK")
+    Rel(pwa, api, "Makes API requests", "HTTPS/JSON")
+    Rel(api, firestore, "Queries/writes data", "Firebase Admin SDK")
+    Rel(api, storage, "Stores/retrieves files", "Firebase Admin SDK")
+    Rel(api, cache, "Caches data", "Firebase SDK")
+    Rel(api, external_apis, "Integrates with", "REST/HTTPS")
+    Rel(scheduler, api, "Triggers background tasks", "Internal")
+    Rel(scheduler, firestore, "Automated data processing", "Firebase Admin SDK")
+    Rel(auth, firestore, "Validates permissions", "Firestore RLS rules")
+
+    UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="1")

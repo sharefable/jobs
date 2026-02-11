@@ -1,0 +1,32 @@
+%%{init: {'theme':'dark', 'themeVariables': { 'primaryColor':'#1168bd'}}}%%
+C4Context
+    title System Context - FNS Compliance Payroll System
+
+    Person(salon_owner, "Salon Owner", "Manages employees, payroll, and compliance")
+    Person(employee, "Employee/Contractor", "Views pay stubs, 1099-NEC forms")
+    Person(admin, "System Administrator", "Configures compliance rules and system settings")
+    Person(accountant, "Accountant/Tax Professional", "Reviews payroll reports and tax documents")
+
+    System(payroll_system, "FNS Payroll System", "PWA for salon payroll management, 1099-NEC generation, compliance tracking, and multi-tenant operations")
+    
+    System_Ext(firebase, "Firebase Platform", "Authentication, Firestore database, Cloud Functions, Cloud Storage")
+    System_Ext(irs_system, "IRS E-File System", "Electronic 1099-NEC submission and validation")
+    System_Ext(stripe, "Stripe Payment Platform", "Payment processing and financial transactions")
+    System_Ext(ai_agents, "AI Compliance Services", "Claude/GPT for automated compliance validation and risk assessment")
+    System_Ext(waitwhile, "Waitwhile Integration", "Queue management and booking synchronization")
+
+    Rel(salon_owner, payroll_system, "Manages payroll, generates reports", "HTTPS/PWA")
+    Rel(employee, payroll_system, "Views documents, submits waivers", "HTTPS/PWA")
+    Rel(admin, payroll_system, "Configures system settings", "HTTPS/PWA")
+    Rel(accountant, payroll_system, "Reviews tax documents", "HTTPS/PWA")
+    
+    Rel(payroll_system, firebase, "Stores data, authenticates users, executes functions", "Firebase SDK")
+    Rel(payroll_system, irs_system, "Submits 1099-NEC forms electronically", "REST API/XML")
+    Rel(payroll_system, stripe, "Processes payments", "Stripe API")
+    Rel(payroll_system, ai_agents, "Validates compliance, assesses risks", "REST API")
+    Rel(payroll_system, waitwhile, "Syncs bookings and queue data", "REST API")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
+    Rel(payroll_system, waitwhile, "Syncs bookings and queue data", "REST API")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")

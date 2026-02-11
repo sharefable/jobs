@@ -1,0 +1,82 @@
+name: Generate Architecture Diagrams
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+        
+      - name: Create diagrams directory
+        run: mkdir -p docs/diagrams
+        
+      - name: Generate Context diagram
+        if: hashFiles('docs/arch-context.mmd') != ''
+        run: |
+          echo "Generating context diagram..."
+          mmdc -i docs/arch-context.mmd \
+               -o docs/diagrams/context.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
+          
+      - name: Generate Container diagram
+        if: hashFiles('docs/arch-container.mmd') != ''
+        run: |
+          echo "Generating container diagram..."
+          mmdc -i docs/arch-container.mmd \
+               -o docs/diagrams/container.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
+          
+      - name: Generate Component diagram
+        if: hashFiles('docs/arch-component.mmd') != ''
+        run: |
+          echo "Generating component diagram..."
+          mmdc -i docs/arch-component.mmd \
+               -o docs/diagrams/component.svg \
+               -t dark \
+               -b transparent \
+               -p puppeteer-config.json
+          
+      - name: List generated files
+        run: |
+          echo "Generated diagrams:"
+          ls -lh docs/diagrams/
+          
+      - name: Commit generated diagrams
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add docs/diagrams/*.svg
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🔄 Auto-generate architecture diagrams [skip ci]"
+            git push
+            echo "✅ Diagrams committed"
+          fi
+# Trigger workflow
